@@ -1,4 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
+import { sortLabByDateDesc } from './lab';
 import { sortNotesByDateDesc } from './notes';
 
 export function sortByDateDesc<T>(
@@ -76,5 +77,5 @@ export async function getVisibleLabEntries(): Promise<
     ({ data }) => data.visible === true,
   );
 
-  return sortByDateDesc(entries, ({ data }) => data.date);
+  return sortLabByDateDesc(entries);
 }

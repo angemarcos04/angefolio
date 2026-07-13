@@ -64,6 +64,15 @@ const lab = defineCollection({
     tags: z.array(z.string()),
     visible: z.boolean(),
     date: z.coerce.date(),
+    category: z.string().optional(),
+    featured: z.boolean().optional(),
+    repo: z.url().optional(),
+    demo: z.url().optional(),
+    relatedProject: z.string().optional(),
+    tools: z.array(z.string()).optional(),
+    lessons: z.array(z.string()).optional(),
+    risk: z.enum(['Low', 'Medium', 'High']).optional(),
+    updatedAt: z.coerce.date().optional(),
   }),
 });
 

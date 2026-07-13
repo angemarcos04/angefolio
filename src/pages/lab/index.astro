@@ -4,11 +4,21 @@ import CollectionHeader from '../../components/astro/CollectionHeader.astro';
 import LabCard from '../../components/astro/LabCard.astro';
 import Layout from '../../components/astro/Layout.astro';
 import SectionHeader from '../../components/astro/SectionHeader.astro';
+import Tag from '../../components/astro/Tag.astro';
 import { getVisibleLabEntries } from '../../lib/content';
+import {
+  getAllLabCategories,
+  getAllLabTags,
+  getLabUrl,
+  groupLabByStatus,
+} from '../../lib/lab';
 
 const description =
   'Small prototypes, UI experiments, terminal setups, AI persona concepts, and unfinished ideas that might become real projects.';
 const entries = await getVisibleLabEntries();
+const groups = groupLabByStatus(entries);
+const categories = getAllLabCategories(entries);
+const tags = getAllLabTags(entries);
 ---
 
 <Layout title="Lab — Angellie Marcos" {description}>
@@ -24,23 +34,63 @@ const entries = await getVisibleLabEntries();
     />
     <div class="collection-summary">
       <p>
-        Structured experiments with a clear state, scope, and reason to exist.
+        This area is intentionally experimental. Entries can be incomplete,
+        paused, or weird, but they should still document what was tried and what
+        was learned.
       </p>
       <span>{entries.length} visible</span>
     </div>
     {
+      entries.length > 0 && (
+        <aside class="workshop-map bento-surface" aria-label="Lab archive map">
+          <div>
+            <strong>Workshop areas</strong>
+            <p>{categories.join(', ')}</p>
+          </div>
+          <div>
+            <strong>Current materials</strong>
+            <div class="archive-tags">
+              {tags.map((tag) => (
+                <Tag>{tag}</Tag>
+              ))}
+            </div>
+          </div>
+        </aside>
+      )
+    }
+    {
       entries.length > 0 ? (
-        <CardGrid class="collection-grid">
-          {entries.map(({ data }) => (
-            <LabCard
-              title={data.title}
-              description={data.description}
-              status={data.status}
-              tags={data.tags}
-              date={data.date}
-            />
+        <div class="status-groups">
+          {groups.map((group) => (
+            <section
+              class="status-group"
+              aria-labelledby={`status-${group.status}`}
+            >
+              <header>
+                <div>
+                  <span aria-hidden="true">./</span>
+                  <h2 id={`status-${group.status}`}>{group.status}</h2>
+                </div>
+                <small>{group.entries.length} entries</small>
+              </header>
+              <CardGrid class="collection-grid">
+                {group.entries.map((entry) => (
+                  <LabCard
+                    href={getLabUrl(entry)}
+                    title={entry.data.title}
+                    description={entry.data.description}
+                    status={entry.data.status}
+                    tags={entry.data.tags}
+                    date={entry.data.date}
+                    category={entry.data.category}
+                    tools={entry.data.tools}
+                    featured={entry.data.featured}
+                  />
+                ))}
+              </CardGrid>
+            </section>
           ))}
-        </CardGrid>
+        </div>
       ) : (
         <p class="empty-state">No visible lab entries yet.</p>
       )
@@ -79,6 +129,63 @@ const entries = await getVisibleLabEntries();
     border-radius: var(--radius-md);
     box-shadow: none;
   }
+  .workshop-map {
+    display: grid;
+    grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+    padding: 1rem;
+    box-shadow: none;
+  }
+  .workshop-map strong {
+    display: block;
+    margin-bottom: 0.45rem;
+    color: var(--accent-green);
+    font: 0.65rem var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .workshop-map p {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: 0.82rem;
+  }
+  .archive-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .status-groups {
+    display: grid;
+    gap: 2rem;
+  }
+  .status-group > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.55rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .status-group > header div {
+    display: flex;
+    align-items: baseline;
+    gap: 0.1rem;
+  }
+  .status-group > header span {
+    color: var(--accent-cyan);
+    font: 0.78rem var(--font-mono);
+  }
+  .status-group h2 {
+    margin: 0;
+    font-size: 1rem;
+    letter-spacing: -0.02em;
+  }
+  .status-group small {
+    color: var(--muted-foreground);
+    font: 0.65rem var(--font-mono);
+  }
   .empty-state {
     margin: 0;
     padding: 2rem;
@@ -88,7 +195,9 @@ const entries = await getVisibleLabEntries();
     font: 0.8rem var(--font-mono);
   }
   @media (max-width: 560px) {
-    .collection-summary {
+    .collection-summary,
+    .workshop-map {
+      grid-template-columns: 1fr;
       flex-direction: column;
     }
   }

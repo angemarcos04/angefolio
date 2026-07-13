@@ -1,0 +1,45 @@
+---
+title: Terminal setup experiments
+description: Exploring a dependable Gentoo, shell, and Neovim workflow without turning configuration into a project of its own.
+status: Testing
+category: Linux / Terminal
+tags: [Gentoo, Terminal, Neovim, Workflow]
+visible: true
+featured: false
+date: 2026-07-05
+updatedAt: 2026-07-12
+tools: [Gentoo Linux, Neovim, Zsh, tmux]
+risk: Medium
+lessons:
+  - Fast recovery matters more than an impressive prompt.
+  - Project-local tooling prevents the host setup from becoming a hidden dependency.
+---
+
+## Context
+
+My terminal environment is part workstation and part ongoing experiment. Gentoo, Neovim, shell functions, and terminal multiplexing can make daily work feel direct, but configuration can also become fragile or distract from the projects it is meant to support.
+
+This entry tracks experiments and constraints. It is not a universal setup guide or a claim that the configuration is finished.
+
+## What I tried
+
+I have been separating the environment into layers: a small shell baseline, editor behavior, project-specific commands, and containerized services. The aim is to make each layer replaceable without losing the whole workflow.
+
+I am also testing which shortcuts I remember naturally, which plugins save real time, and which visual changes only make screenshots look busier.
+
+## Current result
+
+Neovim and a terminal-first Git workflow are stable parts of daily development. The exact shell prompt, multiplexer layout, and language tooling still change as I work across Astro, Laravel, and other projects.
+
+The main unresolved problem is recovery. A useful setup should be understandable after an update breaks something or when the same project needs to run on another machine.
+
+## Notes
+
+- Keep essential configuration in version control, but exclude credentials and machine-specific secrets.
+- Prefer project commands that can be documented in the repository.
+- Treat package and plugin updates as changes that may need rollback context.
+- Containers help with services, but they do not replace understanding ports, files, and process state.
+
+## Next steps
+
+I want to reduce the baseline configuration, document a rebuild checklist, and test it against a fresh user environment. Pieces that only work because of forgotten local state should either be made explicit or removed.

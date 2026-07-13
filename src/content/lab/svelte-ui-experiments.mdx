@@ -1,10 +1,45 @@
 ---
-title: Svelte UI Experiments
-description: Small interaction studies for filters, controls, and interface feedback.
-status: Testing
-tags: [Svelte, UI, Accessibility]
+title: Svelte UI experiments for the portfolio dashboard
+description: Small interaction studies for filters, controls, state feedback, and accessible dashboard behavior.
+status: Prototype
+category: UI Experiments
+tags: [Svelte, UI, Components, Portfolio]
 visible: true
+featured: true
 date: 2026-07-08
+updatedAt: 2026-07-14
+tools: [Svelte, Astro, TypeScript, CSS]
+risk: Low
+lessons:
+  - Static Astro markup should remain the default when an interaction does not need browser state.
+  - Small islands need clear loading and no-JavaScript behavior.
 ---
 
-A loose set of Svelte interface studies that may graduate into reusable portfolio components.
+## Context
+
+The portfolio is intentionally Astro-first, but a few interface ideas benefit from browser state. This experiment is where I test those ideas before deciding whether they deserve a place in the main dashboard.
+
+The goal is not to make every card interactive. It is to find the smallest useful Svelte island and keep the surrounding content understandable without it.
+
+## What I tried
+
+The current studies cover project filtering, theme preference, command-menu framing, and visibility controls. They use realistic portfolio labels so spacing and state feedback can be judged in context rather than inside an isolated component gallery.
+
+I am also checking basic keyboard behavior, focus visibility, and what the server-rendered markup looks like before hydration.
+
+## Current result
+
+The theme toggle is useful enough to run on the public site. The filtering and command-menu ideas remain demonstrations: they show possible interaction patterns, but they are not connected to a production search or admin system.
+
+Keeping each study isolated has made it easier to reject complexity. Some controls look interesting but do not yet solve a real browsing problem.
+
+## Notes
+
+- Astro owns page structure, content loading, and navigation.
+- Svelte is reserved for focused browser interaction.
+- Controls must remain usable with a keyboard and communicate their current state.
+- A prototype should not imply that private dashboard or editing features already exist.
+
+## Next steps
+
+The next useful test is to compare a small real-content filter against plain static grouping. If the static archive is clearer, the experiment can remain in the Lab instead of becoming permanent interface code.

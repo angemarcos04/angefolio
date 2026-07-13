@@ -1,6 +1,7 @@
 ---
 import StatusPill from './StatusPill.astro';
 import Tag from './Tag.astro';
+import { formatDate } from '../../lib/date';
 interface Props {
   title: string;
   description: string;
@@ -8,6 +9,9 @@ interface Props {
   tags: string[];
   date: Date | string;
   href?: string;
+  category?: string;
+  tools?: string[];
+  featured?: boolean;
   class?: string;
 }
 const {
@@ -17,26 +21,49 @@ const {
   tags,
   date,
   href,
+  category,
+  tools = [],
+  featured = false,
   class: className = '',
 } = Astro.props;
-const formatted = new Intl.DateTimeFormat('en', {
-  year: 'numeric',
-  month: 'short',
-  day: '2-digit',
-  timeZone: 'UTC',
-}).format(new Date(date));
 ---
 
 <article class:list={['content-card bento-surface', className]}>
-  <StatusPill {status} /><h3>{href ? <a href={href}>{title}</a> : title}</h3><p>
-    {description}
-  </p>
-  <div>{tags.map((tag) => <Tag>{tag}</Tag>)}</div><small>{formatted}</small>
+  <div class="meta">
+    <StatusPill {status} />
+    {category && <Tag tone="purple">{category}</Tag>}
+    {featured && <Tag tone="yellow">Featured</Tag>}
+  </div>
+  <h3>{href ? <a href={href}>{title}</a> : title}</h3>
+  <p>{description}</p>
+  <div class="tags">{tags.map((tag) => <Tag>{tag}</Tag>)}</div>
+  {
+    tools.length > 0 && (
+      <div class="tools">
+        <span>tools:</span>
+        {tools.slice(0, 3).map((tool) => (
+          <Tag tone="green">{tool}</Tag>
+        ))}
+      </div>
+    )
+  }
+  <small>
+    <time datetime={new Date(date).toISOString()}>{formatDate(date)}</time>
+  </small>
 </article>
 <style>
   .content-card {
+    display: flex;
     min-width: 0;
+    flex-direction: column;
     padding: 1.25rem;
+  }
+  .meta,
+  .tags,
+  .tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
   }
   h3 {
     margin: 1rem 0 0;
@@ -50,14 +77,18 @@ const formatted = new Intl.DateTimeFormat('en', {
     color: var(--muted-foreground);
     font-size: 0.9rem;
   }
-  div {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
+  .tools {
+    align-items: center;
+    margin-top: 0.75rem;
+  }
+  .tools span {
+    color: var(--muted-foreground);
+    font: 0.65rem var(--font-mono);
   }
   small {
     display: block;
-    margin-top: 1rem;
+    margin-top: auto;
+    padding-top: 1rem;
     color: var(--muted-foreground);
     font: 0.65rem var(--font-mono);
   }

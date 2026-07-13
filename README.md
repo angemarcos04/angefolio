@@ -2,7 +2,7 @@
 
 The personal developer portfolio of **Angellie Marcos**, an Information Technology student building practical web systems with a Linux-minded, creative edge.
 
-This repository is currently in **Phase 6: notes and technical writing**. It builds on the Astro baseline, reusable design system, bento-dashboard homepage, public content indexes, and project case studies without adding a database, authentication, admin console, or CMS.
+This repository is currently in **Phase 7: Lab and experiments**. It builds on the Astro baseline, reusable design system, bento-dashboard homepage, public content indexes, project case studies, and technical notes without adding a database, authentication, admin console, or CMS.
 
 ## Tech stack
 
@@ -258,10 +258,60 @@ status: Prototype
 tags: [Svelte, UI]
 visible: true
 date: 2026-07-14
+category: UI Experiments # optional
+featured: false # optional
+repo: https://github.com/example/experiment # optional
+demo: https://example.com/experiment # optional
+relatedProject: /projects/example-project # optional; relative or external
+tools: [Svelte, TypeScript] # optional
+lessons: [Keep the interactive surface small.] # optional
+risk: Low # optional; Low, Medium, or High
+updatedAt: 2026-07-15 # optional
 ---
 ```
 
-Valid lab statuses are `Idea`, `Prototype`, `Testing`, `Paused`, and `Archived`. Only entries with `visible: true` appear on `/lab`.
+Required lab fields are `title`, `description`, `status`, `tags`, `visible`, and `date`. Valid statuses are `Idea`, `Prototype`, `Testing`, `Paused`, and `Archived`. Optional metadata can be added only when it is known; incomplete experiments do not need fake links or results.
+
+Only entries with `visible: true` appear on `/lab` or generate a public detail route. Status describes the current experiment state and controls its static archive group. `featured` adds a visual marker but does not change visibility. Categories identify broad workshop areas, tags describe subjects, and tools record the concrete environment used. Optional lessons surface the current observations without implying that an experiment is complete.
+
+### Recommended lab body
+
+Lab entries render Markdown and MDX with the same readable prose shell as projects and notes. Use this structure to keep unfinished work useful:
+
+```md
+## Context
+
+Why this experiment exists.
+
+## What I tried
+
+The current approach.
+
+## Current result
+
+What works, what does not, and what remains unclear.
+
+## Notes
+
+- An observation, constraint, or technical detail.
+
+## Next steps
+
+What could happen next.
+```
+
+Be explicit when an entry is only an idea, partial prototype, or paused investigation. Do not add a repository, demo, or related project unless the link really exists.
+
+## Phase 7 Lab archive
+
+Visible experiment entries now generate a structured static workshop:
+
+- `/lab` groups visible entries by `Prototype`, `Testing`, `Idea`, `Paused`, and `Archived`, while preserving newest-first order inside each group.
+- `/lab/[slug]` renders the MDX experiment body with status, category, tags, dates, optional tools, risk, lessons, links, and older/newer navigation.
+- The content filename becomes the route slug, so `src/content/lab/svelte-ui-experiments.mdx` builds as `/lab/svelte-ui-experiments`.
+- Project, note, and Lab detail pages reuse the shared `.prose-shell` article styles.
+
+To add an experiment, create an `.md` or `.mdx` file in `src/content/lab/`, complete the required frontmatter, document what was actually tried, and run the normal checks. Lab entries remain source-controlled static content. A future private `/console` may manage them, but there is no browser editor, database, authentication, or admin workflow yet.
 
 ## Folder structure
 
@@ -276,14 +326,15 @@ src/
 │   ├── index.astro  # Eight-cell bento-dashboard homepage
 │   ├── projects/    # Public project index and static detail routes
 │   ├── notes/       # Public note index and static detail routes
-│   └── lab/         # Public lab collection index
+│   └── lab/         # Public Lab index and static detail routes
 └── styles/
     └── global.css   # Tailwind entry, theme tokens, and shared utilities
 ```
 
 ## Current limitations
 
-- Lab detail routes are not implemented yet; its Phase 4 collection index remains a static listing.
+- Lab entries are source-controlled MDX files. There is no browser editor, discussion system, or separate status/tag route yet.
+- Lab grouping is static; search and interactive filtering remain planned for a later polish phase.
 - Notes are source-controlled MDX files. There is no browser editor, comments system, RSS feed, or category/tag route yet.
 - Pagefind search is installed but is not exposed yet; search remains planned for a later polish phase.
 - Project detail pages are static and MDX-backed. There is no browser-based project editor or automatic synchronization with GitHub.
@@ -292,7 +343,7 @@ src/
 - GitHub activity is a static visual placeholder and does not call the GitHub API.
 - Project filtering is a UI demonstration only.
 - The command menu and card visibility controls are non-production stubs.
-- There is no database, authentication, Node adapter, private `/console`, or CMS. A future `/console` may manage project and note content, but it is deliberately outside Phase 6.
+- There is no database, authentication, Node adapter, private `/console`, or CMS. A future `/console` may manage project, note, and Lab content, but it is deliberately outside Phase 7.
 
 ## Roadmap
 
@@ -302,9 +353,9 @@ src/
 - **Phase 4:** Public content collection indexes
 - **Phase 5:** Project detail pages and case studies (complete)
 - **Phase 6:** Note detail pages, tags/categories, and writing polish (complete)
-- **Phase 7:** Lab
+- **Phase 7:** Lab detail pages and prototype archive (complete)
 - **Phase 8:** Search, SEO, and polish
 - **Phase 9:** Docker hardening
 - **Phase 10+:** Private `/console` planning and CMS work
 
-Next: **Phase 7 should build out lab detail pages and experiment write-ups.** Search, SEO, and broader archive polish remain planned for Phase 8. Astro remains the main framework, with Svelte limited to focused interactive islands.
+Next: **Phase 8 should add search, SEO, metadata, and broader archive polish.** Astro remains the main framework, with Svelte limited to focused interactive islands.

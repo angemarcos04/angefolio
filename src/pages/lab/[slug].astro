@@ -1,0 +1,297 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+import BentoCard from '../../components/astro/BentoCard.astro';
+import Button from '../../components/astro/Button.astro';
+import CollectionHeader from '../../components/astro/CollectionHeader.astro';
+import IconLink from '../../components/astro/IconLink.astro';
+import Layout from '../../components/astro/Layout.astro';
+import ProjectMeta from '../../components/astro/ProjectMeta.astro';
+import StatusPill from '../../components/astro/StatusPill.astro';
+import Tag from '../../components/astro/Tag.astro';
+import { getVisibleLabEntries } from '../../lib/content';
+import { formatDate } from '../../lib/date';
+import { getLabSlug, getLabUrl } from '../../lib/lab';
+
+export async function getStaticPaths() {
+  const entries = await getVisibleLabEntries();
+
+  return entries.map((entry, index) => ({
+    params: { slug: getLabSlug(entry) },
+    props: {
+      entry,
+      newerEntry: entries[index - 1],
+      olderEntry: entries[index + 1],
+    },
+  }));
+}
+
+interface Props {
+  entry: CollectionEntry<'lab'>;
+  newerEntry?: CollectionEntry<'lab'>;
+  olderEntry?: CollectionEntry<'lab'>;
+}
+
+const { entry, newerEntry, olderEntry } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+const links = [
+  ...(data.demo
+    ? [{ label: 'Open demo', href: data.demo, external: true }]
+    : []),
+  ...(data.repo
+    ? [{ label: 'Repository', href: data.repo, external: true }]
+    : []),
+  ...(data.relatedProject
+    ? [
+        {
+          label: 'Related project',
+          href: data.relatedProject,
+          external: data.relatedProject.startsWith('http'),
+        },
+      ]
+    : []),
+];
+---
+
+<Layout
+  title={`${data.title} — Angellie Marcos`}
+  description={data.description}
+>
+  <CollectionHeader active="lab" />
+
+  <div class="back-link">
+    <IconLink href="/lab" label="Back to lab" />
+  </div>
+
+  <BentoCard class="lab-hero subtle-grid" accent="green">
+    <div class="hero-meta">
+      <StatusPill status={data.status} />
+      {data.category && <Tag tone="purple">{data.category}</Tag>}
+      {data.featured && <Tag tone="yellow">Featured experiment</Tag>}
+    </div>
+    <h1 class="text-balance">{data.title}</h1>
+    <p class="description">{data.description}</p>
+    <div class="date-meta" aria-label="Experiment dates">
+      <span>
+        Logged <time datetime={data.date.toISOString()}>
+          {formatDate(data.date)}
+        </time>
+      </span>
+      {
+        data.updatedAt && (
+          <span>
+            Updated{' '}
+            <time datetime={data.updatedAt.toISOString()}>
+              {formatDate(data.updatedAt)}
+            </time>
+          </span>
+        )
+      }
+    </div>
+    <div class="tags" aria-label="Experiment tags">
+      {data.tags.map((tag) => <Tag>{tag}</Tag>)}
+    </div>
+    {
+      links.length > 0 && (
+        <div class="hero-links">
+          {links.map((link, index) => (
+            <Button
+              href={link.href}
+              external={link.external}
+              size="sm"
+              variant={index === 0 ? 'primary' : 'secondary'}
+            >
+              {link.label}
+            </Button>
+          ))}
+        </div>
+      )
+    }
+  </BentoCard>
+
+  <div class="metadata-grid" aria-label="Experiment metadata">
+    <ProjectMeta label="Status" value={data.status} />
+    <ProjectMeta label="Category" value={data.category ?? 'Open experiment'} />
+    <ProjectMeta label="Logged" value={formatDate(data.date)} />
+    {data.risk && <ProjectMeta label="Risk" value={data.risk} />}
+    {
+      data.updatedAt && (
+        <ProjectMeta label="Last updated" value={formatDate(data.updatedAt)} />
+      )
+    }
+    {
+      data.tools && data.tools.length > 0 && (
+        <ProjectMeta label="Tools" items={data.tools} class="tools-meta" />
+      )
+    }
+  </div>
+
+  {
+    data.lessons && data.lessons.length > 0 && (
+      <aside class="lesson-log bento-surface" aria-label="Current lessons">
+        <p>Current lessons</p>
+        <ul>
+          {data.lessons.map((lesson) => (
+            <li>{lesson}</li>
+          ))}
+        </ul>
+      </aside>
+    )
+  }
+
+  <article class="prose-shell bento-surface">
+    <Content />
+  </article>
+
+  <nav class="lab-navigation" aria-label="Lab entry navigation">
+    <div>
+      <span>Older experiment</span>
+      {
+        olderEntry ? (
+          <a href={getLabUrl(olderEntry)}>← {olderEntry.data.title}</a>
+        ) : (
+          <span>End of archive</span>
+        )
+      }
+    </div>
+    <div class="newer-entry">
+      <span>Newer experiment</span>
+      {
+        newerEntry ? (
+          <a href={getLabUrl(newerEntry)}>{newerEntry.data.title} →</a>
+        ) : (
+          <a href="/lab">All experiments →</a>
+        )
+      }
+    </div>
+  </nav>
+</Layout>
+
+<style>
+  .back-link {
+    margin-bottom: 1rem;
+  }
+  :global(.lab-hero) {
+    padding: clamp(1.5rem, 5vw, 3rem);
+  }
+  .hero-meta,
+  .date-meta,
+  .tags,
+  .hero-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+  h1 {
+    max-width: 20ch;
+    margin: 1rem 0 0;
+    font-size: clamp(2.3rem, 8vw, 4.75rem);
+    line-height: 0.98;
+    letter-spacing: -0.055em;
+  }
+  .description {
+    max-width: 66ch;
+    margin: 1rem 0 0;
+    color: var(--muted-foreground);
+    font-size: clamp(1rem, 2vw, 1.15rem);
+  }
+  .date-meta {
+    margin-top: 1.25rem;
+    color: var(--muted-foreground);
+    font: 0.68rem/1.5 var(--font-mono);
+  }
+  .date-meta span + span::before {
+    margin-right: 0.45rem;
+    color: var(--border);
+    content: '/';
+  }
+  .tags {
+    margin-top: 0.8rem;
+  }
+  .hero-links {
+    margin-top: 1.2rem;
+  }
+  .metadata-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+  :global(.tools-meta) {
+    grid-column: 1 / -1;
+  }
+  .lesson-log {
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: 1rem;
+    margin-top: 0.75rem;
+    padding: 1rem 1.25rem;
+    box-shadow: none;
+  }
+  .lesson-log p {
+    margin: 0;
+    color: var(--accent-yellow);
+    font: 0.68rem var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .lesson-log ul {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+  .lesson-log li {
+    color: var(--muted-foreground);
+    font-size: 0.84rem;
+  }
+  .prose-shell {
+    margin-top: 0.75rem;
+  }
+  .lab-navigation {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+  .lab-navigation div {
+    display: grid;
+    gap: 0.25rem;
+  }
+  .lab-navigation span {
+    color: var(--muted-foreground);
+    font: 0.65rem var(--font-mono);
+  }
+  .lab-navigation a {
+    font-weight: 650;
+  }
+  .lab-navigation a:hover {
+    color: var(--accent-cyan);
+  }
+  .newer-entry {
+    text-align: right;
+  }
+  @media (max-width: 760px) {
+    .metadata-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 560px) {
+    .date-meta {
+      display: grid;
+    }
+    .date-meta span + span::before {
+      content: none;
+    }
+    .metadata-grid,
+    .lesson-log,
+    .lab-navigation {
+      grid-template-columns: 1fr;
+    }
+    .newer-entry {
+      text-align: left;
+    }
+  }
+</style>
