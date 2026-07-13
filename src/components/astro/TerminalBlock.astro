@@ -1,0 +1,67 @@
+---
+interface Props {
+  title?: string;
+}
+
+const { title = 'phase-one.sh' } = Astro.props;
+---
+
+<div class="terminal" role="region" aria-label={title}>
+  <div class="terminal-bar">
+    <span></span><span></span><span></span>
+    <strong>{title}</strong>
+  </div>
+  <div class="terminal-body">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .terminal {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 0.8rem;
+    background: #080b0f;
+    color: #dce5df;
+    font-family: var(--font-mono);
+  }
+
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.55rem 0.7rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .terminal-bar span {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--accent-red);
+  }
+
+  .terminal-bar span:nth-child(2) {
+    background: var(--accent-purple);
+  }
+
+  .terminal-bar span:nth-child(3) {
+    background: var(--accent-green);
+  }
+
+  strong {
+    margin-left: 0.35rem;
+    color: var(--muted-foreground);
+    font-size: 0.68rem;
+    font-weight: 500;
+  }
+
+  .terminal-body {
+    padding: 0.9rem;
+    font-size: 0.78rem;
+  }
+
+  .terminal-body :global(p) {
+    margin: 0.2rem 0;
+  }
+</style>

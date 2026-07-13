@@ -1,0 +1,45 @@
+---
+interface Props {
+  title?: string;
+  eyebrow?: string;
+  class?: string;
+}
+
+const { title, eyebrow, class: className = '' } = Astro.props;
+---
+
+<section class:list={['bento-card', className]}>
+  {
+    (eyebrow || title) && (
+      <header>
+        {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+        {title && <h2>{title}</h2>}
+      </header>
+    )
+  }
+  <slot />
+</section>
+
+<style>
+  .bento-card {
+    padding: clamp(1.2rem, 3vw, 1.8rem);
+    border: 1px solid var(--border);
+    border-radius: 1.1rem;
+    background: var(--card);
+    color: var(--card-foreground);
+  }
+
+  header {
+    margin-bottom: 1rem;
+  }
+
+  header :global(.eyebrow) {
+    margin: 0 0 0.3rem;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    letter-spacing: -0.025em;
+  }
+</style>

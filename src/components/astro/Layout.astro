@@ -1,0 +1,38 @@
+---
+import '../../styles/global.css';
+import Footer from './Footer.astro';
+import SEO from './SEO.astro';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <SEO {title} {description} />
+    <script is:inline>
+      const theme = localStorage.getItem('theme');
+      if (theme === 'light') document.documentElement.dataset.theme = 'light';
+    </script>
+  </head>
+  <body>
+    <main>
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>
+
+<style>
+  main {
+    width: min(1120px, calc(100% - 2rem));
+    margin: 0 auto;
+    padding: clamp(2rem, 7vw, 5rem) 0;
+  }
+</style>

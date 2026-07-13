@@ -1,0 +1,130 @@
+---
+import BentoCard from '../components/astro/BentoCard.astro';
+import BentoGrid from '../components/astro/BentoGrid.astro';
+import Button from '../components/astro/Button.astro';
+import Layout from '../components/astro/Layout.astro';
+import Tag from '../components/astro/Tag.astro';
+import TerminalBlock from '../components/astro/TerminalBlock.astro';
+import ThemeToggle from '../components/svelte/ThemeToggle.svelte';
+import { site } from '../lib/data/site';
+
+const stack = ['Astro', 'Svelte', 'TypeScript', 'Tailwind', 'MDX', 'Docker'];
+---
+
+<Layout title="angefolio Ã¢â‚¬â€ Angellie Marcos" description={site.tagline}>
+  <div class="page-top">
+    <p class="eyebrow">angefolio / phase 1</p>
+    <ThemeToggle client:load />
+  </div>
+
+  <BentoGrid>
+    <BentoCard class="hero" eyebrow="Information Technology Student">
+      <h1>Hi, Im Angellie Marcos.</h1>
+      <p class="tagline">{site.tagline}</p>
+      <p class="description">{site.description}</p>
+      <div class="actions">
+        <Button href="/" variant="primary">Projects</Button>
+        <Button href={site.github} external>GitHub</Button>
+        <Button href={`mailto:${site.email}`} variant="ghost">Email</Button>
+      </div>
+    </BentoCard>
+
+    <BentoCard
+      class="about"
+      eyebrow="About"
+      title="Practical systems, personal software."
+    >
+      <p>
+        Im an IT student from the Philippines focused on full-stack development,
+        backend systems, Linux workflows, and creative software projects.
+      </p>
+    </BentoCard>
+
+    <BentoCard class="stack" eyebrow="Stack Preview" title="Foundation tools">
+      <div class="tags">
+        {stack.map((item) => <Tag>{item}</Tag>)}
+      </div>
+    </BentoCard>
+
+    <BentoCard class="status" eyebrow="Phase Status" title="Small on purpose.">
+      <TerminalBlock>
+        <p><span>$</span> phase --current</p>
+        <p>
+          Phase 1: project foundation, dependencies, layout primitives, and
+          Docker baseline.
+        </p>
+      </TerminalBlock>
+    </BentoCard>
+  </BentoGrid>
+</Layout>
+
+<style>
+  .page-top {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .page-top .eyebrow {
+    margin: 0;
+  }
+
+  :global(.hero) {
+    grid-column: span 8;
+    min-height: 24rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  :global(.about) {
+    grid-column: span 4;
+  }
+
+  :global(.stack),
+  :global(.status) {
+    grid-column: span 6;
+  }
+
+  h1 {
+    max-width: 46rem;
+    margin: 0 0 0.8rem;
+    font-size: clamp(2.6rem, 7vw, 5.4rem);
+    line-height: 0.92;
+    letter-spacing: -0.065em;
+  }
+
+  .tagline {
+    max-width: 42rem;
+    margin: 0;
+    color: var(--accent-green);
+    font-size: clamp(1rem, 2vw, 1.25rem);
+  }
+
+  .description,
+  .about p {
+    color: var(--muted-foreground);
+  }
+
+  .description {
+    max-width: 44rem;
+    margin: 0.7rem 0 1.2rem;
+  }
+
+  .about p {
+    margin: 0;
+  }
+
+  .actions,
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+
+  .status :global(.terminal-body span) {
+    color: var(--accent-green);
+  }
+</style>

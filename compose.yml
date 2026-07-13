@@ -1,0 +1,12 @@
+services:
+  portfolio:
+    container_name: angefolio
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '4321:4321'
+    environment:
+      - HOST=0.0.0.0
+      - PORT=4321
