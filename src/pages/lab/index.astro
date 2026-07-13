@@ -1,0 +1,95 @@
+---
+import CardGrid from '../../components/astro/CardGrid.astro';
+import CollectionHeader from '../../components/astro/CollectionHeader.astro';
+import LabCard from '../../components/astro/LabCard.astro';
+import Layout from '../../components/astro/Layout.astro';
+import SectionHeader from '../../components/astro/SectionHeader.astro';
+import { getVisibleLabEntries } from '../../lib/content';
+
+const description =
+  'Small prototypes, UI experiments, terminal setups, AI persona concepts, and unfinished ideas that might become real projects.';
+const entries = await getVisibleLabEntries();
+---
+
+<Layout title="Lab — Angellie Marcos" {description}>
+  <CollectionHeader active="lab" />
+  <section aria-labelledby="lab-title">
+    <SectionHeader
+      id="lab-title"
+      eyebrow="/lab"
+      title="Lab"
+      {description}
+      headingLevel={1}
+      class="page-heading"
+    />
+    <div class="collection-summary">
+      <p>
+        Structured experiments with a clear state, scope, and reason to exist.
+      </p>
+      <span>{entries.length} visible</span>
+    </div>
+    {
+      entries.length > 0 ? (
+        <CardGrid class="collection-grid">
+          {entries.map(({ data }) => (
+            <LabCard
+              title={data.title}
+              description={data.description}
+              status={data.status}
+              tags={data.tags}
+              date={data.date}
+            />
+          ))}
+        </CardGrid>
+      ) : (
+        <p class="empty-state">No visible lab entries yet.</p>
+      )
+    }
+  </section>
+</Layout>
+
+<style>
+  :global(.page-heading) {
+    margin-bottom: 1rem;
+  }
+  .collection-summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-block: 0.75rem;
+    border-block: 1px solid var(--border);
+  }
+  .collection-summary p,
+  .collection-summary span {
+    margin: 0;
+    color: var(--muted-foreground);
+    font: 0.72rem/1.5 var(--font-mono);
+  }
+  .collection-summary p {
+    max-width: 67ch;
+  }
+  .collection-summary span {
+    flex: none;
+    color: var(--accent-green);
+  }
+  :global(.collection-grid .content-card) {
+    height: 100%;
+    border-radius: var(--radius-md);
+    box-shadow: none;
+  }
+  .empty-state {
+    margin: 0;
+    padding: 2rem;
+    border: 1px dashed var(--border);
+    background: var(--card);
+    color: var(--muted-foreground);
+    font: 0.8rem var(--font-mono);
+  }
+  @media (max-width: 560px) {
+    .collection-summary {
+      flex-direction: column;
+    }
+  }
+</style>

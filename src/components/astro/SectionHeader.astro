@@ -1,16 +1,35 @@
 ---
 interface Props {
+  id?: string;
   eyebrow?: string;
   title: string;
   description?: string;
+  headingLevel?: 1 | 2;
   class?: string;
 }
-const { eyebrow, title, description, class: className = '' } = Astro.props;
+const {
+  id,
+  eyebrow,
+  title,
+  description,
+  headingLevel = 2,
+  class: className = '',
+} = Astro.props;
 ---
 
 <header class:list={['section-header', className]}>
   {eyebrow && <p class="eyebrow">{eyebrow}</p>}
-  <h2 class="text-balance">{title}</h2>
+  {
+    headingLevel === 1 ? (
+      <h1 {id} class="text-balance">
+        {title}
+      </h1>
+    ) : (
+      <h2 {id} class="text-balance">
+        {title}
+      </h2>
+    )
+  }
   {description && <p>{description}</p>}
 </header>
 <style>
@@ -21,7 +40,7 @@ const { eyebrow, title, description, class: className = '' } = Astro.props;
   .eyebrow {
     margin: 0 0 0.35rem;
   }
-  h2 {
+  :is(h1, h2) {
     margin: 0;
     font-size: clamp(1.6rem, 4vw, 2.35rem);
     line-height: 1.12;

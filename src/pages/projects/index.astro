@@ -1,0 +1,102 @@
+---
+import CardGrid from '../../components/astro/CardGrid.astro';
+import CollectionHeader from '../../components/astro/CollectionHeader.astro';
+import Layout from '../../components/astro/Layout.astro';
+import ProjectCard from '../../components/astro/ProjectCard.astro';
+import SectionHeader from '../../components/astro/SectionHeader.astro';
+import { getVisibleProjects } from '../../lib/content';
+
+const description =
+  "Selected systems, prototypes, and experiments I'm building while learning full-stack development, backend workflows, Linux, and AI-assisted tools.";
+const projects = (await getVisibleProjects()).sort(
+  (a, b) => Number(b.data.featured) - Number(a.data.featured),
+);
+---
+
+<Layout title="Projects — Angellie Marcos" {description}>
+  <CollectionHeader active="projects" />
+  <section aria-labelledby="projects-title">
+    <SectionHeader
+      id="projects-title"
+      eyebrow="/projects"
+      title="Projects"
+      {description}
+      headingLevel={1}
+      class="page-heading"
+    />
+    <div class="collection-summary">
+      <p>
+        Some projects are in progress or planning. I keep unfinished work
+        visible when the direction is useful.
+      </p>
+      <span>{projects.length} visible</span>
+    </div>
+    {
+      projects.length > 0 ? (
+        <CardGrid class="collection-grid">
+          {projects.map(({ data }) => (
+            <ProjectCard
+              title={data.title}
+              description={data.description}
+              status={data.status}
+              category={data.category}
+              stack={data.stack}
+              github={data.github}
+              demo={data.demo}
+              caseStudy={data.caseStudy}
+              featured={data.featured}
+            />
+          ))}
+        </CardGrid>
+      ) : (
+        <p class="empty-state">No visible projects yet.</p>
+      )
+    }
+  </section>
+</Layout>
+
+<style>
+  :global(.page-heading) {
+    margin-bottom: 1rem;
+  }
+  .collection-summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-block: 0.75rem;
+    border-block: 1px solid var(--border);
+  }
+  .collection-summary p,
+  .collection-summary span {
+    margin: 0;
+    color: var(--muted-foreground);
+    font: 0.72rem/1.5 var(--font-mono);
+  }
+  .collection-summary p {
+    max-width: 67ch;
+  }
+  .collection-summary span {
+    flex: none;
+    color: var(--accent-cyan);
+  }
+  :global(.collection-grid .content-card) {
+    height: 100%;
+    border-radius: var(--radius-md);
+    box-shadow: none;
+  }
+  .empty-state {
+    margin: 0;
+    padding: 2rem;
+    border: 1px dashed var(--border);
+    background: var(--card);
+    color: var(--muted-foreground);
+    font: 0.8rem var(--font-mono);
+  }
+  @media (max-width: 560px) {
+    .collection-summary {
+      flex-direction: column;
+    }
+  }
+</style>

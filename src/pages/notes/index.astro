@@ -1,0 +1,97 @@
+---
+import CardGrid from '../../components/astro/CardGrid.astro';
+import CollectionHeader from '../../components/astro/CollectionHeader.astro';
+import Layout from '../../components/astro/Layout.astro';
+import NoteCard from '../../components/astro/NoteCard.astro';
+import SectionHeader from '../../components/astro/SectionHeader.astro';
+import { getPublishedNotes } from '../../lib/content';
+
+const description =
+  'Project logs, Linux fixes, web development notes, and thoughts from building things.';
+const notes = await getPublishedNotes();
+---
+
+<Layout title="Notes — Angellie Marcos" {description}>
+  <CollectionHeader active="notes" />
+  <section aria-labelledby="notes-title">
+    <SectionHeader
+      id="notes-title"
+      eyebrow="/notes"
+      title="Notes"
+      {description}
+      headingLevel={1}
+      class="page-heading"
+    />
+    <div class="collection-summary">
+      <p>
+        Build logs and working notes, published when they are useful to revisit.
+      </p>
+      <span>{notes.length} published</span>
+    </div>
+    {
+      notes.length > 0 ? (
+        <CardGrid class="collection-grid">
+          {notes.map(({ data }) => (
+            <NoteCard
+              title={data.title}
+              description={data.description}
+              category={data.category}
+              tags={data.tags}
+              createdAt={data.createdAt}
+              updatedAt={data.updatedAt}
+              featured={data.featured}
+            />
+          ))}
+        </CardGrid>
+      ) : (
+        <p class="empty-state">No published notes yet.</p>
+      )
+    }
+  </section>
+</Layout>
+
+<style>
+  :global(.page-heading) {
+    margin-bottom: 1rem;
+  }
+  .collection-summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-block: 0.75rem;
+    border-block: 1px solid var(--border);
+  }
+  .collection-summary p,
+  .collection-summary span {
+    margin: 0;
+    color: var(--muted-foreground);
+    font: 0.72rem/1.5 var(--font-mono);
+  }
+  .collection-summary p {
+    max-width: 67ch;
+  }
+  .collection-summary span {
+    flex: none;
+    color: var(--accent-purple);
+  }
+  :global(.collection-grid .content-card) {
+    height: 100%;
+    border-radius: var(--radius-md);
+    box-shadow: none;
+  }
+  .empty-state {
+    margin: 0;
+    padding: 2rem;
+    border: 1px dashed var(--border);
+    background: var(--card);
+    color: var(--muted-foreground);
+    font: 0.8rem var(--font-mono);
+  }
+  @media (max-width: 560px) {
+    .collection-summary {
+      flex-direction: column;
+    }
+  }
+</style>

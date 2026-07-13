@@ -2,7 +2,7 @@
 
 The personal developer portfolio of **Angellie Marcos**, an Information Technology student building practical web systems with a Linux-minded, creative edge.
 
-This repository is currently in **Phase 3: static bento-dashboard homepage**. It builds on the Phase 1 Astro baseline and Phase 2 design system without adding a database, authentication, admin console, or CMS.
+This repository is currently in **Phase 4: public content collection pages**. It builds on the Astro baseline, reusable design system, and bento-dashboard homepage without adding a database, authentication, admin console, or CMS.
 
 ## Tech stack
 
@@ -66,7 +66,7 @@ Astro presentation primitives:
 - Bento layout: `BentoGrid`, `BentoCard`, `CardGrid`
 - Controls and labels: `Button`, `Tag`, `StatusPill`, `IconLink`
 - Content structure: `SectionHeader`, `StackGroup`, `TerminalBlock`
-- Future content cards: `ProjectCard`, `NoteCard`, `LabCard`
+- Content cards: `ProjectCard`, `NoteCard`, `LabCard`
 
 Svelte islands:
 
@@ -105,6 +105,74 @@ The homepage is a desktop-first 12-column bento dashboard with a natural mobile 
 
 Profile identity remains in `src/lib/data/site.ts`. Homepage-only lists, stack groups, contact links, and the static contribution pattern live in `src/lib/data/home.ts`. Featured projects and latest notes are loaded from Astro Content Collections in `src/content/` during the static build.
 
+## Phase 4 content pages
+
+The public collection indexes are generated statically from Astro Content Collections:
+
+- `/projects` lists visible projects, with featured work first and newest entries first within each group.
+- `/notes` lists published notes from newest to oldest.
+- `/lab` lists visible experiments from newest to oldest.
+
+All three routes share the existing layout, terminal-style navigation, responsive card grid, content cards, status pills, and tags. Their core filtering and date sorting live in `src/lib/content.ts`. Hidden or unpublished entries remain available to the source repository but are excluded from public listing pages during the build.
+
+### Add a project
+
+Create an `.md` or `.mdx` file in `src/content/projects/`:
+
+```yaml
+---
+title: Example Project
+description: A concise explanation of what the project does.
+status: In Progress
+featured: false
+visible: true
+stack: [Astro, TypeScript, PostgreSQL]
+github: https://github.com/example/project # optional
+demo: https://example.com # optional
+caseStudy: /projects/example-project # optional; use only when the route exists
+date: 2026-07-14
+category: Developer Tools # optional
+---
+```
+
+Valid project statuses are `Planning`, `Prototype`, `In Progress`, `Live`, and `Archived`. Only entries with `visible: true` appear on `/projects`.
+
+### Add a note
+
+Create an `.md` or `.mdx` file in `src/content/notes/`:
+
+```yaml
+---
+title: Example Note
+description: A concise summary of the note.
+category: Build Log
+tags: [Astro, Linux]
+published: true
+featured: false
+createdAt: 2026-07-14
+updatedAt: 2026-07-15 # optional
+---
+```
+
+Only entries with `published: true` appear on `/notes`.
+
+### Add a lab entry
+
+Create an `.md` or `.mdx` file in `src/content/lab/`:
+
+```yaml
+---
+title: Example Experiment
+description: A concise explanation of the experiment.
+status: Prototype
+tags: [Svelte, UI]
+visible: true
+date: 2026-07-14
+---
+```
+
+Valid lab statuses are `Idea`, `Prototype`, `Testing`, `Paused`, and `Archived`. Only entries with `visible: true` appear on `/lab`.
+
 ## Folder structure
 
 ```text
@@ -113,16 +181,19 @@ src/
 │   ├── astro/       # Layout, content cards, and presentation primitives
 │   └── svelte/      # Small interactive islands and future-facing stubs
 ├── content/         # Typed starter projects, notes, and lab entries
-├── lib/             # Shared site identity and utilities
+├── lib/             # Shared site identity and content utilities
 ├── pages/
-│   └── index.astro  # Minimal Phase 2 component demonstration
+│   ├── index.astro  # Eight-cell bento-dashboard homepage
+│   ├── projects/    # Public project collection index
+│   ├── notes/       # Public note collection index
+│   └── lab/         # Public lab collection index
 └── styles/
     └── global.css   # Tailwind entry, theme tokens, and shared utilities
 ```
 
 ## Current limitations
 
-- Project, note, and lab listing/detail routes are not implemented yet; homepage links intentionally point to the future `/projects`, `/notes`, and `/lab` routes.
+- Project, note, and lab detail routes are not implemented yet; Phase 4 only provides their public collection indexes.
 - The resume link expects a future `public/resume.pdf` file.
 - GitHub activity is a static visual placeholder and does not call the GitHub API.
 - Project filtering is a UI demonstration only.
@@ -134,12 +205,12 @@ src/
 - **Phase 1:** Project setup and foundation
 - **Phase 2:** Design system and reusable UI foundation
 - **Phase 3:** Static bento homepage
-- **Phase 4:** Content collections and content pages
-- **Phase 5:** Projects section
-- **Phase 6:** Notes/blog
+- **Phase 4:** Public content collection indexes
+- **Phase 5:** Project detail pages and case studies
+- **Phase 6:** Note detail pages, tags/categories, and search
 - **Phase 7:** Lab
 - **Phase 8:** Search, SEO, and polish
 - **Phase 9:** Docker hardening
 - **Phase 10+:** Private `/console` planning and CMS work
 
-Next: **Phase 4 should add content collection listing pages for Projects, Notes, and Lab. Phase 5 should add project detail pages and case studies.** Astro remains the main framework, with Svelte limited to focused interactive islands.
+Next: **Phase 5 should add project detail pages and honest case studies. Phase 6 should add note detail pages, tag/category navigation, and Pagefind search.** Astro remains the main framework, with Svelte limited to focused interactive islands.
