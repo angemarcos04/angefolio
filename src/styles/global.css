@@ -116,7 +116,7 @@ pre {
 
 .bento-surface {
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-md);
   background: var(--card);
   color: var(--card-foreground);
   box-shadow: var(--shadow-soft);

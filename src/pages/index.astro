@@ -1,71 +1,150 @@
 ---
+import { getCollection } from 'astro:content';
 import BentoCard from '../components/astro/BentoCard.astro';
 import BentoGrid from '../components/astro/BentoGrid.astro';
 import Button from '../components/astro/Button.astro';
+import IconLink from '../components/astro/IconLink.astro';
 import Layout from '../components/astro/Layout.astro';
+import NoteCard from '../components/astro/NoteCard.astro';
+import ProjectCard from '../components/astro/ProjectCard.astro';
 import StackGroup from '../components/astro/StackGroup.astro';
 import Tag from '../components/astro/Tag.astro';
 import TerminalBlock from '../components/astro/TerminalBlock.astro';
-import CommandMenuStub from '../components/svelte/CommandMenuStub.svelte';
 import ThemeToggle from '../components/svelte/ThemeToggle.svelte';
+import {
+  aboutTags,
+  activityLevels,
+  contactLinks,
+  nowItems,
+  stackGroups,
+} from '../lib/data/home';
 import { site } from '../lib/data/site';
 
-const stackGroups = [
-  { title: 'Core', items: ['Astro', 'Svelte', 'TypeScript'] },
-  {
-    title: 'Content + UI',
-    items: ['Tailwind CSS', 'MDX', 'Content Collections'],
-  },
-  { title: 'Tooling', items: ['pnpm', 'Docker', 'Linux'] },
+const projects = (await getCollection('projects', ({ data }) => data.visible))
+  .sort(
+    (a, b) =>
+      Number(b.data.featured) - Number(a.data.featured) ||
+      b.data.date.getTime() - a.data.date.getTime(),
+  )
+  .slice(0, 4);
+const notes = (await getCollection('notes', ({ data }) => data.published))
+  .sort((a, b) => b.data.createdAt.getTime() - a.data.createdAt.getTime())
+  .slice(0, 3);
+const navItems = [
+  { label: 'Projects', href: '/projects' },
+  { label: 'Notes', href: '/notes' },
+  { label: 'Lab', href: '/lab' },
 ];
 ---
 
-<Layout title={`angefolio — ${site.name}`} description={site.description}>
-  <div class="page-top">
-    <p class="eyebrow">angefolio / phase 2</p>
-    <ThemeToggle client:load />
-  </div>
-
-  <BentoGrid>
+<Layout title={'angefolio - ' + site.name} description={site.description}>
+  <header class="topbar">
+    <a class="wordmark" href="/" aria-label="angefolio home">
+      <span aria-hidden="true">~/</span>angefolio
+    </a>
+    <div class="topbar-actions">
+      <nav aria-label="Primary navigation">
+        {navItems.map((item) => <a href={item.href}>{item.label}</a>)}
+      </nav>
+      <ThemeToggle client:load />
+    </div>
+  </header>
+  <BentoGrid class="homepage-grid">
     <BentoCard
       class="hero subtle-grid md:col-span-2 lg:col-span-8"
       accent="green"
       eyebrow={site.role}
     >
-      <h1 class="text-balance">Hi, I’m Angellie Marcos.</h1>
+      <h1 class="text-balance">Hi, I'm Angellie Marcos.</h1>
       <p class="tagline">{site.tagline}</p>
-      <p class="description">{site.description}</p>
+      <p class="hero-description">{site.description}</p>
+      <p class="support-line">
+        Information Technology student building practical web systems, backend
+        workflows, and personal software projects.
+      </p>
       <div class="actions">
-        <Button href="#foundation" variant="primary"
-          >Explore the foundation</Button
-        >
-        <Button href={site.github} external>GitHub</Button>
+        <Button href="/projects" variant="primary">Projects</Button>
+        <Button href="/resume.pdf">Resume / CV</Button>
+        <Button href={'mailto:' + site.email} variant="ghost">Email</Button>
       </div>
+      <TerminalBlock title="whoami" class="hero-terminal">
+        <p><code>~/angefolio $ whoami</code></p>
+        <p>angellie :: it-student :: linux-user :: system-builder</p>
+      </TerminalBlock>
     </BentoCard>
 
     <BentoCard
-      class="md:col-span-2 lg:col-span-4"
+      class="about md:col-span-2 lg:col-span-4"
       accent="purple"
       eyebrow="About"
       title="Practical systems, personal software."
     >
-      <p class="copy">
-        I’m an IT student from the Philippines focused on full-stack
-        development, backend systems, Linux workflows, and useful experiments.
+      <p>
+        I'm an IT student from the Philippines focused on full-stack
+        development, backend systems, Linux workflows, and creative software
+        projects.
+      </p>
+      <p>
+        I like building tools that feel practical, personal, and slightly
+        strange.
       </p>
       <div class="tags">
-        <Tag tone="green">Full stack</Tag><Tag tone="cyan">Linux</Tag><Tag
-          tone="purple">AI + data</Tag
-        >
+        {
+          aboutTags.map((tag, index) => (
+            <Tag
+              tone={index === 0 ? 'green' : index === 4 ? 'cyan' : 'neutral'}
+            >
+              {tag}
+            </Tag>
+          ))
+        }
       </div>
+    </BentoCard>
+    <BentoCard
+      class="projects md:col-span-2 lg:col-span-12"
+      accent="cyan"
+      eyebrow="Featured Projects"
+      title="Systems and ideas I am taking seriously."
+      description="A mix of active school systems, prototypes, and planned personal tools."
+    >
+      <div class="project-grid">
+        {
+          projects.map(({ data }) => (
+            <ProjectCard
+              title={data.title}
+              description={data.description}
+              status={data.status}
+              stack={data.stack}
+              github={data.github}
+              demo={data.demo}
+              caseStudy={data.caseStudy}
+              category={data.category}
+              featured={data.featured}
+            />
+          ))
+        }
+      </div>
+      <div class="card-footer">
+        <IconLink href="/projects" label="View all projects" />
+      </div>
+    </BentoCard>
+    <BentoCard
+      class="now md:col-span-1 lg:col-span-3"
+      accent="yellow"
+      eyebrow="Now"
+      title="Current focus"
+    >
+      <ul class="status-list">
+        {nowItems.map((item) => <li>{item}</li>)}
+      </ul>
+      <p class="metadata">Updated manually.</p>
     </BentoCard>
 
     <BentoCard
-      id="foundation"
-      class="md:col-span-2 lg:col-span-7"
-      accent="cyan"
-      eyebrow="Stack Preview"
-      title="A focused Astro-first foundation."
+      class="stack md:col-span-1 lg:col-span-5"
+      accent="green"
+      eyebrow="Stack"
+      title="Tools I build with"
     >
       <div class="stack-groups">
         {
@@ -77,103 +156,303 @@ const stackGroups = [
     </BentoCard>
 
     <BentoCard
-      class="lg:col-span-5"
-      accent="yellow"
-      eyebrow="Phase Status"
-      title="Small, reusable, ready to grow."
+      class="github md:col-span-2 lg:col-span-4"
+      accent="red"
+      eyebrow="GitHub Activity"
+      title="Building in public"
     >
-      <TerminalBlock title="phase-status.sh">
-        <p><code>phase --current</code></p>
-        <p>
-          Phase 2: design tokens, layout primitives, content cards, accessible
-          controls, and responsive grids.
-        </p>
-      </TerminalBlock>
+      <p>Public work, experiments, and project commits live here.</p>
+      <div
+        class="contribution-grid"
+        aria-label="Decorative contribution activity grid"
+      >
+        {
+          activityLevels.map((level) => (
+            <span class={'level-' + level} aria-hidden="true" />
+          ))
+        }
+      </div>
+      <div class="activity-meta" aria-label="GitHub profile status">
+        <span>repo: angemarcos04</span>
+        <span>status: active learner / project builder</span>
+      </div>
+      <IconLink href={site.github} label="GitHub" external />
+    </BentoCard>
+    <BentoCard
+      class="notes md:col-span-2 lg:col-span-8"
+      accent="purple"
+      eyebrow="Latest Notes"
+      title="Things I am learning out loud"
+    >
+      <div class="note-grid">
+        {
+          notes.map(({ data }) => (
+            <NoteCard
+              title={data.title}
+              description={data.description}
+              category={data.category}
+              tags={data.tags}
+              createdAt={data.createdAt}
+              updatedAt={data.updatedAt}
+              featured={data.featured}
+            />
+          ))
+        }
+      </div>
+      <div class="card-footer">
+        <IconLink href="/notes" label="Read notes" />
+      </div>
     </BentoCard>
 
     <BentoCard
-      class="md:col-span-2 lg:col-span-12"
-      accent="neutral"
-      eyebrow="Design System Preview"
-      title="Quiet developer tooling, not dashboard theater."
-      description="A small preview of the reusable controls and status language that future project, note, and lab pages will share."
+      class="contact md:col-span-2 lg:col-span-4"
+      accent="green"
+      eyebrow="Contact"
+      title="Let us make something useful."
     >
-      <div class="preview">
-        <div class="tags">
-          <Tag>Static-first</Tag><Tag tone="green">In Progress</Tag><Tag
-            tone="cyan">Prototype</Tag
-          ><Tag tone="yellow">Paused</Tag>
-        </div>
-        <CommandMenuStub />
+      <p>Want to talk, collaborate, or check my work?</p>
+      <div class="contact-links">
+        {
+          contactLinks.map((link) => (
+            <IconLink
+              href={link.href}
+              label={link.label}
+              external={link.external}
+            />
+          ))
+        }
       </div>
+      <p class="contact-email">angellie.marcos0104@protonmail.me</p>
     </BentoCard>
   </BentoGrid>
 </Layout>
-
 <style>
-  .page-top {
+  .topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
     margin-bottom: 1rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--border);
   }
-  .page-top .eyebrow {
-    margin: 0;
+  .wordmark {
+    color: var(--foreground);
+    font: 700 0.82rem var(--font-mono);
+    letter-spacing: -0.02em;
+  }
+  .wordmark span {
+    color: var(--accent-green);
+  }
+  .topbar-actions,
+  nav,
+  .actions,
+  .tags {
+    display: flex;
+    align-items: center;
+  }
+  .topbar-actions {
+    gap: 0.8rem;
+  }
+  nav {
+    gap: 0.2rem;
+  }
+  nav a {
+    padding: 0.45rem 0.55rem;
+    color: var(--muted-foreground);
+    font: 0.72rem var(--font-mono);
+  }
+  nav a:hover {
+    color: var(--accent-cyan);
+  }
+  :global(.homepage-grid) {
+    align-items: stretch;
   }
   :global(.hero) {
-    min-height: clamp(24rem, 48vw, 34rem);
     display: flex;
+    min-height: 29rem;
     flex-direction: column;
     justify-content: flex-end;
   }
   h1 {
     max-width: 48rem;
-    margin: 0 0 0.8rem;
-    font-size: clamp(2.7rem, 8vw, 5.8rem);
-    line-height: 0.92;
-    letter-spacing: -0.065em;
+    margin: 0 0 0.85rem;
+    font-size: clamp(2.5rem, 7vw, 5.25rem);
+    line-height: 0.94;
+    letter-spacing: -0.062em;
   }
   .tagline {
-    max-width: 42rem;
+    max-width: 43rem;
     margin: 0;
     color: var(--accent-green);
     font-size: clamp(1rem, 2vw, 1.25rem);
   }
-  .description,
-  .copy {
+  .hero-description,
+  .support-line,
+  .about p,
+  .github > p,
+  .contact > p {
     color: var(--muted-foreground);
   }
-  .description {
-    max-width: 47rem;
-    margin: 0.7rem 0 1.2rem;
+  .hero-description {
+    max-width: 48rem;
+    margin: 0.7rem 0 0;
   }
-  .copy {
-    margin: 0 0 1rem;
+  .support-line {
+    max-width: 48rem;
+    margin: 0.45rem 0 1.2rem;
+    font-size: 0.88rem;
   }
   .actions,
-  .tags,
-  .preview {
-    display: flex;
+  .tags {
     flex-wrap: wrap;
-    gap: 0.55rem;
+    gap: 0.5rem;
+  }
+  :global(.hero-terminal) {
+    margin-top: 1.35rem;
+  }
+  .about p {
+    margin: 0 0 0.85rem;
+  }
+  .about .tags {
+    margin-top: 1.15rem;
+  }
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+  }
+  :global(.project-grid .content-card),
+  :global(.note-grid .content-card) {
+    border-radius: var(--radius-md);
+    box-shadow: none;
+  }
+  .card-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+  .status-list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .status-list li {
+    position: relative;
+    padding-left: 1rem;
+    color: var(--muted-foreground);
+    font-size: 0.86rem;
+  }
+  .status-list li::before {
+    position: absolute;
+    top: 0.65em;
+    left: 0;
+    width: 0.35rem;
+    height: 1px;
+    background: var(--accent-yellow);
+    content: '';
+  }
+  .metadata,
+  .activity-meta,
+  .contact-email {
+    color: var(--muted-foreground);
+    font: 0.65rem var(--font-mono);
+  }
+  .metadata {
+    margin: 1.25rem 0 0;
   }
   .stack-groups {
     display: grid;
-    gap: 1.2rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.2rem 1rem;
+  }
+  .contribution-grid {
+    display: grid;
+    grid-template-columns: repeat(14, minmax(0, 1fr));
+    gap: 0.25rem;
+    max-width: 100%;
+    margin: 1.1rem 0;
+  }
+  .contribution-grid span {
+    aspect-ratio: 1;
+    min-width: 0;
+    border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+    border-radius: 2px;
+    background: var(--muted);
+  }
+  .contribution-grid .level-1 {
+    background: color-mix(in srgb, var(--accent-green) 18%, var(--muted));
+  }
+  .contribution-grid .level-2 {
+    background: color-mix(in srgb, var(--accent-green) 35%, var(--muted));
+  }
+  .contribution-grid .level-3 {
+    background: color-mix(in srgb, var(--accent-green) 58%, var(--muted));
+  }
+  .contribution-grid .level-4 {
+    background: color-mix(in srgb, var(--accent-green) 82%, var(--muted));
+  }
+  .activity-meta {
+    display: grid;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+  }
+  .note-grid {
+    display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.8rem;
   }
-  .preview {
-    align-items: center;
-    justify-content: space-between;
+  .contact-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 1.4rem 0;
   }
-  @media (max-width: 700px) {
-    .stack-groups {
+  .contact-email {
+    overflow-wrap: anywhere;
+  }
+  @media (min-width: 1120px) {
+    .project-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 760px) {
+    .topbar {
+      align-items: flex-start;
+    }
+    .topbar-actions {
+      align-items: flex-end;
+      flex-direction: column-reverse;
+      gap: 0.45rem;
+    }
+    :global(.hero) {
+      min-height: 0;
+    }
+    .project-grid,
+    .note-grid {
       grid-template-columns: 1fr;
     }
-    .preview {
-      align-items: flex-start;
+  }
+  @media (max-width: 480px) {
+    .topbar {
+      align-items: stretch;
       flex-direction: column;
+    }
+    .topbar-actions {
+      align-items: center;
+      justify-content: space-between;
+      flex-direction: row;
+    }
+    nav a {
+      padding-inline: 0.4rem;
+    }
+    .stack-groups,
+    .contact-links {
+      grid-template-columns: 1fr;
     }
   }
 </style>

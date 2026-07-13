@@ -2,7 +2,7 @@
 
 The personal developer portfolio of **Angellie Marcos**, an Information Technology student building practical web systems with a Linux-minded, creative edge.
 
-This repository is currently in **Phase 2: design system and reusable UI foundation**. It preserves the Phase 1 Astro baseline and demonstrates the visual language without building the final homepage, database, authentication, admin console, or CMS.
+This repository is currently in **Phase 3: static bento-dashboard homepage**. It builds on the Phase 1 Astro baseline and Phase 2 design system without adding a database, authentication, admin console, or CMS.
 
 ## Tech stack
 
@@ -90,6 +90,21 @@ import Tag from '../components/astro/Tag.astro';
 
 Bento children may use Tailwind responsive spans such as `md:col-span-2`, `lg:col-span-4`, or `lg:col-span-8`. Global tokens and compact shared utilities live in `src/styles/global.css`.
 
+## Phase 3 homepage
+
+The homepage is a desktop-first 12-column bento dashboard with a natural mobile stack. It contains exactly eight main cells, each with one job:
+
+1. **Hero** - identity, focus, and primary paths
+2. **About** - developer perspective and interests
+3. **Featured Projects** - four visible collection-backed projects
+4. **Now** - current work, learning, and daily environment
+5. **Stack** - compact frontend, backend, systems, and exploring groups
+6. **GitHub Activity** - static public-work indicator and profile link
+7. **Latest Notes** - up to three published collection-backed notes
+8. **Contact** - email, GitHub, resume, and LinkedIn links
+
+Profile identity remains in `src/lib/data/site.ts`. Homepage-only lists, stack groups, contact links, and the static contribution pattern live in `src/lib/data/home.ts`. Featured projects and latest notes are loaded from Astro Content Collections in `src/content/` during the static build.
+
 ## Folder structure
 
 ```text
@@ -107,8 +122,9 @@ src/
 
 ## Current limitations
 
-- The homepage is still a compact placeholder, not the final eight-cell portfolio.
-- Project, note, and lab cards are ready for content collection data but are not wired to listing routes yet.
+- Project, note, and lab listing/detail routes are not implemented yet; homepage links intentionally point to the future `/projects`, `/notes`, and `/lab` routes.
+- The resume link expects a future `public/resume.pdf` file.
+- GitHub activity is a static visual placeholder and does not call the GitHub API.
 - Project filtering is a UI demonstration only.
 - The command menu and card visibility controls are non-production stubs.
 - There is no database, authentication, Node adapter, private `/console`, or CMS.
@@ -126,4 +142,4 @@ src/
 - **Phase 9:** Docker hardening
 - **Phase 10+:** Private `/console` planning and CMS work
 
-Next: **Phase 3 will build the static bento homepage** from these primitives while keeping Astro as the main framework and Svelte limited to interactive islands.
+Next: **Phase 4 should add content collection listing pages for Projects, Notes, and Lab. Phase 5 should add project detail pages and case studies.** Astro remains the main framework, with Svelte limited to focused interactive islands.

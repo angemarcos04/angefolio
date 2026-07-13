@@ -5,5 +5,5 @@ export const site = {
   description:
     'I code full-stack apps, wrestle with backend systems, call the Linux terminal home, and experiment with AI, data, and tools that actually do the job.',
   github: 'https://github.com/angemarcos04',
-  email: 'hello@example.com',
+  email: 'angellie.marcos0104@protonmail.me',
 };
