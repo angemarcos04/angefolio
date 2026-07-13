@@ -1,11 +1,46 @@
 ---
-title: Building angefolio
-description: Establishing the Astro, Svelte, content, and Docker foundation for this portfolio.
-category: Build Log
-tags: [Astro, Svelte, Portfolio]
+title: Building angefolio as a content-driven dashboard
+description: Why this portfolio uses Astro, focused Svelte islands, and a phased content-first build.
+summary: Building a personal portfolio as a content-driven bento dashboard instead of a collection of disconnected landing pages.
+category: Projects
+tags: [Astro, Svelte, Portfolio, MDX]
 published: true
 featured: true
 createdAt: 2026-07-14
 ---
 
-Phase 1 keeps the foundation small so later design and content decisions have room to grow.
+## Context
+
+I wanted this portfolio to behave more like a compact developer dashboard than a polished corporate landing page. It needs enough personality to feel like my corner of the internet, while keeping projects, notes, and experiments easy to update.
+
+The work is deliberately phased. Each phase should leave the site usable and make the next layer easier to add without replacing the foundation.
+
+## What I am building or learning
+
+Astro is the main framework because most of the site is content that can be generated ahead of time. Project case studies and notes live in typed content collections, so their frontmatter is checked during the build and each entry can become a static route.
+
+Svelte stays focused on small interactive islands such as the theme control. That keeps the default experience simple: the archive, cards, and articles do not need client-side JavaScript to work.
+
+## Current approach
+
+The site currently combines:
+
+- Astro layouts and components for the overall structure
+- MDX for project and note bodies
+- Svelte only where browser interaction adds something useful
+- Tailwind CSS and shared global tokens for the dark bento system
+- static collection routes for projects, notes, and lab entries
+- Docker support for a repeatable local preview
+
+The homepage remains a fixed eight-cell dashboard. Deeper routes do the quieter work of presenting an archive and giving longer writing enough room to breathe.
+
+## Problems to solve
+
+- Keep metadata consistent without making every entry tedious to write.
+- Make long technical notes readable on small screens.
+- Preserve the terminal-inspired identity without turning every paragraph into decoration.
+- Add future search only when the content and build pipeline are ready for it.
+
+## Next steps
+
+The notes system now has static detail pages, shared article styling, categories, and tags. A later polish phase can add search, richer social metadata, and more deliberate archive navigation once there is enough writing to justify them.

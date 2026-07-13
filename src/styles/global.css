@@ -147,6 +147,124 @@ pre {
   text-transform: uppercase;
 }
 
+.prose-shell {
+  min-width: 0;
+  padding: clamp(1.35rem, 5vw, 3rem);
+  box-shadow: none;
+}
+
+.prose-shell > :first-child {
+  margin-top: 0;
+}
+
+.prose-shell > :last-child {
+  margin-bottom: 0;
+}
+
+.prose-shell h2 {
+  margin: 2.4rem 0 0.8rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  scroll-margin-top: 1rem;
+}
+
+.prose-shell h3 {
+  margin: 1.8rem 0 0.65rem;
+  font-size: 1.08rem;
+  line-height: 1.35;
+}
+
+.prose-shell p,
+.prose-shell li,
+.prose-shell blockquote {
+  max-width: 70ch;
+  color: #c1c8d2;
+}
+
+.prose-shell p {
+  margin: 0.9rem 0;
+}
+
+.prose-shell ul,
+.prose-shell ol {
+  margin: 0.9rem 0;
+  padding-left: 1.35rem;
+}
+
+.prose-shell li + li {
+  margin-top: 0.4rem;
+}
+
+.prose-shell a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-decoration-color: color-mix(
+    in srgb,
+    var(--accent-cyan) 55%,
+    transparent
+  );
+}
+
+.prose-shell a:hover {
+  text-decoration-color: var(--accent-cyan);
+}
+
+.prose-shell code:not(pre code) {
+  padding: 0.14rem 0.32rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--muted);
+  color: var(--accent-green);
+  overflow-wrap: anywhere;
+}
+
+.prose-shell pre {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+}
+
+.prose-shell blockquote {
+  margin: 1.25rem 0;
+  padding: 0.2rem 0 0.2rem 1rem;
+  border-left: 2px solid var(--accent-purple);
+}
+
+.prose-shell blockquote p {
+  color: var(--muted-foreground);
+}
+
+.prose-shell img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+}
+
+.prose-shell table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.prose-shell th,
+.prose-shell td {
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.prose-shell th {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
 @media (max-width: 640px) {
   .container-shell {
     width: min(100% - 1.25rem, 1180px);

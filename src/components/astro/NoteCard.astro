@@ -1,5 +1,6 @@
 ---
 import Tag from './Tag.astro';
+import { formatDate } from '../../lib/notes';
 interface Props {
   title: string;
   description: string;
@@ -22,13 +23,6 @@ const {
   featured = false,
   class: className = '',
 } = Astro.props;
-const formatDate = (value: Date | string) =>
-  new Intl.DateTimeFormat('en', {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-    timeZone: 'UTC',
-  }).format(new Date(value));
 ---
 
 <article class:list={['content-card bento-surface', className]}>
@@ -39,11 +33,21 @@ const formatDate = (value: Date | string) =>
   </div>
   <h3>{href ? <a href={href}>{title}</a> : title}</h3><p>{description}</p>
   <div class="tags">{tags.map((tag) => <Tag>{tag}</Tag>)}</div>
-  <small
-    >Created {formatDate(createdAt)}{
-      updatedAt ? ` · Updated ${formatDate(updatedAt)}` : ''
-    }</small
-  >
+  <small>
+    <time datetime={new Date(createdAt).toISOString()}>
+      {formatDate(createdAt)}
+    </time>
+    {
+      updatedAt && (
+        <>
+          {' · Updated '}
+          <time datetime={new Date(updatedAt).toISOString()}>
+            {formatDate(updatedAt)}
+          </time>
+        </>
+      )
+    }
+  </small>
 </article>
 <style>
   .content-card {

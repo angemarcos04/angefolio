@@ -20,13 +20,14 @@ import {
 } from '../lib/data/home';
 import { site } from '../lib/data/site';
 import { getProjectUrl, sortProjects } from '../lib/content';
+import { getNoteUrl, sortNotesByDateDesc } from '../lib/notes';
 
 const projects = sortProjects(
   await getCollection('projects', ({ data }) => data.visible),
 ).slice(0, 4);
-const notes = (await getCollection('notes', ({ data }) => data.published))
-  .sort((a, b) => b.data.createdAt.getTime() - a.data.createdAt.getTime())
-  .slice(0, 3);
+const notes = sortNotesByDateDesc(
+  await getCollection('notes', ({ data }) => data.published),
+).slice(0, 3);
 const navItems = [
   { label: 'Projects', href: '/projects' },
   { label: 'Notes', href: '/notes' },
@@ -184,15 +185,16 @@ const navItems = [
     >
       <div class="note-grid">
         {
-          notes.map(({ data }) => (
+          notes.map((note) => (
             <NoteCard
-              title={data.title}
-              description={data.description}
-              category={data.category}
-              tags={data.tags}
-              createdAt={data.createdAt}
-              updatedAt={data.updatedAt}
-              featured={data.featured}
+              href={getNoteUrl(note)}
+              title={note.data.title}
+              description={note.data.summary ?? note.data.description}
+              category={note.data.category}
+              tags={note.data.tags}
+              createdAt={note.data.createdAt}
+              updatedAt={note.data.updatedAt}
+              featured={note.data.featured}
             />
           ))
         }

@@ -1,0 +1,221 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+import BentoCard from '../../components/astro/BentoCard.astro';
+import CollectionHeader from '../../components/astro/CollectionHeader.astro';
+import IconLink from '../../components/astro/IconLink.astro';
+import Layout from '../../components/astro/Layout.astro';
+import Tag from '../../components/astro/Tag.astro';
+import { getPublishedNotes } from '../../lib/content';
+import {
+  formatDate,
+  getNoteReadingTime,
+  getNoteSlug,
+  getNoteUrl,
+} from '../../lib/notes';
+
+export async function getStaticPaths() {
+  const notes = await getPublishedNotes();
+
+  return notes.map((note, index) => ({
+    params: { slug: getNoteSlug(note) },
+    props: {
+      note,
+      newerNote: notes[index - 1],
+      olderNote: notes[index + 1],
+    },
+  }));
+}
+
+interface Props {
+  note: CollectionEntry<'notes'>;
+  newerNote?: CollectionEntry<'notes'>;
+  olderNote?: CollectionEntry<'notes'>;
+}
+
+const { note, newerNote, olderNote } = Astro.props;
+const { data } = note;
+const { Content } = await render(note);
+const noteBody =
+  'body' in note && typeof note.body === 'string' ? note.body : '';
+const readingTime = getNoteReadingTime(noteBody);
+---
+
+<Layout
+  title={`${data.title} — Angellie Marcos`}
+  description={data.description}
+>
+  <CollectionHeader active="notes" />
+
+  <div class="back-link">
+    <IconLink href="/notes" label="Back to notes" />
+  </div>
+
+  <BentoCard class="note-hero subtle-grid" accent="purple">
+    <div class="hero-meta">
+      <Tag tone="cyan">{data.category}</Tag>
+      {data.featured && <Tag tone="yellow">Featured</Tag>}
+    </div>
+    <h1 class="text-balance">{data.title}</h1>
+    <p class="description">{data.description}</p>
+    <div class="note-meta" aria-label="Note metadata">
+      <span>
+        Published <time datetime={data.createdAt.toISOString()}>
+          {formatDate(data.createdAt)}
+        </time>
+      </span>
+      {
+        data.updatedAt && (
+          <span>
+            Updated{' '}
+            <time datetime={data.updatedAt.toISOString()}>
+              {formatDate(data.updatedAt)}
+            </time>
+          </span>
+        )
+      }
+      <span>{readingTime}</span>
+    </div>
+    <div class="tags" aria-label="Note tags">
+      {data.tags.map((tag) => <Tag>{tag}</Tag>)}
+    </div>
+  </BentoCard>
+
+  {
+    data.summary && (
+      <aside class="note-summary bento-surface" aria-label="Note summary">
+        <strong>In short</strong>
+        <p>{data.summary}</p>
+      </aside>
+    )
+  }
+
+  <article class="prose-shell bento-surface">
+    <Content />
+  </article>
+
+  <nav class="note-navigation" aria-label="Note navigation">
+    <div>
+      <span>Older note</span>
+      {
+        olderNote ? (
+          <a href={getNoteUrl(olderNote)}>← {olderNote.data.title}</a>
+        ) : (
+          <span>End of archive</span>
+        )
+      }
+    </div>
+    <div class="newer-note">
+      <span>Newer note</span>
+      {
+        newerNote ? (
+          <a href={getNoteUrl(newerNote)}>{newerNote.data.title} →</a>
+        ) : (
+          <a href="/notes">All notes →</a>
+        )
+      }
+    </div>
+  </nav>
+</Layout>
+
+<style>
+  .back-link {
+    margin-bottom: 1rem;
+  }
+  :global(.note-hero) {
+    padding: clamp(1.5rem, 5vw, 3rem);
+  }
+  .hero-meta,
+  .note-meta,
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+  h1 {
+    max-width: 20ch;
+    margin: 1rem 0 0;
+    font-size: clamp(2.3rem, 8vw, 4.75rem);
+    line-height: 0.98;
+    letter-spacing: -0.055em;
+  }
+  .description {
+    max-width: 66ch;
+    margin: 1rem 0 0;
+    color: var(--muted-foreground);
+    font-size: clamp(1rem, 2vw, 1.15rem);
+  }
+  .note-meta {
+    margin-top: 1.25rem;
+    color: var(--muted-foreground);
+    font: 0.68rem/1.5 var(--font-mono);
+  }
+  .note-meta span + span::before {
+    margin-right: 0.45rem;
+    color: var(--border);
+    content: '/';
+  }
+  .tags {
+    margin-top: 0.8rem;
+  }
+  .note-summary {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    gap: 1rem;
+    margin-top: 0.75rem;
+    padding: 1rem 1.25rem;
+    box-shadow: none;
+  }
+  .note-summary strong {
+    color: var(--accent-green);
+    font: 0.68rem var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .note-summary p {
+    margin: 0;
+    color: var(--muted-foreground);
+  }
+  .prose-shell {
+    margin-top: 0.75rem;
+  }
+  .note-navigation {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+  .note-navigation div {
+    display: grid;
+    gap: 0.25rem;
+  }
+  .note-navigation span {
+    color: var(--muted-foreground);
+    font: 0.65rem var(--font-mono);
+  }
+  .note-navigation a {
+    font-weight: 650;
+  }
+  .note-navigation a:hover {
+    color: var(--accent-cyan);
+  }
+  .newer-note {
+    text-align: right;
+  }
+  @media (max-width: 560px) {
+    .note-meta {
+      display: grid;
+    }
+    .note-meta span + span::before {
+      content: none;
+    }
+    .note-summary,
+    .note-navigation {
+      grid-template-columns: 1fr;
+    }
+    .newer-note {
+      text-align: left;
+    }
+  }
+</style>

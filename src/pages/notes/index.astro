@@ -4,11 +4,15 @@ import CollectionHeader from '../../components/astro/CollectionHeader.astro';
 import Layout from '../../components/astro/Layout.astro';
 import NoteCard from '../../components/astro/NoteCard.astro';
 import SectionHeader from '../../components/astro/SectionHeader.astro';
+import Tag from '../../components/astro/Tag.astro';
 import { getPublishedNotes } from '../../lib/content';
+import { getAllCategories, getAllTags, getNoteUrl } from '../../lib/notes';
 
 const description =
   'Project logs, Linux fixes, web development notes, and thoughts from building things.';
 const notes = await getPublishedNotes();
+const categories = getAllCategories(notes);
+const tags = getAllTags(notes);
 ---
 
 <Layout title="Notes — Angellie Marcos" {description}>
@@ -24,22 +28,45 @@ const notes = await getPublishedNotes();
     />
     <div class="collection-summary">
       <p>
-        Build logs and working notes, published when they are useful to revisit.
+        This is where I document what I am learning, breaking, fixing, and
+        slowly understanding.
       </p>
       <span>{notes.length} published</span>
     </div>
     {
+      notes.length > 0 && (
+        <aside
+          class="archive-map bento-surface"
+          aria-label="Notes archive topics"
+        >
+          <div>
+            <strong>Categories</strong>
+            <p>{categories.join(', ')}</p>
+          </div>
+          <div>
+            <strong>Tags</strong>
+            <div class="archive-tags">
+              {tags.map((tag) => (
+                <Tag>{tag}</Tag>
+              ))}
+            </div>
+          </div>
+        </aside>
+      )
+    }
+    {
       notes.length > 0 ? (
         <CardGrid class="collection-grid">
-          {notes.map(({ data }) => (
+          {notes.map((note) => (
             <NoteCard
-              title={data.title}
-              description={data.description}
-              category={data.category}
-              tags={data.tags}
-              createdAt={data.createdAt}
-              updatedAt={data.updatedAt}
-              featured={data.featured}
+              href={getNoteUrl(note)}
+              title={note.data.title}
+              description={note.data.summary ?? note.data.description}
+              category={note.data.category}
+              tags={note.data.tags}
+              createdAt={note.data.createdAt}
+              updatedAt={note.data.updatedAt}
+              featured={note.data.featured}
             />
           ))}
         </CardGrid>
@@ -81,6 +108,32 @@ const notes = await getPublishedNotes();
     border-radius: var(--radius-md);
     box-shadow: none;
   }
+  .archive-map {
+    display: grid;
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    box-shadow: none;
+  }
+  .archive-map strong {
+    display: block;
+    margin-bottom: 0.45rem;
+    color: var(--accent-purple);
+    font: 0.65rem var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .archive-map p {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: 0.82rem;
+  }
+  .archive-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
   .empty-state {
     margin: 0;
     padding: 2rem;
@@ -90,7 +143,9 @@ const notes = await getPublishedNotes();
     font: 0.8rem var(--font-mono);
   }
   @media (max-width: 560px) {
-    .collection-summary {
+    .collection-summary,
+    .archive-map {
+      grid-template-columns: 1fr;
       flex-direction: column;
     }
   }

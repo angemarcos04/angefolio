@@ -1,4 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
+import { sortNotesByDateDesc } from './notes';
 
 export function sortByDateDesc<T>(
   entries: T[],
@@ -64,7 +65,7 @@ export async function getPublishedNotes(): Promise<CollectionEntry<'notes'>[]> {
     ({ data }) => data.published === true,
   );
 
-  return sortByDateDesc(notes, ({ data }) => data.createdAt);
+  return sortNotesByDateDesc(notes);
 }
 
 export async function getVisibleLabEntries(): Promise<

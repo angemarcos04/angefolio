@@ -2,7 +2,7 @@
 
 The personal developer portfolio of **Angellie Marcos**, an Information Technology student building practical web systems with a Linux-minded, creative edge.
 
-This repository is currently in **Phase 5: project detail pages and case studies**. It builds on the Astro baseline, reusable design system, bento-dashboard homepage, and public content indexes without adding a database, authentication, admin console, or CMS.
+This repository is currently in **Phase 6: notes and technical writing**. It builds on the Astro baseline, reusable design system, bento-dashboard homepage, public content indexes, and project case studies without adding a database, authentication, admin console, or CMS.
 
 ## Tech stack
 
@@ -199,10 +199,52 @@ published: true
 featured: false
 createdAt: 2026-07-14
 updatedAt: 2026-07-15 # optional
+summary: A shorter archive or callout summary. # optional
 ---
 ```
 
-Only entries with `published: true` appear on `/notes`.
+Required note fields are `title`, `description`, `category`, `tags`, `published`, `featured`, and `createdAt`. `updatedAt` and `summary` are optional.
+
+Only entries with `published: true` appear on `/notes` or generate a public detail page. `featured` adds a visual marker and lets the homepage communicate important writing; it does not publish an entry by itself. Categories provide broad archive groupings, while tags describe the specific technologies or ideas in a note. The index currently summarizes both as static metadata rather than client-side filters.
+
+### Recommended note body
+
+Note detail pages render Markdown and MDX inside the shared readable article shell used by project case studies. A useful starter structure is:
+
+```md
+## Context
+
+Why this note exists.
+
+## What I am building or learning
+
+The current subject or question.
+
+## Current approach
+
+What I am trying now.
+
+## Problems to solve
+
+- An open problem or tradeoff.
+
+## Next steps
+
+What I plan to test or document next.
+```
+
+Keep work-in-progress notes explicit about what is planned, tested, or complete. Reading time is estimated automatically from the entry body at 200 words per minute with a one-minute minimum.
+
+## Phase 6 notes archive
+
+Published note entries now generate a static technical writing archive:
+
+- `/notes` lists published notes newest first and links every title to its local detail page.
+- `/notes/[slug]` renders the MDX body with category, tags, dates, reading time, an optional summary, and older/newer navigation.
+- The content filename becomes the route slug, so `src/content/notes/building-angefolio.mdx` builds as `/notes/building-angefolio`.
+- Project case studies and notes share the global `.prose-shell` styles for headings, paragraphs, lists, links, code, blockquotes, images, and overflow-safe tables.
+
+To add writing, create an `.md` or `.mdx` file in `src/content/notes/`, fill in the required frontmatter, write the body, and run the normal checks. No database, CMS, or browser-based editor is involved; these are static MDX-backed routes. A future private `/console` may manage note content, but it is intentionally outside this phase.
 
 ### Add a lab entry
 
@@ -233,7 +275,7 @@ src/
 ├── pages/
 │   ├── index.astro  # Eight-cell bento-dashboard homepage
 │   ├── projects/    # Public project index and static detail routes
-│   ├── notes/       # Public note collection index
+│   ├── notes/       # Public note index and static detail routes
 │   └── lab/         # Public lab collection index
 └── styles/
     └── global.css   # Tailwind entry, theme tokens, and shared utilities
@@ -241,14 +283,16 @@ src/
 
 ## Current limitations
 
-- Note and lab detail routes are not implemented yet; their Phase 4 collection indexes remain static listings.
+- Lab detail routes are not implemented yet; its Phase 4 collection index remains a static listing.
+- Notes are source-controlled MDX files. There is no browser editor, comments system, RSS feed, or category/tag route yet.
+- Pagefind search is installed but is not exposed yet; search remains planned for a later polish phase.
 - Project detail pages are static and MDX-backed. There is no browser-based project editor or automatic synchronization with GitHub.
 - The optional project `cover` field is reserved for later visual treatment and is not rendered yet.
 - The resume link expects a future `public/resume.pdf` file.
 - GitHub activity is a static visual placeholder and does not call the GitHub API.
 - Project filtering is a UI demonstration only.
 - The command menu and card visibility controls are non-production stubs.
-- There is no database, authentication, Node adapter, private `/console`, or CMS. A future `/console` may manage project content, but it is deliberately outside Phase 5.
+- There is no database, authentication, Node adapter, private `/console`, or CMS. A future `/console` may manage project and note content, but it is deliberately outside Phase 6.
 
 ## Roadmap
 
@@ -257,10 +301,10 @@ src/
 - **Phase 3:** Static bento homepage
 - **Phase 4:** Public content collection indexes
 - **Phase 5:** Project detail pages and case studies (complete)
-- **Phase 6:** Note detail pages, tags/categories, and search
+- **Phase 6:** Note detail pages, tags/categories, and writing polish (complete)
 - **Phase 7:** Lab
 - **Phase 8:** Search, SEO, and polish
 - **Phase 9:** Docker hardening
 - **Phase 10+:** Private `/console` planning and CMS work
 
-Next: **Phase 6 should add note detail pages, tag/category navigation, and Pagefind search.** Astro remains the main framework, with Svelte limited to focused interactive islands.
+Next: **Phase 7 should build out lab detail pages and experiment write-ups.** Search, SEO, and broader archive polish remain planned for Phase 8. Astro remains the main framework, with Svelte limited to focused interactive islands.

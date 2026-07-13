@@ -263,47 +263,6 @@ const projectLinks = [
   .local-nav a:hover {
     color: var(--accent-cyan);
   }
-  .prose-shell {
-    min-width: 0;
-    padding: clamp(1.35rem, 5vw, 3rem);
-    box-shadow: none;
-  }
-  .prose-shell :global(> :first-child) {
-    margin-top: 0;
-  }
-  .prose-shell :global(> :last-child) {
-    margin-bottom: 0;
-  }
-  .prose-shell :global(h2) {
-    margin: 2.3rem 0 0.75rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border);
-    font-size: clamp(1.35rem, 3vw, 1.75rem);
-    letter-spacing: -0.025em;
-    scroll-margin-top: 1rem;
-  }
-  .prose-shell :global(h3) {
-    margin: 1.7rem 0 0.6rem;
-    font-size: 1.05rem;
-  }
-  .prose-shell :global(p),
-  .prose-shell :global(li) {
-    max-width: 70ch;
-    color: #c1c8d2;
-  }
-  .prose-shell :global(a) {
-    color: var(--accent-cyan);
-    text-decoration: underline;
-  }
-  .prose-shell :global(code:not(pre code)) {
-    padding: 0.14rem 0.32rem;
-    border: 1px solid var(--border);
-    background: var(--muted);
-    color: var(--accent-green);
-  }
-  .prose-shell :global(pre) {
-    border: 1px solid var(--border);
-  }
   .project-navigation {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

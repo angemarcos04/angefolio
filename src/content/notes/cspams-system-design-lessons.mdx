@@ -1,0 +1,45 @@
+---
+title: System design lessons from planning CSPAMS
+description: Early lessons from mapping roles, concerns, records, and workflows for a school monitoring system.
+summary: Planning CSPAMS is teaching me to define responsibilities and state changes before reaching for controllers, tables, or interface screens.
+category: Project Logs
+tags: [Laravel, PostgreSQL, System Design, Capstone]
+published: true
+featured: false
+createdAt: 2026-07-06
+updatedAt: 2026-07-13
+---
+
+## Context
+
+CSPAMS is a school project concerned with monitoring and managing student concerns. The exact implementation is still evolving, so this note focuses on design lessons from planning rather than claiming a finished system.
+
+## What I am building or learning
+
+The main lesson is that a concern is more than a form submission. It moves through a workflow: someone reports it, the right people need visibility, actions may be recorded, and the eventual outcome needs context.
+
+That makes role boundaries, status changes, and record history more important than the first version of the interface.
+
+## Current approach
+
+I am separating the work into a few questions before committing to database tables or Laravel controllers:
+
+1. Who can create, view, assign, update, and close a concern?
+2. Which status changes are valid, and who is allowed to make them?
+3. What information belongs to the concern itself versus its activity history?
+4. Which notifications are genuinely useful instead of just noisy?
+5. What should remain visible for accountability without exposing unrelated student information?
+
+PostgreSQL is a good fit for the structured records and relationships I expect, while Laravel provides a practical application structure for policies, validation, and server-rendered or API-backed workflows. Those are current directions, not proof that every design decision is settled.
+
+## Problems to solve
+
+- Keeping permissions understandable as roles grow.
+- Preserving a useful history of changes without duplicating every field.
+- Designing statuses around real school workflows instead of arbitrary labels.
+- Handling sensitive information with deliberate access boundaries.
+- Keeping the capstone scope realistic for the time and team available.
+
+## Next steps
+
+The next useful artifacts are a clearer state diagram, a role-and-permission matrix, and a small vertical slice that follows one concern from creation to resolution. Testing that slice should reveal more than building every dashboard screen at once.

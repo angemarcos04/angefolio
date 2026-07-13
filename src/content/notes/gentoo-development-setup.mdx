@@ -1,0 +1,40 @@
+---
+title: Shaping a Gentoo development setup
+description: Goals and tradeoffs for a Linux environment built around the terminal, Neovim, and repeatable project tooling.
+summary: A working note about making my Gentoo setup dependable for development without pretending the setup is ever completely finished.
+category: Linux
+tags: [Gentoo, Linux, Dev Environment, Neovim]
+published: true
+featured: false
+createdAt: 2026-07-10
+updatedAt: 2026-07-14
+---
+
+## Context
+
+Gentoo gives me control over my system, but that control is only useful when the machine remains dependable enough to build, test, and debug projects. This is a record of the environment I am aiming for, not a complete installation tutorial.
+
+## What I am building or learning
+
+I want one development environment that feels comfortable for web work, backend services, containers, and school projects. The terminal is the center of that workflow, with Neovim as the editor and Git as the history I can trust when experiments go sideways.
+
+The interesting part is not collecting dotfiles. It is deciding which choices should be system-wide, which belong to each project, and which need to be reproducible inside a container.
+
+## Current approach
+
+- Keep language versions and project dependencies explicit inside each repository.
+- Use Neovim for editing, navigation, diagnostics, and quick terminal access.
+- Treat shell configuration as a small tool with comments and version control.
+- Use Docker or Podman when a service should not depend on the host configuration.
+- Prefer commands I understand over automation I cannot repair.
+
+## Problems to solve
+
+- Avoiding version drift between school projects with different requirements.
+- Keeping rebuild and update decisions understandable.
+- Making database and container workflows convenient without hiding their state.
+- Documenting the setup well enough that a future rebuild is less archaeological.
+
+## Next steps
+
+I plan to document the pieces that remain stable in daily use: project bootstrapping, editor language support, container conventions, and a small recovery checklist. Anything hardware-specific or still experimental should stay labeled as such.
