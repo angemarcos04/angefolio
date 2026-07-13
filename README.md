@@ -2,7 +2,7 @@
 
 The personal developer portfolio of **Angellie Marcos**, an Information Technology student building practical web systems with a Linux-minded, creative edge.
 
-This repository is currently in **Phase 9: Docker hardening, production build reliability, and deployment readiness**. It builds on the Astro baseline, reusable design system, bento-dashboard homepage, static project, note, and Lab archives, and Phase 8 search/SEO work without adding a database, authentication, admin console, or CMS.
+This repository is currently in **Phase 10: private `/console` planning and safe architecture scaffold**. It builds on the static Astro portfolio and hardened Phase 9 deployment without adding a database, authentication, writable CMS, API mutations, or an SSR runtime.
 
 ## Tech stack
 
@@ -98,9 +98,9 @@ Expected public output includes the homepage; project, note, and Lab indexes and
 
 ## Environment
 
-Phase 9 does not require environment variables. `.env.example` documents that empty contract and does not contain invented secrets. The canonical URL is still a checked-in placeholder because both Astro configuration and public site metadata need the same absolute origin during a static build.
+Phase 10 does not require environment variables. `.env.example` keeps the current empty runtime contract and documents commented names that a future console may use. `AUTH_SECRET`, `DATABASE_URL`, and `PUBLIC_SITE_URL` are not read by the application and must not be populated until the corresponding authenticated server architecture exists.
 
-Before a real deployment, replace `https://angellie-marcos.dev` in both `astro.config.mjs` and `src/lib/data/site.ts`, then rebuild. Do not add authentication, database, or private API variables until a future `/console` architecture defines how those values will be used.
+Before a real deployment, replace `https://angellie-marcos.dev` in both `astro.config.mjs` and `src/lib/data/site.ts`, then rebuild. Do not add authentication, database, or private API values until Phase 11 defines how they are generated, stored, rotated, and consumed.
 
 ## CI
 
@@ -403,20 +403,41 @@ The production path is now explicitly static and container-friendly:
 
 This runtime serves only the public portfolio. It does not provide API routes, on-demand rendering, authentication, content editing, or a private `/console`.
 
+## Phase 10 private console planning
+
+Phase 10 creates a careful boundary for a future private portfolio CMS while leaving the deployed site static:
+
+- [Private Console Plan](docs/console-plan.md) records purpose, non-goals, future sections, authentication/security boundaries, SSR migration choices, deployment implications, and the recommended Phase 11 slice.
+- [Future Console Data Model](docs/data-model.md) sketches `now_status`, projects, notes, Lab entries, stack groups, homepage cards, site settings, and an audit log without creating a database.
+- [Future Console Route Map](docs/console-routes.md) separates current public routes from planned guarded pages and mutation endpoints.
+- `src/lib/console/types.ts` provides future-facing TypeScript contracts only; it contains no database or auth access.
+- `/console` is a static, noindex, Pagefind-excluded planning notice. It is not linked from public navigation, is excluded from the sitemap, and explicitly does not claim privacy or security.
+
+The future console is intended to manage Now/status content, featured projects, note drafts, Lab entries, stack groups, homepage card visibility, and supported site settings. Content is still edited through source-controlled MDX, Astro Content Collections, and TypeScript data in Phase 10.
+
+There is no Better Auth integration, Drizzle schema, SQLite database, Turso connection, Node adapter, login, session, route guard, form submission, server action, or API write route in this phase. A working `/console` will require authenticated SSR or a separate secured service, persistent storage, backups, and a revised deployment strategy.
+
 ## Folder structure
 
 ```text
+docs/
+├── console-plan.md    # Console architecture and security plan
+├── console-routes.md  # Current and future route boundaries
+└── data-model.md      # Future persistence sketches
+
 src/
 ├── components/
 │   ├── astro/       # Layout, content cards, and presentation primitives
 │   └── svelte/      # Small interactive islands and future-facing stubs
 ├── content/         # Typed starter projects, notes, and lab entries
 ├── lib/             # Shared site identity and content utilities
+│   └── console/     # Future-facing type contracts only
 ├── pages/
 │   ├── index.astro  # Eight-cell bento-dashboard homepage
 │   ├── projects/    # Public project index and static detail routes
 │   ├── notes/       # Public note index and static detail routes
 │   ├── lab/         # Public Lab index and static detail routes
+│   ├── console/     # Static noindex planning placeholder
 │   ├── search.astro # Static Pagefind search shell
 │   ├── rss.xml.ts   # Published-note RSS feed
 │   └── 404.astro    # Static not-found page
@@ -432,12 +453,13 @@ src/
 - Pagefind search is available only after a production build; the development server intentionally shows a fallback message when the index is absent.
 - The canonical production domain is still a documented placeholder and must be replaced before deployment.
 - Container TLS, DNS, and hosting-provider configuration remain external deployment concerns; the image serves HTTP on port `80` behind the chosen platform or reverse proxy.
+- `/console` is only a public static planning notice. No route in Phase 10 is private, authenticated, or capable of changing content.
 - Project detail pages are static and MDX-backed. There is no browser-based project editor or automatic synchronization with GitHub.
 - The optional project `cover` field is reserved for later visual treatment and is not rendered yet.
 - GitHub activity is a static visual placeholder and does not call the GitHub API.
 - Project filtering is a UI demonstration only.
 - The command menu and card visibility controls are non-production stubs.
-- There is no database, authentication, Node adapter, private `/console`, or CMS. A future `/console` may manage project, note, and Lab content, but it is deliberately outside Phase 9 and may require a separate authenticated runtime strategy.
+- There is no database, authentication, Node adapter, private console, or CMS. The planned console may eventually manage project, note, and Lab content, but Phase 10 adds only documentation, types, and a non-functional holding page.
 
 ## Roadmap
 
@@ -450,6 +472,7 @@ src/
 - **Phase 7:** Lab detail pages and prototype archive (complete)
 - **Phase 8:** Search, SEO, accessibility, RSS, and polish (complete)
 - **Phase 9:** Docker hardening, production reliability, and deployment readiness (complete)
-- **Phase 10+:** Private `/console` architecture planning
+- **Phase 10:** Private `/console` planning and safe architecture scaffold (complete)
+- **Phase 11+:** Authenticated console vertical slice and content migration decisions
 
-Next: **Phase 10 should define requirements and threat boundaries for a future private `/console` before choosing authentication, storage, or runtime technology.** That planning should decide whether the console belongs in a separate service or requires an SSR-capable deployment while keeping the public portfolio Astro-first and statically deployable. The real production origin, TLS, DNS, and hosting target should also be confirmed before launch.
+Next: **Phase 11 should decide between integrated Astro SSR and a separate private console service, then implement one secured Now Status vertical slice.** That phase should add the Node adapter, Better Auth, Drizzle, SQLite, server-side guards, CSRF protection, audit logging, and backup/restore tests only after the deployment and data-source decisions are recorded. Projects, notes, Lab, stack, homepage cards, and settings should remain file-backed until the first slice proves the security and operational model.

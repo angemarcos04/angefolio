@@ -1,0 +1,90 @@
+---
+import BentoCard from '../../components/astro/BentoCard.astro';
+import Button from '../../components/astro/Button.astro';
+import CollectionHeader from '../../components/astro/CollectionHeader.astro';
+import Layout from '../../components/astro/Layout.astro';
+import Tag from '../../components/astro/Tag.astro';
+
+const description =
+  'A static planning notice for the future private angefolio console.';
+---
+
+<Layout
+  title="Console planned — Angellie Marcos"
+  {description}
+  noindex
+  searchable={false}
+  class="console-placeholder"
+>
+  <CollectionHeader />
+
+  <BentoCard class="console-notice subtle-grid" accent="yellow">
+    <div class="status-line">
+      <Tag tone="yellow">Planning only</Tag>
+      <span>static / no auth / no data</span>
+    </div>
+    <p class="eyebrow">/console</p>
+    <h1 class="text-balance">Console planned</h1>
+    <p class="lead">Private dashboard is not implemented yet.</p>
+    <p>
+      This page is a planning placeholder, not an admin panel. It has no login,
+      private content, database connection, editing controls, or security
+      boundary.
+    </p>
+    <div class="public-links" aria-label="Return to public portfolio pages">
+      <Button href="/" variant="primary">Return home</Button>
+      <Button href="/projects">Projects</Button>
+      <Button href="/notes">Notes</Button>
+      <Button href="/lab">Lab</Button>
+    </div>
+  </BentoCard>
+</Layout>
+
+<style>
+  :global(.console-placeholder) {
+    max-width: 58rem;
+  }
+  :global(.console-notice) {
+    padding: clamp(1.5rem, 6vw, 3.5rem);
+  }
+  .status-line,
+  .public-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  .status-line {
+    justify-content: space-between;
+    margin-bottom: clamp(2.5rem, 8vw, 5rem);
+  }
+  .status-line > span {
+    color: var(--muted-foreground);
+    font: 0.66rem var(--font-mono);
+  }
+  .eyebrow {
+    margin: 0 0 0.45rem;
+  }
+  h1 {
+    max-width: 12ch;
+    margin: 0;
+    font-size: clamp(2.5rem, 9vw, 5.25rem);
+    line-height: 0.96;
+    letter-spacing: -0.06em;
+  }
+  .lead {
+    margin: 1.1rem 0 0;
+    color: var(--accent-yellow);
+    font: 0.9rem/1.6 var(--font-mono);
+  }
+  .console-notice > p:not(.eyebrow, .lead) {
+    max-width: 62ch;
+    margin: 0.8rem 0 0;
+    color: var(--muted-foreground);
+  }
+  .public-links {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+</style>
