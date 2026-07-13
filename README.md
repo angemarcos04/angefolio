@@ -2,7 +2,7 @@
 
 The personal developer portfolio of **Angellie Marcos**, an Information Technology student building practical web systems with a Linux-minded, creative edge.
 
-This repository is currently in **Phase 8: search, SEO, accessibility, and polish**. It builds on the Astro baseline, reusable design system, bento-dashboard homepage, and static project, note, and Lab archives without adding a database, authentication, admin console, or CMS.
+This repository is currently in **Phase 9: Docker hardening, production build reliability, and deployment readiness**. It builds on the Astro baseline, reusable design system, bento-dashboard homepage, static project, note, and Lab archives, and Phase 8 search/SEO work without adding a database, authentication, admin console, or CMS.
 
 ## Tech stack
 
@@ -32,14 +32,14 @@ pnpm dev
 
 Open `http://localhost:4321`.
 
-Build and preview production output:
+Build and preview production output locally:
 
 ```bash
 pnpm build
 pnpm preview --host 0.0.0.0 --port 4321
 ```
 
-`pnpm build` also runs Pagefind against `dist/`, so the production preview includes the static search index. Rebuild after changing public content.
+`pnpm build` remains the standard production build and its existing `postbuild` hook generates the Pagefind index. For an explicit, self-contained search build that does not depend on lifecycle behavior, use `pnpm build:search`. To regenerate only the index for an existing `dist/`, use `pnpm index`.
 
 Optional checks:
 
@@ -50,7 +50,18 @@ pnpm format:check
 
 ## Docker
 
-Build and run the `portfolio` service:
+The production image uses three stages: a pnpm dependency stage, a static Astro/Pagefind build stage, and an Nginx runtime containing only `dist/` and the server configuration. Node.js, pnpm, source files, and development dependencies do not ship in the runtime image. Nginx serves the generated routes directly; there is no SPA fallback or SSR process.
+
+Build and run the image directly:
+
+```bash
+pnpm docker:build
+pnpm docker:run
+```
+
+The equivalent raw commands are `docker build -t angefolio .` and `docker run --rm -p 4321:80 angefolio`.
+
+Or build and run the `portfolio` Compose service:
 
 ```bash
 docker compose up --build
@@ -58,7 +69,50 @@ docker compose up --build
 
 Open `http://localhost:4321`. Stop it with `docker compose down`.
 
-The container is named `angefolio` and uses `unless-stopped`. No database volumes or secrets are required.
+The container is named `angefolio`, maps host port `4321` to Nginx port `80`, and uses `unless-stopped`. Compose also enables the image health check, a read-only root filesystem, temporary Nginx cache/run mounts, and `no-new-privileges`. No database volumes, backend services, runtime environment variables, or secrets are required.
+
+Useful validation commands:
+
+```bash
+docker compose config
+docker build -t angefolio:test .
+docker inspect --format='{{json .State.Health}}' angefolio
+```
+
+The last command applies while the Compose service is running.
+
+## Production build
+
+The deployable artifact is the generated `dist/` directory. A non-container static host can publish that directory after this workflow:
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm check
+pnpm build
+```
+
+The Docker build uses `pnpm build:search` so Pagefind output is always present in the runtime image. `astro preview` remains available for local inspection, but the production container intentionally uses Nginx instead of the Astro preview server.
+
+Expected public output includes the homepage; project, note, and Lab indexes and detail pages; `/search`; `/rss.xml`; `/robots.txt`; `/sitemap-index.xml`; and `/404.html`. Nginx uses normal file/directory resolution and returns the generated 404 page with a 404 response instead of rewriting unknown paths to the homepage.
+
+## Environment
+
+Phase 9 does not require environment variables. `.env.example` documents that empty contract and does not contain invented secrets. The canonical URL is still a checked-in placeholder because both Astro configuration and public site metadata need the same absolute origin during a static build.
+
+Before a real deployment, replace `https://angellie-marcos.dev` in both `astro.config.mjs` and `src/lib/data/site.ts`, then rebuild. Do not add authentication, database, or private API variables until a future `/console` architecture defines how those values will be used.
+
+## CI
+
+`.github/workflows/ci.yml` validates pushes and pull requests targeting `main` on Node.js 22. It installs the frozen pnpm lockfile, runs Astro checks, verifies formatting, builds the static site and Pagefind index, and builds the production Docker image. It does not deploy, publish an image, use secrets, or assume a hosting provider.
+
+## Deployment notes
+
+- Deploy the Nginx image to any container host that can expose container port `80` and honor its health check.
+- Alternatively, publish `dist/` to a static hosting provider. Configure that provider to serve generated directories normally and use `404.html` for missing routes; do not enable a blanket SPA rewrite.
+- Terminate HTTPS and configure the public domain at the hosting platform or reverse proxy. The repository intentionally contains no domain-specific proxy labels.
+- Rebuild for every content change so Astro pages, RSS, sitemap, and Pagefind stay synchronized.
+- Preserve `/pagefind/`, `/_astro/`, XML, text, image, and font files when copying the artifact.
 
 ## Production URL placeholder
 
@@ -337,6 +391,18 @@ Search indexing runs automatically through the `postbuild` script. It indexes th
 
 The accessibility pass preserves the skip link and semantic landmarks, strengthens visible focus rings, adds accessible external-link announcements, improves search status messaging, and keeps navigation and controls wrapping safely on small screens.
 
+## Phase 9 deployment readiness
+
+The production path is now explicitly static and container-friendly:
+
+- A multi-stage Dockerfile installs from the frozen pnpm lockfile, builds Astro plus Pagefind, and copies only the generated output into Nginx.
+- Nginx serves real generated files and directories, applies conservative cache lifetimes, emits basic security headers, and exposes a container health check.
+- Compose maps `4321:80`, uses a read-only runtime filesystem with narrowly scoped temporary mounts, and adds no database, secrets, or backend service.
+- Docker build/run scripts and a separate `build:search` command make local and automated workflows reproducible.
+- GitHub Actions checks types, formatting, the production build, and the Docker image without deploying anything.
+
+This runtime serves only the public portfolio. It does not provide API routes, on-demand rendering, authentication, content editing, or a private `/console`.
+
 ## Folder structure
 
 ```text
@@ -365,12 +431,13 @@ src/
 - Notes are source-controlled MDX files. There is no browser editor, comments system, or category/tag route yet.
 - Pagefind search is available only after a production build; the development server intentionally shows a fallback message when the index is absent.
 - The canonical production domain is still a documented placeholder and must be replaced before deployment.
+- Container TLS, DNS, and hosting-provider configuration remain external deployment concerns; the image serves HTTP on port `80` behind the chosen platform or reverse proxy.
 - Project detail pages are static and MDX-backed. There is no browser-based project editor or automatic synchronization with GitHub.
 - The optional project `cover` field is reserved for later visual treatment and is not rendered yet.
 - GitHub activity is a static visual placeholder and does not call the GitHub API.
 - Project filtering is a UI demonstration only.
 - The command menu and card visibility controls are non-production stubs.
-- There is no database, authentication, Node adapter, private `/console`, or CMS. A future `/console` may manage project, note, and Lab content, but it is deliberately outside Phase 7.
+- There is no database, authentication, Node adapter, private `/console`, or CMS. A future `/console` may manage project, note, and Lab content, but it is deliberately outside Phase 9 and may require a separate authenticated runtime strategy.
 
 ## Roadmap
 
@@ -382,7 +449,7 @@ src/
 - **Phase 6:** Note detail pages, tags/categories, and writing polish (complete)
 - **Phase 7:** Lab detail pages and prototype archive (complete)
 - **Phase 8:** Search, SEO, accessibility, RSS, and polish (complete)
-- **Phase 9:** Docker hardening
-- **Phase 10+:** Private `/console` planning and CMS work
+- **Phase 9:** Docker hardening, production reliability, and deployment readiness (complete)
+- **Phase 10+:** Private `/console` architecture planning
 
-Next: **Phase 9 should harden the Docker and deployment workflow, replace the placeholder production origin, and verify the final hosting environment.** Astro remains the main framework, with Svelte limited to focused interactive islands.
+Next: **Phase 10 should define requirements and threat boundaries for a future private `/console` before choosing authentication, storage, or runtime technology.** That planning should decide whether the console belongs in a separate service or requires an SSR-capable deployment while keeping the public portfolio Astro-first and statically deployable. The real production origin, TLS, DNS, and hosting target should also be confirmed before launch.

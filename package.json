@@ -9,11 +9,14 @@
     "build": "astro build",
     "postbuild": "pagefind --site dist",
     "index": "pagefind --site dist",
+    "build:search": "astro build && pagefind --site dist",
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "docker:build": "docker build -t angefolio .",
+    "docker:run": "docker run --rm -p 4321:80 angefolio"
   },
   "dependencies": {
     "@astrojs/mdx": "latest",

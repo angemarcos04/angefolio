@@ -1,20 +1,35 @@
-FROM node:22-alpine AS base
+FROM node:22-alpine AS dependencies
+
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+ENV ASTRO_TELEMETRY_DISABLED=1
+
 WORKDIR /app
 
-FROM base AS dependencies
+RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-FROM dependencies AS build
-COPY . .
-RUN pnpm build
+FROM node:22-alpine AS build
 
-FROM base AS runtime
-COPY --from=build /app/package.json /app/pnpm-lock.yaml ./
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
-EXPOSE 4321
-CMD ["pnpm", "preview", "--host", "0.0.0.0", "--port", "4321"]
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+ENV ASTRO_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+
+WORKDIR /app
+
+RUN corepack enable
+COPY --from=dependencies /app/node_modules ./node_modules
+COPY . .
+RUN pnpm build:search
+
+FROM nginx:1.28-alpine AS runtime
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget -qO- http://127.0.0.1/ > /dev/null || exit 1
