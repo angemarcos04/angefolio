@@ -2,14 +2,31 @@
 interface Props {
   title: string;
   description: string;
+  image?: string;
+  type?: string;
 }
-
-const { title, description } = Astro.props;
+const { title, description, image, type = 'website' } = Astro.props;
+const canonical = Astro.site
+  ? new URL(Astro.url.pathname, Astro.site)
+  : undefined;
+const socialImage = image
+  ? new URL(image, Astro.site ?? Astro.url.origin)
+  : undefined;
 ---
 
 <title>{title}</title>
 <meta name="description" content={description} />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta property="og:type" content="website" />
+{canonical ? <link rel="canonical" href={canonical} /> : null}
+<meta property="og:type" content={type} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
+{canonical ? <meta property="og:url" content={canonical} /> : null}
+{socialImage ? <meta property="og:image" content={socialImage} /> : null}
+<meta
+  name="twitter:card"
+  content={socialImage ? 'summary_large_image' : 'summary'}
+/>
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+{socialImage ? <meta name="twitter:image" content={socialImage} /> : null}

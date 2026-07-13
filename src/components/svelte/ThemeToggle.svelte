@@ -1,38 +1,50 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-
-  let light = false;
-
+  type Theme = 'dark' | 'dim';
+  let theme: Theme = 'dark';
+  let mounted = false;
   onMount(() => {
-    light = document.documentElement.dataset.theme === 'light';
+    theme = document.documentElement.dataset.theme === 'dim' ? 'dim' : 'dark';
+    mounted = true;
   });
-
   function toggleTheme() {
-    light = !light;
-    document.documentElement.dataset.theme = light ? 'light' : 'dark';
-    localStorage.setItem('theme', light ? 'light' : 'dark');
+    theme = theme === 'dark' ? 'dim' : 'dark';
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem('theme', theme);
+    } catch {
+      /* Storage is optional. */
+    }
   }
 </script>
 
 <button
   type="button"
-  on:click={toggleTheme}
-  aria-label={light ? 'Use dark theme' : 'Use light theme'}
+  onclick={toggleTheme}
+  aria-label={`Switch to ${theme === 'dark' ? 'dim' : 'dark'} theme`}
+  aria-pressed={theme === 'dim'}
+  title="Toggle color theme"
 >
-  {light ? 'Dark mode' : 'Light mode'}
+  <span aria-hidden="true">{theme === 'dark' ? '◐' : '◑'}</span><span
+    >{mounted ? theme : 'dark'}</span
+  >
 </button>
 
 <style>
   button {
-    padding: 0.5rem 0.7rem;
+    display: inline-flex;
+    min-height: 2.35rem;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.65rem;
     border: 1px solid var(--border);
-    border-radius: 0.65rem;
+    border-radius: var(--radius-md);
     background: var(--muted);
     color: var(--foreground);
-    font: 0.72rem var(--font-mono);
+    font: 0.7rem var(--font-mono);
+    text-transform: capitalize;
     cursor: pointer;
   }
-
   button:hover {
     border-color: var(--accent-cyan);
   }

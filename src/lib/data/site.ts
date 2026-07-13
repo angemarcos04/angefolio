@@ -1,10 +1,9 @@
 export const site = {
   name: 'Angellie Marcos',
   role: 'Information Technology Student',
-  tagline:
-    'IT student building practical web systems with a Linux-minded, creative edge.',
+  tagline: 'Coding, tinkering, and convincing computers to do my bidding.',
   description:
-    'I work with full-stack web apps, backend workflows, Linux environments, and experimental software around AI, data, and personal tools.',
+    'I code full-stack apps, wrestle with backend systems, call the Linux terminal home, and experiment with AI, data, and tools that actually do the job.',
   github: 'https://github.com/angemarcos04',
   email: 'hello@example.com',
 };

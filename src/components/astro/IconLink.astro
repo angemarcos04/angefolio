@@ -1,0 +1,31 @@
+---
+interface Props {
+  href: string;
+  label: string;
+  external?: boolean;
+  class?: string;
+}
+const { href, label, external = false, class: className = '' } = Astro.props;
+---
+
+<a
+  class:list={['icon-link', className]}
+  {href}
+  aria-label={external ? `${label} (opens in a new tab)` : label}
+  target={external ? '_blank' : undefined}
+  rel={external ? 'noreferrer' : undefined}
+>
+  <span>{label}</span><span aria-hidden="true">{external ? '↗' : '→'}</span>
+</a>
+<style>
+  .icon-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--muted-foreground);
+    font: 0.72rem var(--font-mono);
+  }
+  .icon-link:hover {
+    color: var(--accent-cyan);
+  }
+</style>

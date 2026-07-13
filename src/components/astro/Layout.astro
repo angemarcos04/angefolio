@@ -1,28 +1,46 @@
 ---
 import '../../styles/global.css';
+import { site } from '../../lib/data/site';
 import Footer from './Footer.astro';
 import SEO from './SEO.astro';
 
 interface Props {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
+  class?: string;
 }
 
-const { title, description } = Astro.props;
+const {
+  title = `${site.name} — ${site.role}`,
+  description = site.description,
+  class: className = '',
+} = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <SEO {title} {description} />
     <script is:inline>
-      const theme = localStorage.getItem('theme');
-      if (theme === 'light') document.documentElement.dataset.theme = 'light';
+      (() => {
+        try {
+          const savedTheme = localStorage.getItem('theme');
+          document.documentElement.dataset.theme =
+            savedTheme === 'dim' ? 'dim' : 'dark';
+        } catch {
+          document.documentElement.dataset.theme = 'dark';
+        }
+      })();
     </script>
   </head>
   <body>
-    <main>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <main
+      id="main-content"
+      class:list={['container-shell', className]}
+      tabindex="-1"
+    >
       <slot />
     </main>
     <Footer />
@@ -31,8 +49,22 @@ const { title, description } = Astro.props;
 
 <style>
   main {
-    width: min(1120px, calc(100% - 2rem));
-    margin: 0 auto;
-    padding: clamp(2rem, 7vw, 5rem) 0;
+    padding-block: clamp(1.5rem, 6vw, 4.5rem);
+  }
+  .skip-link {
+    position: fixed;
+    z-index: 100;
+    top: 0.75rem;
+    left: 0.75rem;
+    transform: translateY(-180%);
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--accent-cyan);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    color: var(--foreground);
+    font: 0.78rem var(--font-mono);
+  }
+  .skip-link:focus {
+    transform: translateY(0);
   }
 </style>

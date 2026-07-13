@@ -1,15 +1,39 @@
-<span class="tag"><slot /></span>
+---
+interface Props {
+  tone?: 'neutral' | 'green' | 'cyan' | 'red' | 'purple' | 'yellow';
+  class?: string;
+}
+const { tone = 'neutral', class: className = '' } = Astro.props;
+---
 
+<span class:list={['tag', `tone-${tone}`, className]}><slot /></span>
 <style>
   .tag {
+    --tag-color: var(--muted-foreground);
     display: inline-flex;
     align-items: center;
-    min-height: 1.7rem;
-    padding: 0.2rem 0.52rem;
-    border: 1px solid var(--border);
+    min-height: 1.65rem;
+    padding: 0.16rem 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--tag-color) 34%, var(--border));
     border-radius: 999px;
-    color: var(--muted-foreground);
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
+    background: color-mix(in srgb, var(--tag-color) 7%, transparent);
+    color: var(--tag-color);
+    font: 0.68rem/1.2 var(--font-mono);
+    white-space: nowrap;
+  }
+  .tone-green {
+    --tag-color: var(--accent-green);
+  }
+  .tone-cyan {
+    --tag-color: var(--accent-cyan);
+  }
+  .tone-red {
+    --tag-color: var(--accent-red);
+  }
+  .tone-purple {
+    --tag-color: var(--accent-purple);
+  }
+  .tone-yellow {
+    --tag-color: var(--accent-yellow);
   }
 </style>

@@ -2,28 +2,33 @@
 
 :root {
   color-scheme: dark;
-  --background: #090b0f;
-  --foreground: #edf1f7;
-  --muted: #151a21;
-  --muted-foreground: #929baa;
-  --card: #10141a;
-  --card-foreground: #edf1f7;
-  --border: #242a33;
-  --accent-green: #73d39a;
-  --accent-cyan: #66c7d4;
-  --accent-red: #ef7d9a;
-  --accent-purple: #a995e8;
+  --background: #080a0e;
+  --foreground: #eef2f7;
+  --muted: #151920;
+  --muted-foreground: #929cab;
+  --card: #0e1218;
+  --card-foreground: #eef2f7;
+  --border: #272d36;
+  --accent-green: #79d69f;
+  --accent-cyan: #68cbd8;
+  --accent-red: #ee8197;
+  --accent-purple: #aa98e8;
+  --accent-yellow: #dfbf69;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.45rem;
+  --radius-lg: 0.7rem;
+  --radius-xl: 0.9rem;
+  --shadow-soft: 0 18px 55px rgb(0 0 0 / 0.22);
 }
 
-:root[data-theme='light'] {
-  color-scheme: light;
-  --background: #f4f2ed;
-  --foreground: #1a1e24;
-  --muted: #e9e6df;
-  --muted-foreground: #646c78;
-  --card: #fbfaf7;
-  --card-foreground: #1a1e24;
-  --border: #d5d2ca;
+:root[data-theme='dim'] {
+  --background: #11151b;
+  --foreground: #e3e8ef;
+  --muted: #1c222b;
+  --muted-foreground: #a4adba;
+  --card: #171c23;
+  --card-foreground: #e3e8ef;
+  --border: #343c47;
 }
 
 @theme inline {
@@ -38,7 +43,8 @@
   --color-accent-cyan: var(--accent-cyan);
   --color-accent-red: var(--accent-red);
   --color-accent-purple: var(--accent-purple);
-  --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --color-accent-yellow: var(--accent-yellow);
+  --font-sans: Inter, 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
 }
 
@@ -49,6 +55,7 @@
 html {
   min-width: 320px;
   background: var(--background);
+  scroll-behavior: smooth;
 }
 
 body {
@@ -56,24 +63,33 @@ body {
   margin: 0;
   background:
     radial-gradient(
-      circle at 10% 0%,
-      color-mix(in srgb, var(--accent-purple) 8%, transparent),
-      transparent 30rem
+      circle at 12% 0%,
+      rgb(170 152 232 / 0.07),
+      transparent 29rem
     ),
     var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
   line-height: 1.6;
   text-rendering: optimizeLegibility;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+  text-underline-offset: 0.2em;
+}
+
+button {
+  font: inherit;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent-cyan) 28%, transparent);
+  background: color-mix(in srgb, var(--accent-cyan) 30%, transparent);
+  color: var(--foreground);
 }
 
 :focus-visible {
@@ -81,10 +97,70 @@ a {
   outline-offset: 3px;
 }
 
+code,
+pre {
+  font-family: var(--font-mono);
+}
+code {
+  font-size: 0.9em;
+}
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.container-shell {
+  width: min(1180px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.bento-surface {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--shadow-soft);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.terminal-glow {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.025),
+    0 0 32px rgb(104 203 216 / 0.035);
+}
+
+.subtle-grid {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.025) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
 .eyebrow {
   color: var(--accent-green);
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .container-shell {
+    width: min(100% - 1.25rem, 1180px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

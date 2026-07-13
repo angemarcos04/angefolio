@@ -1,0 +1,27 @@
+---
+import Tag from './Tag.astro';
+interface Props {
+  title: string;
+  items: string[];
+  class?: string;
+}
+const { title, items, class: className = '' } = Astro.props;
+---
+
+<section class:list={['stack-group', className]}>
+  <h3>{title}</h3><div>{items.map((item) => <Tag>{item}</Tag>)}</div>
+</section>
+<style>
+  .stack-group h3 {
+    margin: 0 0 0.55rem;
+    color: var(--muted-foreground);
+    font: 0.68rem var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .stack-group div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+</style>

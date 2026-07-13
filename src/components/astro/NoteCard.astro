@@ -1,0 +1,77 @@
+---
+import Tag from './Tag.astro';
+interface Props {
+  title: string;
+  description: string;
+  category: string;
+  tags: string[];
+  createdAt: Date | string;
+  updatedAt?: Date | string;
+  href?: string;
+  featured?: boolean;
+  class?: string;
+}
+const {
+  title,
+  description,
+  category,
+  tags,
+  createdAt,
+  updatedAt,
+  href,
+  featured = false,
+  class: className = '',
+} = Astro.props;
+const formatDate = (value: Date | string) =>
+  new Intl.DateTimeFormat('en', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    timeZone: 'UTC',
+  }).format(new Date(value));
+---
+
+<article class:list={['content-card bento-surface', className]}>
+  <div class="meta">
+    <Tag tone="cyan">{category}</Tag>{
+      featured && <Tag tone="yellow">Featured</Tag>
+    }
+  </div>
+  <h3>{href ? <a href={href}>{title}</a> : title}</h3><p>{description}</p>
+  <div class="tags">{tags.map((tag) => <Tag>{tag}</Tag>)}</div>
+  <small
+    >Created {formatDate(createdAt)}{
+      updatedAt ? ` · Updated ${formatDate(updatedAt)}` : ''
+    }</small
+  >
+</article>
+<style>
+  .content-card {
+    min-width: 0;
+    padding: 1.25rem;
+  }
+  .meta,
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  h3 {
+    margin: 1rem 0 0;
+    font-size: 1.1rem;
+  }
+  h3 a:hover {
+    color: var(--accent-cyan);
+  }
+  p {
+    margin: 0.45rem 0 1rem;
+    color: var(--muted-foreground);
+    font-size: 0.9rem;
+  }
+  small {
+    display: block;
+    margin-top: 1rem;
+    color: var(--muted-foreground);
+    font: 0.65rem var(--font-mono);
+  }
+</style>

@@ -1,0 +1,88 @@
+---
+import Button from './Button.astro';
+import StatusPill from './StatusPill.astro';
+import Tag from './Tag.astro';
+interface Props {
+  title: string;
+  description: string;
+  status: string;
+  stack: string[];
+  github?: string;
+  demo?: string;
+  caseStudy?: string;
+  category?: string;
+  featured?: boolean;
+  class?: string;
+}
+const {
+  title,
+  description,
+  status,
+  stack,
+  github,
+  demo,
+  caseStudy,
+  category,
+  featured = false,
+  class: className = '',
+} = Astro.props;
+---
+
+<article class:list={['content-card bento-surface', className]}>
+  <div class="meta">
+    <StatusPill {status} />{category && <Tag tone="purple">{category}</Tag>}{
+      featured && <Tag tone="yellow">Featured</Tag>
+    }
+  </div>
+  <h3>{title}</h3><p>{description}</p>
+  <div class="tags">{stack.map((item) => <Tag>{item}</Tag>)}</div>
+  {
+    (github || demo || caseStudy) && (
+      <div class="links">
+        {demo && (
+          <Button href={demo} external size="sm" variant="primary">
+            Demo
+          </Button>
+        )}
+        {github && (
+          <Button href={github} external size="sm">
+            GitHub
+          </Button>
+        )}
+        {caseStudy && (
+          <Button href={caseStudy} size="sm" variant="ghost">
+            Case study
+          </Button>
+        )}
+      </div>
+    )
+  }
+</article>
+<style>
+  .content-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    padding: 1.25rem;
+  }
+  .meta,
+  .tags,
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  h3 {
+    margin: 1rem 0 0;
+    font-size: 1.1rem;
+  }
+  p {
+    margin: 0.45rem 0 1rem;
+    color: var(--muted-foreground);
+    font-size: 0.9rem;
+  }
+  .links {
+    margin-top: auto;
+    padding-top: 1.1rem;
+  }
+</style>

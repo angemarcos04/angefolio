@@ -1,23 +1,35 @@
-<div class="stub" aria-label="Command menu planned">
-  <span>Command menu planned</span>
-  <kbd>⌘ K</kbd>
+<div class="stub" role="note" aria-label="Command menu planned">
+  <span
+    ><strong>Command menu planned</strong><small>Future shortcut</small></span
+  ><kbd>Ctrl + K</kbd>
 </div>
 
 <style>
   .stub {
     display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.45rem 0.6rem;
-    border: 1px solid var(--border);
-    border-radius: 0.6rem;
+    gap: 0.8rem;
+    padding: 0.55rem 0.65rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
     color: var(--muted-foreground);
-    font: 0.72rem var(--font-mono);
+    font: 0.68rem var(--font-mono);
   }
-
+  .stub span {
+    display: grid;
+  }
+  strong {
+    color: var(--foreground);
+    font-weight: 550;
+  }
+  small {
+    font: inherit;
+  }
   kbd {
-    padding: 0.08rem 0.28rem;
+    padding: 0.16rem 0.35rem;
     border: 1px solid var(--border);
-    border-radius: 0.3rem;
+    border-radius: var(--radius-sm);
+    background: var(--muted);
+    white-space: nowrap;
   }
 </style>

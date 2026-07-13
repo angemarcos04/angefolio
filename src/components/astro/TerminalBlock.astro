@@ -1,67 +1,79 @@
 ---
 interface Props {
   title?: string;
+  class?: string;
 }
-
-const { title = 'phase-one.sh' } = Astro.props;
+const { title = 'angefolio.sh', class: className = '' } = Astro.props;
 ---
 
-<div class="terminal" role="region" aria-label={title}>
-  <div class="terminal-bar">
-    <span></span><span></span><span></span>
-    <strong>{title}</strong>
+<div
+  class:list={['terminal terminal-glow', className]}
+  role="region"
+  aria-label={`Terminal: ${title}`}
+>
+  <div class="bar" aria-hidden="true">
+    <i></i><i></i><i></i><strong>{title}</strong>
   </div>
-  <div class="terminal-body">
-    <slot />
-  </div>
+  <div class="body"><span aria-hidden="true">$</span><div><slot /></div></div>
 </div>
-
 <style>
   .terminal {
+    max-width: 100%;
     overflow: hidden;
     border: 1px solid var(--border);
-    border-radius: 0.8rem;
-    background: #080b0f;
+    border-radius: var(--radius-lg);
+    background: #070a0e;
     color: #dce5df;
     font-family: var(--font-mono);
   }
-
-  .terminal-bar {
+  .bar {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.55rem 0.7rem;
+    gap: 0.36rem;
+    min-height: 2.15rem;
+    padding: 0.45rem 0.7rem;
     border-bottom: 1px solid var(--border);
   }
-
-  .terminal-bar span {
-    width: 0.55rem;
-    height: 0.55rem;
+  i {
+    width: 0.48rem;
+    height: 0.48rem;
     border-radius: 50%;
     background: var(--accent-red);
   }
-
-  .terminal-bar span:nth-child(2) {
-    background: var(--accent-purple);
+  i:nth-child(2) {
+    background: var(--accent-yellow);
   }
-
-  .terminal-bar span:nth-child(3) {
+  i:nth-child(3) {
     background: var(--accent-green);
   }
-
   strong {
+    min-width: 0;
     margin-left: 0.35rem;
+    overflow: hidden;
     color: var(--muted-foreground);
-    font-size: 0.68rem;
+    font-size: 0.66rem;
     font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-
-  .terminal-body {
-    padding: 0.9rem;
-    font-size: 0.78rem;
+  .body {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.55rem;
+    padding: clamp(0.75rem, 3vw, 1rem);
+    font-size: clamp(0.7rem, 2vw, 0.78rem);
   }
-
-  .terminal-body :global(p) {
-    margin: 0.2rem 0;
+  .body > span {
+    color: var(--accent-green);
+  }
+  .body > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .body :global(p) {
+    margin: 0.15rem 0;
+  }
+  .body :global(code) {
+    color: var(--accent-cyan);
   }
 </style>

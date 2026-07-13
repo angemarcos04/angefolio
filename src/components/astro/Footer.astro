@@ -1,29 +1,33 @@
-<footer>
-  <p>Built by Angellie Marcos.</p>
-  <a href="https://github.com/angemarcos04" target="_blank" rel="noreferrer"
-    >GitHub ↗</a
-  >
-</footer>
+---
+import { site } from '../../lib/data/site';
+import IconLink from './IconLink.astro';
+---
 
+<footer class="container-shell">
+  <p>Built by {site.name}. <span>Astro-first, terminal at heart.</span></p>
+  <IconLink href={site.github} label="GitHub" external />
+</footer>
 <style>
   footer {
-    width: min(1120px, calc(100% - 2rem));
-    margin: 0 auto;
-    padding: 1.5rem 0 2.5rem;
-    border-top: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     gap: 1rem;
+    padding-block: 1.4rem 2.5rem;
+    border-top: 1px solid var(--border);
     color: var(--muted-foreground);
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
+    font: 0.7rem var(--font-mono);
   }
-
   footer p {
     margin: 0;
   }
-
-  footer a:hover {
-    color: var(--accent-cyan);
+  @media (max-width: 540px) {
+    footer {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    footer span {
+      display: block;
+      margin-top: 0.25rem;
+    }
   }
 </style>
