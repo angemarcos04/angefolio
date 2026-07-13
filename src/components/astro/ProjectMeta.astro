@@ -1,0 +1,53 @@
+---
+import Tag from './Tag.astro';
+
+interface Props {
+  label: string;
+  value?: string;
+  items?: string[];
+  class?: string;
+}
+
+const { label, value, items = [], class: className = '' } = Astro.props;
+---
+
+<section class:list={['project-meta bento-surface', className]}>
+  <p>{label}</p>
+  {value && <strong>{value}</strong>}
+  {
+    items.length > 0 && (
+      <div>
+        {items.map((item) => (
+          <Tag>{item}</Tag>
+        ))}
+      </div>
+    )
+  }
+</section>
+
+<style>
+  .project-meta {
+    min-width: 0;
+    padding: 1rem;
+    box-shadow: none;
+  }
+  p {
+    margin: 0 0 0.5rem;
+    color: var(--accent-cyan);
+    font: 0.65rem var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  strong {
+    display: block;
+    color: var(--foreground);
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.45;
+  }
+  div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+</style>

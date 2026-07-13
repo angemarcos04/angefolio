@@ -22,6 +22,21 @@ const projects = defineCollection({
     caseStudy: z.string().optional(),
     date: z.coerce.date(),
     category: z.string().optional(),
+    problem: z.string().optional(),
+    solution: z.string().optional(),
+    role: z.string().optional(),
+    highlights: z.array(z.string()).optional(),
+    links: z
+      .array(
+        z.object({
+          label: z.string(),
+          href: z.string(),
+          external: z.boolean().optional(),
+        }),
+      )
+      .optional(),
+    cover: z.string().optional(),
+    order: z.number().int().optional(),
   }),
 });
 

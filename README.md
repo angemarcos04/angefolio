@@ -2,7 +2,7 @@
 
 The personal developer portfolio of **Angellie Marcos**, an Information Technology student building practical web systems with a Linux-minded, creative edge.
 
-This repository is currently in **Phase 4: public content collection pages**. It builds on the Astro baseline, reusable design system, and bento-dashboard homepage without adding a database, authentication, admin console, or CMS.
+This repository is currently in **Phase 5: project detail pages and case studies**. It builds on the Astro baseline, reusable design system, bento-dashboard homepage, and public content indexes without adding a database, authentication, admin console, or CMS.
 
 ## Tech stack
 
@@ -115,6 +115,12 @@ The public collection indexes are generated statically from Astro Content Collec
 
 All three routes share the existing layout, terminal-style navigation, responsive card grid, content cards, status pills, and tags. Their core filtering and date sorting live in `src/lib/content.ts`. Hidden or unpublished entries remain available to the source repository but are excluded from public listing pages during the build.
 
+## Phase 5 project case studies
+
+Visible project entries now generate static detail pages at `/projects/[slug]`. The filename becomes the route slug, so `src/content/projects/example-project.mdx` builds as `/projects/example-project`.
+
+The `/projects` index and homepage project cards link to these local pages. Detail pages render the MDX body inside a consistent case-study shell with project status, category, date, role, stack, optional links, summary fields, and previous/next navigation.
+
 ### Add a project
 
 Create an `.md` or `.mdx` file in `src/content/projects/`:
@@ -132,10 +138,52 @@ demo: https://example.com # optional
 caseStudy: /projects/example-project # optional; use only when the route exists
 date: 2026-07-14
 category: Developer Tools # optional
+problem: The concise problem this project explores. # optional
+solution: The current solution direction. # optional
+role: Product design and full-stack development # optional
+highlights: [Typed content, Static delivery] # optional
+links: # optional additional links; relative and external URLs are supported
+  - label: Documentation
+    href: /docs/example
+    external: false
+cover: /images/projects/example.webp # optional; reserved for cover artwork
+order: 1 # optional; lower values are shown first within a featured group
 ---
 ```
 
-Valid project statuses are `Planning`, `Prototype`, `In Progress`, `Live`, and `Archived`. Only entries with `visible: true` appear on `/projects`.
+Required fields are `title`, `description`, `status`, `featured`, `visible`, `stack`, and `date`. Valid project statuses are `Planning`, `Prototype`, `In Progress`, `Live`, and `Archived`.
+
+Only entries with `visible: true` appear on `/projects` or generate a public detail route. Featured projects appear before non-featured projects; projects are otherwise ordered newest first unless an optional numeric `order` is provided within the same featured group. `featured` controls prominence and ordering, not visibility.
+
+Use `github` and `demo` for their standard external actions. `caseStudy` remains supported for compatibility with a separately specified case-study URL, but the local detail link is generated automatically from the content entry filename.
+
+### Recommended project body
+
+Normal Markdown and MDX work inside each detail page. The starter entries use this compact structure so the local section navigation remains useful:
+
+```md
+## Overview
+
+What the project is and why it exists.
+
+## Problem
+
+The need or workflow being addressed.
+
+## Approach
+
+How the project is being designed or built.
+
+## Current status
+
+What is complete, active, or still planned.
+
+## What I am learning
+
+Technical and design lessons from the work.
+```
+
+Keep project claims honest: do not invent usage metrics, clients, production status, or completed features. Optional frontmatter can be added gradually; incomplete case studies still render safely.
 
 ### Add a note
 
@@ -184,7 +232,7 @@ src/
 ├── lib/             # Shared site identity and content utilities
 ├── pages/
 │   ├── index.astro  # Eight-cell bento-dashboard homepage
-│   ├── projects/    # Public project collection index
+│   ├── projects/    # Public project index and static detail routes
 │   ├── notes/       # Public note collection index
 │   └── lab/         # Public lab collection index
 └── styles/
@@ -193,12 +241,14 @@ src/
 
 ## Current limitations
 
-- Project, note, and lab detail routes are not implemented yet; Phase 4 only provides their public collection indexes.
+- Note and lab detail routes are not implemented yet; their Phase 4 collection indexes remain static listings.
+- Project detail pages are static and MDX-backed. There is no browser-based project editor or automatic synchronization with GitHub.
+- The optional project `cover` field is reserved for later visual treatment and is not rendered yet.
 - The resume link expects a future `public/resume.pdf` file.
 - GitHub activity is a static visual placeholder and does not call the GitHub API.
 - Project filtering is a UI demonstration only.
 - The command menu and card visibility controls are non-production stubs.
-- There is no database, authentication, Node adapter, private `/console`, or CMS.
+- There is no database, authentication, Node adapter, private `/console`, or CMS. A future `/console` may manage project content, but it is deliberately outside Phase 5.
 
 ## Roadmap
 
@@ -206,11 +256,11 @@ src/
 - **Phase 2:** Design system and reusable UI foundation
 - **Phase 3:** Static bento homepage
 - **Phase 4:** Public content collection indexes
-- **Phase 5:** Project detail pages and case studies
+- **Phase 5:** Project detail pages and case studies (complete)
 - **Phase 6:** Note detail pages, tags/categories, and search
 - **Phase 7:** Lab
 - **Phase 8:** Search, SEO, and polish
 - **Phase 9:** Docker hardening
 - **Phase 10+:** Private `/console` planning and CMS work
 
-Next: **Phase 5 should add project detail pages and honest case studies. Phase 6 should add note detail pages, tag/category navigation, and Pagefind search.** Astro remains the main framework, with Svelte limited to focused interactive islands.
+Next: **Phase 6 should add note detail pages, tag/category navigation, and Pagefind search.** Astro remains the main framework, with Svelte limited to focused interactive islands.

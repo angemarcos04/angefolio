@@ -4,9 +4,36 @@ description: Tokusatsu tracker/database/API concept for organizing shows and med
 status: Planning
 featured: false
 visible: true
-stack: [FastAPI, PostgreSQL, TypeScript]
+stack: [SvelteKit, PostgreSQL, API]
 date: 2026-03-15
 category: Media Tools
+role: Product concept, data modeling, and API planning
+problem: Niche media tracking needs structured metadata and flexible organization that generic watch lists do not always provide.
+solution: Model shows, entries, tags, and watch states as a focused tracker with room for a reusable API.
+highlights:
+  - Tokusatsu-focused metadata
+  - Personal watch tracking
+  - API-oriented data model
 ---
 
-Tokumako is a database-first experiment for tracking tokusatsu series, episodes, characters, and viewing progress.
+## Overview
+
+Tokumako is a tokusatsu tracker, database, and possible API concept for organizing shows and personal viewing progress. Its narrow subject area is a chance to design for richer metadata than a generic watch list.
+
+## Problem
+
+Niche media collections often need flexible tags, related series information, and watch states that do not fit neatly into broad entertainment databases.
+
+## Approach
+
+The current direction starts with a PostgreSQL data model for shows, entries, tags, and personal tracking. A SvelteKit interface could sit above a reusable API once the data boundaries are clear.
+
+## Current status
+
+Tokumako is still in planning. The product scope, schema, and API shape are exploratory, and no public database or complete tracker is being claimed.
+
+## What I am learning
+
+- Modeling irregular media metadata without making the schema brittle
+- Separating personal tracking data from shared catalog data
+- Scoping an API around real interface needs instead of speculative endpoints

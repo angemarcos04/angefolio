@@ -4,13 +4,11 @@ import CollectionHeader from '../../components/astro/CollectionHeader.astro';
 import Layout from '../../components/astro/Layout.astro';
 import ProjectCard from '../../components/astro/ProjectCard.astro';
 import SectionHeader from '../../components/astro/SectionHeader.astro';
-import { getVisibleProjects } from '../../lib/content';
+import { getProjectUrl, getVisibleProjects } from '../../lib/content';
 
 const description =
   "Selected systems, prototypes, and experiments I'm building while learning full-stack development, backend workflows, Linux, and AI-assisted tools.";
-const projects = (await getVisibleProjects()).sort(
-  (a, b) => Number(b.data.featured) - Number(a.data.featured),
-);
+const projects = await getVisibleProjects();
 ---
 
 <Layout title="Projects — Angellie Marcos" {description}>
@@ -34,17 +32,18 @@ const projects = (await getVisibleProjects()).sort(
     {
       projects.length > 0 ? (
         <CardGrid class="collection-grid">
-          {projects.map(({ data }) => (
+          {projects.map((project) => (
             <ProjectCard
-              title={data.title}
-              description={data.description}
-              status={data.status}
-              category={data.category}
-              stack={data.stack}
-              github={data.github}
-              demo={data.demo}
-              caseStudy={data.caseStudy}
-              featured={data.featured}
+              href={getProjectUrl(project)}
+              title={project.data.title}
+              description={project.data.description}
+              status={project.data.status}
+              category={project.data.category}
+              stack={project.data.stack}
+              github={project.data.github}
+              demo={project.data.demo}
+              caseStudy={project.data.caseStudy}
+              featured={project.data.featured}
             />
           ))}
         </CardGrid>

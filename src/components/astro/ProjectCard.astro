@@ -3,6 +3,7 @@ import Button from './Button.astro';
 import StatusPill from './StatusPill.astro';
 import Tag from './Tag.astro';
 interface Props {
+  href?: string;
   title: string;
   description: string;
   status: string;
@@ -15,6 +16,7 @@ interface Props {
   class?: string;
 }
 const {
+  href,
   title,
   description,
   status,
@@ -34,7 +36,7 @@ const {
       featured && <Tag tone="yellow">Featured</Tag>
     }
   </div>
-  <h3>{title}</h3><p>{description}</p>
+  <h3>{href ? <a href={href}>{title}</a> : title}</h3><p>{description}</p>
   <div class="tags">{stack.map((item) => <Tag>{item}</Tag>)}</div>
   {
     (github || demo || caseStudy) && (
@@ -75,6 +77,9 @@ const {
   h3 {
     margin: 1rem 0 0;
     font-size: 1.1rem;
+  }
+  h3 a:hover {
+    color: var(--accent-cyan);
   }
   p {
     margin: 0.45rem 0 1rem;

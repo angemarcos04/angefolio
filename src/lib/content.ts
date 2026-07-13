@@ -9,6 +9,38 @@ export function sortByDateDesc<T>(
   );
 }
 
+export function getProjectSlug(project: CollectionEntry<'projects'>): string {
+  return project.id.replace(/\.(md|mdx)$/, '');
+}
+
+export function getProjectUrl(project: CollectionEntry<'projects'>): string {
+  return `/projects/${getProjectSlug(project)}`;
+}
+
+export function sortProjects(
+  projects: CollectionEntry<'projects'>[],
+): CollectionEntry<'projects'>[] {
+  return [...projects].sort((a, b) => {
+    const featuredDifference =
+      Number(b.data.featured) - Number(a.data.featured);
+
+    if (featuredDifference !== 0) return featuredDifference;
+
+    const aHasOrder = a.data.order !== undefined;
+    const bHasOrder = b.data.order !== undefined;
+
+    if (aHasOrder || bHasOrder) {
+      if (!aHasOrder) return 1;
+      if (!bHasOrder) return -1;
+
+      const orderDifference = a.data.order! - b.data.order!;
+      if (orderDifference !== 0) return orderDifference;
+    }
+
+    return b.data.date.getTime() - a.data.date.getTime();
+  });
+}
+
 export async function getVisibleProjects(): Promise<
   CollectionEntry<'projects'>[]
 > {
@@ -17,7 +49,7 @@ export async function getVisibleProjects(): Promise<
     ({ data }) => data.visible === true,
   );
 
-  return sortByDateDesc(projects, ({ data }) => data.date);
+  return sortProjects(projects);
 }
 
 export async function getFeaturedProjects(): Promise<

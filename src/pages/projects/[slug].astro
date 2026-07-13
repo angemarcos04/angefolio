@@ -1,0 +1,366 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+import BentoCard from '../../components/astro/BentoCard.astro';
+import Button from '../../components/astro/Button.astro';
+import CollectionHeader from '../../components/astro/CollectionHeader.astro';
+import IconLink from '../../components/astro/IconLink.astro';
+import Layout from '../../components/astro/Layout.astro';
+import ProjectMeta from '../../components/astro/ProjectMeta.astro';
+import StatusPill from '../../components/astro/StatusPill.astro';
+import Tag from '../../components/astro/Tag.astro';
+import {
+  getProjectSlug,
+  getProjectUrl,
+  getVisibleProjects,
+} from '../../lib/content';
+
+export async function getStaticPaths() {
+  const projects = await getVisibleProjects();
+
+  return projects.map((project, index) => ({
+    params: { slug: getProjectSlug(project) },
+    props: {
+      project,
+      previousProject: projects[index - 1],
+      nextProject: projects[index + 1],
+    },
+  }));
+}
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  previousProject?: CollectionEntry<'projects'>;
+  nextProject?: CollectionEntry<'projects'>;
+}
+
+const { project, previousProject, nextProject } = Astro.props;
+const { data } = project;
+const { Content } = await render(project);
+const formattedDate = new Intl.DateTimeFormat('en', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: 'UTC',
+}).format(data.date);
+const projectLinks = [
+  ...(data.demo
+    ? [{ label: 'Live demo', href: data.demo, external: true }]
+    : []),
+  ...(data.github
+    ? [{ label: 'GitHub', href: data.github, external: true }]
+    : []),
+  ...(data.links ?? []),
+];
+---
+
+<Layout
+  title={`${data.title} — Angellie Marcos`}
+  description={data.description}
+>
+  <CollectionHeader active="projects" />
+
+  <div class="back-link">
+    <IconLink href="/projects" label="Back to projects" />
+  </div>
+
+  <BentoCard class="project-hero subtle-grid" accent="cyan">
+    <div class="hero-meta">
+      <StatusPill status={data.status} />
+      {data.category && <Tag tone="purple">{data.category}</Tag>}
+      {data.featured && <Tag tone="yellow">Featured</Tag>}
+    </div>
+    <h1 class="text-balance">{data.title}</h1>
+    <p>{data.description}</p>
+    {
+      projectLinks.length > 0 && (
+        <div class="hero-links">
+          {projectLinks.map((link, index) => (
+            <Button
+              href={link.href}
+              external={link.external ?? false}
+              size="sm"
+              variant={index === 0 ? 'primary' : 'secondary'}
+            >
+              {link.label}
+            </Button>
+          ))}
+        </div>
+      )
+    }
+  </BentoCard>
+
+  <div class="metadata-grid" aria-label="Project metadata">
+    <ProjectMeta label="Status" value={data.status} />
+    <ProjectMeta
+      label="Category"
+      value={data.category ?? 'Independent project'}
+    />
+    <ProjectMeta label="Date" value={formattedDate} />
+    {data.role && <ProjectMeta label="Role" value={data.role} />}
+    <ProjectMeta label="Stack" items={data.stack} class="stack-meta" />
+  </div>
+
+  {
+    (data.problem || data.solution || data.highlights?.length) && (
+      <aside class="case-summary bento-surface" aria-label="Case study summary">
+        {data.problem && (
+          <section>
+            <p>Problem</p>
+            <strong>{data.problem}</strong>
+          </section>
+        )}
+        {data.solution && (
+          <section>
+            <p>Direction</p>
+            <strong>{data.solution}</strong>
+          </section>
+        )}
+        {data.highlights?.length && (
+          <section>
+            <p>Focus areas</p>
+            <ul>
+              {data.highlights.map((highlight) => (
+                <li>{highlight}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </aside>
+    )
+  }
+
+  <div class="case-study-layout">
+    <nav class="local-nav bento-surface" aria-label="Case study sections">
+      <p>On this page</p>
+      <a href="#overview">Overview</a>
+      <a href="#problem">Problem</a>
+      <a href="#approach">Approach</a>
+      <a href="#current-status">Current status</a>
+      <a href="#what-i-am-learning">What I am learning</a>
+    </nav>
+    <article class="prose-shell bento-surface">
+      <Content />
+    </article>
+  </div>
+
+  <nav class="project-navigation" aria-label="Project navigation">
+    <div>
+      <span>Previous project</span>
+      {
+        previousProject ? (
+          <a href={getProjectUrl(previousProject)}>
+            ← {previousProject.data.title}
+          </a>
+        ) : (
+          <span>Start of list</span>
+        )
+      }
+    </div>
+    <div class="next-project">
+      <span>Next project</span>
+      {
+        nextProject ? (
+          <a href={getProjectUrl(nextProject)}>{nextProject.data.title} →</a>
+        ) : (
+          <a href="/projects">All projects →</a>
+        )
+      }
+    </div>
+  </nav>
+</Layout>
+
+<style>
+  .back-link {
+    margin-bottom: 1rem;
+  }
+  :global(.project-hero) {
+    padding: clamp(1.5rem, 5vw, 3rem);
+  }
+  .hero-meta,
+  .hero-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+  h1 {
+    max-width: 17ch;
+    margin: 1rem 0 0;
+    font-size: clamp(2.4rem, 8vw, 5rem);
+    line-height: 0.98;
+    letter-spacing: -0.055em;
+  }
+  .project-hero > p {
+    max-width: 65ch;
+    margin: 1rem 0 0;
+    color: var(--muted-foreground);
+    font-size: clamp(1rem, 2vw, 1.15rem);
+  }
+  .hero-links {
+    margin-top: 1.4rem;
+  }
+  .metadata-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+  :global(.stack-meta) {
+    grid-column: 1 / -1;
+  }
+  .case-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    margin-top: 0.75rem;
+    overflow: hidden;
+    box-shadow: none;
+  }
+  .case-summary section {
+    padding: 1.15rem;
+    border-right: 1px solid var(--border);
+  }
+  .case-summary section:last-child {
+    border-right: 0;
+  }
+  .case-summary p,
+  .local-nav p {
+    margin: 0 0 0.55rem;
+    color: var(--accent-green);
+    font: 0.65rem var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .case-summary strong,
+  .case-summary li {
+    color: var(--muted-foreground);
+    font-size: 0.84rem;
+    font-weight: 500;
+    line-height: 1.55;
+  }
+  .case-summary ul {
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+  .case-study-layout {
+    display: grid;
+    grid-template-columns: 12rem minmax(0, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    align-items: start;
+  }
+  .local-nav {
+    position: sticky;
+    top: 1rem;
+    display: grid;
+    gap: 0.45rem;
+    padding: 1rem;
+    box-shadow: none;
+  }
+  .local-nav a {
+    color: var(--muted-foreground);
+    font: 0.7rem/1.4 var(--font-mono);
+  }
+  .local-nav a:hover {
+    color: var(--accent-cyan);
+  }
+  .prose-shell {
+    min-width: 0;
+    padding: clamp(1.35rem, 5vw, 3rem);
+    box-shadow: none;
+  }
+  .prose-shell :global(> :first-child) {
+    margin-top: 0;
+  }
+  .prose-shell :global(> :last-child) {
+    margin-bottom: 0;
+  }
+  .prose-shell :global(h2) {
+    margin: 2.3rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    font-size: clamp(1.35rem, 3vw, 1.75rem);
+    letter-spacing: -0.025em;
+    scroll-margin-top: 1rem;
+  }
+  .prose-shell :global(h3) {
+    margin: 1.7rem 0 0.6rem;
+    font-size: 1.05rem;
+  }
+  .prose-shell :global(p),
+  .prose-shell :global(li) {
+    max-width: 70ch;
+    color: #c1c8d2;
+  }
+  .prose-shell :global(a) {
+    color: var(--accent-cyan);
+    text-decoration: underline;
+  }
+  .prose-shell :global(code:not(pre code)) {
+    padding: 0.14rem 0.32rem;
+    border: 1px solid var(--border);
+    background: var(--muted);
+    color: var(--accent-green);
+  }
+  .prose-shell :global(pre) {
+    border: 1px solid var(--border);
+  }
+  .project-navigation {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+  .project-navigation div {
+    display: grid;
+    gap: 0.25rem;
+  }
+  .project-navigation span {
+    color: var(--muted-foreground);
+    font: 0.65rem var(--font-mono);
+  }
+  .project-navigation a {
+    font-weight: 650;
+  }
+  .project-navigation a:hover {
+    color: var(--accent-cyan);
+  }
+  .next-project {
+    text-align: right;
+  }
+  @media (max-width: 760px) {
+    .metadata-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .case-summary {
+      grid-template-columns: 1fr;
+    }
+    .case-summary section {
+      border-right: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .case-summary section:last-child {
+      border-bottom: 0;
+    }
+    .case-study-layout {
+      grid-template-columns: 1fr;
+    }
+    .local-nav {
+      position: static;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .local-nav p {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (max-width: 480px) {
+    .metadata-grid,
+    .project-navigation {
+      grid-template-columns: 1fr;
+    }
+    .next-project {
+      text-align: left;
+    }
+  }
+</style>

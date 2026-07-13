@@ -19,14 +19,11 @@ import {
   stackGroups,
 } from '../lib/data/home';
 import { site } from '../lib/data/site';
+import { getProjectUrl, sortProjects } from '../lib/content';
 
-const projects = (await getCollection('projects', ({ data }) => data.visible))
-  .sort(
-    (a, b) =>
-      Number(b.data.featured) - Number(a.data.featured) ||
-      b.data.date.getTime() - a.data.date.getTime(),
-  )
-  .slice(0, 4);
+const projects = sortProjects(
+  await getCollection('projects', ({ data }) => data.visible),
+).slice(0, 4);
 const notes = (await getCollection('notes', ({ data }) => data.published))
   .sort((a, b) => b.data.createdAt.getTime() - a.data.createdAt.getTime())
   .slice(0, 3);
@@ -109,17 +106,18 @@ const navItems = [
     >
       <div class="project-grid">
         {
-          projects.map(({ data }) => (
+          projects.map((project) => (
             <ProjectCard
-              title={data.title}
-              description={data.description}
-              status={data.status}
-              stack={data.stack}
-              github={data.github}
-              demo={data.demo}
-              caseStudy={data.caseStudy}
-              category={data.category}
-              featured={data.featured}
+              href={getProjectUrl(project)}
+              title={project.data.title}
+              description={project.data.description}
+              status={project.data.status}
+              stack={project.data.stack}
+              github={project.data.github}
+              demo={project.data.demo}
+              caseStudy={project.data.caseStudy}
+              category={project.data.category}
+              featured={project.data.featured}
             />
           ))
         }
