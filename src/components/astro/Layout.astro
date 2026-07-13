@@ -7,12 +7,22 @@ import SEO from './SEO.astro';
 interface Props {
   title?: string;
   description?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  canonical?: string | URL;
+  noindex?: boolean;
+  searchable?: boolean;
   class?: string;
 }
 
 const {
-  title = `${site.name} — ${site.role}`,
-  description = site.description,
+  title = site.defaultTitle,
+  description = site.seoDescription,
+  image,
+  type = 'website',
+  canonical,
+  noindex = false,
+  searchable = true,
   class: className = '',
 } = Astro.props;
 ---
@@ -21,7 +31,7 @@ const {
 <html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <SEO {title} {description} />
+    <SEO {title} {description} {image} {type} {canonical} {noindex} />
     <script is:inline>
       (() => {
         try {
@@ -40,6 +50,8 @@ const {
       id="main-content"
       class:list={['container-shell', className]}
       tabindex="-1"
+      data-pagefind-body={searchable ? true : undefined}
+      data-pagefind-ignore={searchable ? undefined : true}
     >
       <slot />
     </main>

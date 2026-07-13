@@ -4,7 +4,7 @@
   $: options = ['All', ...new Set(categories)];
 </script>
 
-<div class="filter" aria-label="Project filters">
+<div class="filter" role="group" aria-label="Project filters">
   {#each options as option}
     <button
       type="button"

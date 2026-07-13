@@ -32,11 +32,12 @@ const navItems = [
   { label: 'Projects', href: '/projects' },
   { label: 'Notes', href: '/notes' },
   { label: 'Lab', href: '/lab' },
+  { label: 'Search', href: '/search' },
 ];
 ---
 
-<Layout title={'angefolio - ' + site.name} description={site.description}>
-  <header class="topbar">
+<Layout title={site.defaultTitle} description={site.seoDescription}>
+  <header class="topbar" data-pagefind-ignore>
     <a class="wordmark" href="/" aria-label="angefolio home">
       <span aria-hidden="true">~/</span>angefolio
     </a>
@@ -62,7 +63,6 @@ const navItems = [
       </p>
       <div class="actions">
         <Button href="/projects" variant="primary">Projects</Button>
-        <Button href="/resume.pdf">Resume / CV</Button>
         <Button href={'mailto:' + site.email} variant="ghost">Email</Button>
       </div>
       <TerminalBlock title="whoami" class="hero-terminal">
@@ -255,6 +255,7 @@ const navItems = [
     gap: 0.8rem;
   }
   nav {
+    flex-wrap: wrap;
     gap: 0.2rem;
   }
   nav a {
@@ -444,6 +445,7 @@ const navItems = [
     }
     .topbar-actions {
       align-items: center;
+      flex-wrap: wrap;
       justify-content: space-between;
       flex-direction: row;
     }

@@ -41,7 +41,6 @@ export const stackGroups: StackGroup[] = [
 export const contactLinks: ContactLink[] = [
   { label: 'Email', href: 'mailto:angellie.marcos0104@protonmail.me' },
   { label: 'GitHub', href: 'https://github.com/angemarcos04', external: true },
-  { label: 'Resume / CV', href: '/resume.pdf' },
   {
     label: 'LinkedIn',
     href: 'https://www.linkedin.com/in/angellie-marcos-6a904917a/',

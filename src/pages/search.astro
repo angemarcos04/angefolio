@@ -1,0 +1,38 @@
+---
+import CollectionHeader from '../components/astro/CollectionHeader.astro';
+import Layout from '../components/astro/Layout.astro';
+import SectionHeader from '../components/astro/SectionHeader.astro';
+import SearchBox from '../components/svelte/SearchBox.svelte';
+
+const description =
+  'Search projects, notes, lab entries, and public portfolio pages.';
+---
+
+<Layout title="Search — Angellie Marcos" {description}>
+  <CollectionHeader active="search" />
+  <section aria-labelledby="search-title">
+    <SectionHeader
+      id="search-title"
+      eyebrow="/search"
+      title="Search"
+      {description}
+      headingLevel={1}
+    />
+    <SearchBox client:load />
+    <noscript>
+      Search requires JavaScript in the browser. Projects, Notes, and Lab remain
+      available through the primary navigation.
+    </noscript>
+  </section>
+</Layout>
+
+<style>
+  noscript {
+    display: block;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px dashed var(--border);
+    color: var(--muted-foreground);
+    font: 0.72rem/1.5 var(--font-mono);
+  }
+</style>
