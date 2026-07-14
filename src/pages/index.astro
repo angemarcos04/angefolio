@@ -96,8 +96,20 @@ const navItems = [
       accent="strong"
       eyebrow={site.role}
     >
-      <h1 class="text-balance">Hi, I'm Angellie Marcos.</h1>
+      <h1 class="hero-heading text-balance">Hi, I'm Angellie Marcos.</h1>
       <p class="tagline">{site.tagline}</p>
+      <p class="role-line">
+        <span class="sr-only">
+          Roles: IT student, Linux user, System builder, Full-stack dev.
+        </span>
+
+        <span class="role-cycle" aria-hidden="true">
+          <span class="role role-1">IT student.</span>
+          <span class="role role-2">Linux user.</span>
+          <span class="role role-3">System builder.</span>
+          <span class="role role-4">Full-stack dev.</span>
+        </span>
+      </p>
       <div class="actions">
         <Button href="/projects" variant="primary">Projects</Button>
         <Button href={'mailto:' + site.email} variant="ghost">Email</Button>
@@ -304,11 +316,11 @@ const navItems = [
     flex-direction: column;
     justify-content: flex-end;
   }
-  h1 {
+  .hero-heading {
     max-width: 48rem;
     margin: 0 0 0.85rem;
-    font-size: clamp(2.5rem, 7vw, 5.25rem);
-    line-height: 0.94;
+    font-size: clamp(2.25rem, 5vw, 3.5rem);
+    line-height: 1.15;
     letter-spacing: 0.01em;
   }
   .tagline {
@@ -316,6 +328,46 @@ const navItems = [
     margin: 0;
     color: var(--accent-text);
     font-size: clamp(1rem, 2vw, 1.25rem);
+  }
+  .role-line {
+    min-height: 1.4em;
+    margin: 0.45rem 0 0;
+    color: var(--accent);
+    font-family: var(--type-ui);
+    font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+    font-weight: 600;
+    line-height: 1.4;
+    font-variant-ligatures: none;
+    font-feature-settings:
+      'calt' 0,
+      'liga' 0;
+  }
+  .role-cycle {
+    position: relative;
+    display: inline-block;
+    inline-size: 16ch;
+    height: 1.4em;
+    vertical-align: bottom;
+    white-space: nowrap;
+  }
+  .role {
+    position: absolute;
+    inset: 0 auto auto 0;
+    opacity: 0;
+    white-space: nowrap;
+    animation: role-fade 8.8s ease-in-out infinite both;
+  }
+  .role-1 {
+    animation-delay: 0s;
+  }
+  .role-2 {
+    animation-delay: 2.2s;
+  }
+  .role-3 {
+    animation-delay: 4.4s;
+  }
+  .role-4 {
+    animation-delay: 6.6s;
   }
   .about p,
   .github > p,
@@ -436,6 +488,32 @@ const navItems = [
   }
   .contact-email {
     overflow-wrap: anywhere;
+  }
+  @keyframes role-fade {
+    0%,
+    3% {
+      opacity: 0;
+    }
+
+    7%,
+    20% {
+      opacity: 1;
+    }
+
+    24%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .role {
+      animation: none;
+      opacity: 0;
+    }
+
+    .role:first-child {
+      opacity: 1;
+    }
   }
   @media (min-width: 1120px) {
     .project-grid {
