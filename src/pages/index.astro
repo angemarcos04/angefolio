@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import BentoCard from '../components/astro/BentoCard.astro';
 import BentoGrid from '../components/astro/BentoGrid.astro';
+import BrandLogo from '../components/astro/BrandLogo.astro';
 import Button from '../components/astro/Button.astro';
 import IconLink from '../components/astro/IconLink.astro';
 import Layout from '../components/astro/Layout.astro';
@@ -81,9 +82,7 @@ const navItems = [
 
 <Layout title={site.defaultTitle} description={site.seoDescription}>
   <header class="topbar" data-pagefind-ignore>
-    <a class="wordmark" href="/" aria-label="angefolio home">
-      <span aria-hidden="true">~/</span>angefolio
-    </a>
+    <BrandLogo href="/" placement="header" priority />
     <div class="topbar-actions">
       <nav aria-label="Primary navigation">
         {navItems.map((item) => <a href={item.href}>{item.label}</a>)}
@@ -278,14 +277,6 @@ const navItems = [
     margin-bottom: 1rem;
     padding-bottom: 0.9rem;
     border-bottom: 1px solid var(--border);
-  }
-  .wordmark {
-    color: var(--foreground);
-    font: 700 0.82rem var(--font-mono);
-    letter-spacing: 0.02em;
-  }
-  .wordmark span {
-    color: var(--accent-text);
   }
   .topbar-actions,
   nav,

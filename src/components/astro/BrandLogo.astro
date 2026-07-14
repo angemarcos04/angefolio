@@ -1,0 +1,72 @@
+---
+interface Props {
+  href?: string;
+  placement?: 'header' | 'standalone';
+  class?: string;
+  priority?: boolean;
+}
+
+const {
+  href,
+  placement = 'standalone',
+  class: className,
+  priority = false,
+} = Astro.props;
+
+const imageAttributes = {
+  src: '/angefolio_terminal_logo.svg',
+  width: 408,
+  height: 148,
+  loading: priority ? 'eager' : 'lazy',
+  decoding: 'async',
+  fetchpriority: priority ? 'high' : 'auto',
+} as const;
+---
+
+{
+  href ? (
+    <a
+      href={href}
+      class:list={['brand-logo', `brand-logo--${placement}`, className]}
+      aria-label="Angefolio home"
+    >
+      <img {...imageAttributes} alt="" />
+    </a>
+  ) : (
+    <span class:list={['brand-logo', `brand-logo--${placement}`, className]}>
+      <img {...imageAttributes} alt="Angefolio" />
+    </span>
+  )
+}
+
+<style>
+  .brand-logo {
+    display: inline-flex;
+    min-height: 44px;
+    max-width: 100%;
+    align-items: center;
+    justify-content: flex-start;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+  }
+  .brand-logo:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 4px;
+  }
+  .brand-logo img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+  .brand-logo--header img {
+    width: clamp(9.5rem, 14vw, 10.5rem);
+  }
+  .brand-logo--standalone img {
+    width: clamp(9.5rem, 50vw, 11rem);
+  }
+  @media (max-width: 480px) {
+    .brand-logo--header img {
+      width: clamp(8rem, 38vw, 9rem);
+    }
+  }
+</style>
