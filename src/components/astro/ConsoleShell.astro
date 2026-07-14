@@ -4,7 +4,7 @@ import Layout from './Layout.astro';
 interface Props {
   title: string;
   description: string;
-  active?: 'overview' | 'now';
+  active?: 'overview' | 'now' | 'projects';
   user: {
     name: string;
     email: string;
@@ -38,7 +38,12 @@ const { title, description, active, user } = Astro.props;
     <a href="/console/now" aria-current={active === 'now' ? 'page' : undefined}>
       Now Status
     </a>
-    <span>Projects · planned</span>
+    <a
+      href="/console/projects"
+      aria-current={active === 'projects' ? 'page' : undefined}
+    >
+      Projects
+    </a>
     <span>Notes · planned</span>
     <span>Lab · planned</span>
   </nav>

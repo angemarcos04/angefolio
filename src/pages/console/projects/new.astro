@@ -1,0 +1,72 @@
+---
+import ConsoleShell from '../../../components/astro/ConsoleShell.astro';
+import ProjectForm from '../../../components/astro/ProjectForm.astro';
+import SectionHeader from '../../../components/astro/SectionHeader.astro';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/console/login');
+
+const error = Astro.url.searchParams.get('error');
+const invalidField = Astro.url.searchParams.get('field');
+const fieldLabels: Record<string, string> = {
+  title: 'title',
+  slug: 'slug',
+  description: 'description',
+  status: 'status',
+  category: 'category',
+  role: 'role',
+  problem: 'problem',
+  solution: 'solution',
+  stack: 'stack list',
+  links: 'additional links',
+  github: 'GitHub URL',
+  demo: 'demo URL',
+  caseStudyBody: 'case study body',
+  orderIndex: 'order index',
+};
+const errorMessage =
+  error === 'slug'
+    ? 'That slug is already used by another database project.'
+    : error === 'validation'
+      ? `Check the ${fieldLabels[invalidField ?? ''] ?? 'project fields'} and try again.`
+      : error === 'invalid'
+        ? 'The request was invalid or did not come from the trusted site origin.'
+        : error === 'unavailable'
+          ? 'The project could not be created. Try again.'
+          : null;
+---
+
+<ConsoleShell
+  title="New Project — Console"
+  description="Create a protected project record."
+  active="projects"
+  {user}
+>
+  <SectionHeader
+    eyebrow="Private / Projects"
+    title="New project record"
+    description="This creates database metadata only. It never writes to the source-controlled MDX collection."
+    headingLevel={1}
+  />
+  {
+    errorMessage && (
+      <p class="feedback" role="alert">
+        {errorMessage}
+      </p>
+    )
+  }
+  <ProjectForm
+    action="/api/console/projects/create"
+    submitLabel="Create project"
+  />
+</ConsoleShell>
+
+<style>
+  .feedback {
+    margin: 0 0 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--accent-red);
+    color: var(--accent-red);
+    font: 0.7rem var(--font-mono);
+  }
+</style>

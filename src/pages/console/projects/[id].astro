@@ -1,0 +1,177 @@
+---
+import ConsoleShell from '../../../components/astro/ConsoleShell.astro';
+import ProjectForm from '../../../components/astro/ProjectForm.astro';
+import SectionHeader from '../../../components/astro/SectionHeader.astro';
+import { getProjectRecordById } from '../../../lib/server/projects';
+import type { ProjectFormValues } from '../../../lib/server/validation/projects';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/console/login');
+
+const id = Astro.params.id ?? '';
+const project = await getProjectRecordById(id);
+const error = Astro.url.searchParams.get('error');
+const invalidField = Astro.url.searchParams.get('field');
+const fieldLabels: Record<string, string> = {
+  title: 'title',
+  slug: 'slug',
+  description: 'description',
+  status: 'status',
+  category: 'category',
+  role: 'role',
+  problem: 'problem',
+  solution: 'solution',
+  stack: 'stack list',
+  links: 'additional links',
+  github: 'GitHub URL',
+  demo: 'demo URL',
+  caseStudyBody: 'case study body',
+  orderIndex: 'order index',
+};
+const errorMessage =
+  error === 'slug'
+    ? 'That slug is already used by another database project.'
+    : error === 'validation'
+      ? `Check the ${fieldLabels[invalidField ?? ''] ?? 'project fields'} and try again.`
+      : error === 'invalid'
+        ? 'The request was invalid or did not come from the trusted site origin.'
+        : error === 'unavailable'
+          ? 'The project could not be updated. Try again.'
+          : null;
+const values: Partial<ProjectFormValues> | undefined = project
+  ? {
+      title: project.title,
+      slug: project.slug,
+      description: project.description,
+      status: project.status,
+      category: project.category ?? '',
+      role: project.role ?? '',
+      problem: project.problem ?? '',
+      solution: project.solution ?? '',
+      stack: project.stack.join('\n'),
+      links: project.links
+        .map((link) => `${link.label} | ${link.href}`)
+        .join('\n'),
+      github: project.github ?? '',
+      demo: project.demo ?? '',
+      caseStudyBody: project.caseStudyBody ?? '',
+      featured: project.featured,
+      visible: project.visible,
+      orderIndex: project.orderIndex?.toString() ?? '',
+    }
+  : undefined;
+---
+
+<ConsoleShell
+  title="Edit Project — Console"
+  description="Edit a protected project record."
+  active="projects"
+  {user}
+>
+  {
+    project && values ? (
+      <>
+        <SectionHeader
+          eyebrow="Private / Projects"
+          title={`Edit ${project.title}`}
+          description={
+            project.archived
+              ? 'This record is archived and remains private.'
+              : 'Update project metadata and public state.'
+          }
+          headingLevel={1}
+        />
+        {errorMessage && (
+          <p class="feedback" role="alert">
+            {errorMessage}
+          </p>
+        )}
+        <ProjectForm
+          action={`/api/console/projects/${project.id}/update`}
+          submitLabel="Save changes"
+          {values}
+          archived={project.archived}
+        />
+        {!project.archived && (
+          <form
+            class="archive-panel"
+            method="post"
+            action={`/api/console/projects/${project.id}/archive`}
+          >
+            <input type="hidden" name="intent" value="archive" />
+            <div>
+              <strong>Archive project</strong>
+              <p>
+                Archiving hides and unfeatures this record. Phase 12 does not
+                hard-delete projects.
+              </p>
+            </div>
+            <button type="submit">Archive record</button>
+          </form>
+        )}
+      </>
+    ) : (
+      <div class="missing">
+        <h1>Project record not found.</h1>
+        <p>The record may have been removed outside the console.</p>
+        <a href="/console/projects">Back to Projects Manager →</a>
+      </div>
+    )
+  }
+</ConsoleShell>
+
+<style>
+  .feedback {
+    margin: 0 0 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--accent-red);
+    color: var(--accent-red);
+    font: 0.7rem var(--font-mono);
+  }
+  .archive-panel,
+  .missing {
+    margin-top: 0.75rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    background: var(--card);
+  }
+  .archive-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .archive-panel strong {
+    color: var(--accent-red);
+    font: 0.75rem var(--font-mono);
+  }
+  .archive-panel p,
+  .missing p {
+    margin: 0.35rem 0 0;
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+  }
+  .archive-panel button {
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--accent-red);
+    background: transparent;
+    color: var(--accent-red);
+    font: 0.68rem var(--font-mono);
+    cursor: pointer;
+  }
+  .missing h1 {
+    margin-top: 0;
+  }
+  .missing a {
+    display: inline-block;
+    margin-top: 1rem;
+    color: var(--accent-cyan);
+    font: 0.72rem var(--font-mono);
+  }
+  @media (max-width: 640px) {
+    .archive-panel {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>

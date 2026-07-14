@@ -1,0 +1,271 @@
+---
+import ConsoleShell from '../../../components/astro/ConsoleShell.astro';
+import SectionHeader from '../../../components/astro/SectionHeader.astro';
+import StatusPill from '../../../components/astro/StatusPill.astro';
+import Tag from '../../../components/astro/Tag.astro';
+import { getConsoleProjects } from '../../../lib/server/projects';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/console/login');
+
+const projects = await getConsoleProjects();
+const notice = Astro.url.searchParams.get('notice');
+const error = Astro.url.searchParams.get('error');
+const notices: Record<string, string> = {
+  created: 'Project record created.',
+  updated: 'Project record updated.',
+  archived: 'Project archived and removed from public surfaces.',
+  visibility: 'Project visibility updated.',
+  featured: 'Project featured state updated.',
+};
+const errors: Record<string, string> = {
+  missing: 'That project record no longer exists.',
+  unavailable: 'The project change could not be completed. Try again.',
+};
+---
+
+<ConsoleShell
+  title="Projects Manager — Console"
+  description="Protected database-backed project record manager."
+  active="projects"
+  {user}
+>
+  <SectionHeader
+    eyebrow="Private / Projects"
+    title="Projects Manager"
+    description="Database records power public project surfaces when at least one visible record exists. MDX remains the fallback source."
+    headingLevel={1}
+  />
+
+  {
+    notice && notices[notice] && (
+      <p class="feedback success" role="status">
+        {notices[notice]}
+      </p>
+    )
+  }
+  {
+    error && errors[error] && (
+      <p class="feedback error" role="alert">
+        {errors[error]}
+      </p>
+    )
+  }
+
+  <div class="toolbar">
+    <p>{projects.length} database record{projects.length === 1 ? '' : 's'}</p>
+    <a href="/console/projects/new">New project</a>
+  </div>
+
+  {
+    projects.length > 0 ? (
+      <div class="project-list">
+        {projects.map((project) => (
+          <article class:list={['project-row', { archived: project.archived }]}>
+            <div class="project-main">
+              <div class="status-line">
+                <StatusPill status={project.status} />
+                {project.visible && !project.archived && (
+                  <Tag tone="green">Visible</Tag>
+                )}
+                {project.featured && !project.archived && (
+                  <Tag tone="yellow">Featured</Tag>
+                )}
+                {project.archived && <Tag tone="red">Archived</Tag>}
+              </div>
+              <h2>
+                <a href={`/console/projects/${project.id}`}>{project.title}</a>
+              </h2>
+              <p>{project.description}</p>
+              <small>
+                /{project.slug} · Updated{' '}
+                {project.updatedAt.toLocaleDateString('en', {
+                  dateStyle: 'medium',
+                })}
+              </small>
+            </div>
+            <div class="row-actions">
+              <a href={`/console/projects/${project.id}`}>Edit</a>
+              {!project.archived && (
+                <>
+                  <form
+                    method="post"
+                    action={`/api/console/projects/${project.id}/toggle-visible`}
+                  >
+                    <input type="hidden" name="intent" value="toggle-visible" />
+                    <button type="submit">
+                      {project.visible ? 'Hide' : 'Show'}
+                    </button>
+                  </form>
+                  <form
+                    method="post"
+                    action={`/api/console/projects/${project.id}/toggle-featured`}
+                  >
+                    <input
+                      type="hidden"
+                      name="intent"
+                      value="toggle-featured"
+                    />
+                    <button type="submit">
+                      {project.featured ? 'Unfeature' : 'Feature'}
+                    </button>
+                  </form>
+                  <form
+                    method="post"
+                    action={`/api/console/projects/${project.id}/archive`}
+                  >
+                    <input type="hidden" name="intent" value="archive" />
+                    <button class="archive-button" type="submit">
+                      Archive
+                    </button>
+                  </form>
+                </>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <div class="empty-state">
+        <h2>No database projects yet.</h2>
+        <p>
+          The public site continues using source-controlled MDX until a visible
+          database project exists.
+        </p>
+        <a href="/console/projects/new">Create the first record →</a>
+      </div>
+    )
+  }
+
+  <p class="source-note">
+    Projects managed here are database-backed. Existing MDX project content
+    remains available as fallback and is never modified by the console.
+  </p>
+</ConsoleShell>
+
+<style>
+  .feedback,
+  .toolbar,
+  .project-row,
+  .empty-state,
+  .source-note {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+  }
+  .feedback {
+    margin: 0 0 0.75rem;
+    padding: 0.75rem;
+    font: 0.7rem var(--font-mono);
+  }
+  .success {
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+  }
+  .error {
+    border-color: var(--accent-red);
+    color: var(--accent-red);
+  }
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    padding: 0.85rem 1rem;
+  }
+  .toolbar p {
+    margin: 0;
+    color: var(--muted-foreground);
+    font: 0.7rem var(--font-mono);
+  }
+  .toolbar a,
+  .empty-state a {
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--accent-green);
+    border-radius: var(--radius-sm);
+    color: var(--accent-green);
+    font: 700 0.7rem var(--font-mono);
+  }
+  .project-list {
+    display: grid;
+    gap: 0.65rem;
+  }
+  .project-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  .project-row.archived {
+    opacity: 0.72;
+  }
+  .status-line,
+  .row-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  h2 {
+    margin: 0.65rem 0 0;
+    font-size: 1.05rem;
+  }
+  h2 a:hover {
+    color: var(--accent-cyan);
+  }
+  .project-main > p {
+    max-width: 72ch;
+    margin: 0.35rem 0;
+    color: var(--muted-foreground);
+    font-size: 0.8rem;
+  }
+  small {
+    color: var(--muted-foreground);
+    font: 0.63rem var(--font-mono);
+  }
+  .row-actions {
+    justify-content: flex-end;
+    align-content: flex-start;
+  }
+  .row-actions :is(a, button) {
+    min-height: 2.15rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--muted);
+    color: var(--foreground);
+    font: 0.65rem var(--font-mono);
+    cursor: pointer;
+  }
+  .row-actions input[type='hidden'] {
+    display: none;
+  }
+  .row-actions .archive-button {
+    color: var(--accent-red);
+  }
+  .empty-state {
+    padding: 1.5rem;
+  }
+  .empty-state h2 {
+    margin-top: 0;
+  }
+  .empty-state p {
+    margin: 0.5rem 0 1.25rem;
+    color: var(--muted-foreground);
+  }
+  .source-note {
+    margin: 0.75rem 0 0;
+    padding: 0.85rem;
+    color: var(--muted-foreground);
+    font: 0.67rem/1.55 var(--font-mono);
+  }
+  @media (max-width: 760px) {
+    .project-row {
+      grid-template-columns: 1fr;
+    }
+    .row-actions {
+      justify-content: flex-start;
+    }
+  }
+</style>

@@ -1,9 +1,8 @@
 /**
  * Future-facing console contracts only.
  *
- * Phase 10 has no console runtime, persistence, authentication, or mutation
- * code. These types document intended boundaries without becoming a database
- * schema or a public API contract.
+ * These shared planning contracts are not the database schema or a public API
+ * contract. Server persistence and validation stay under src/lib/server.
  */
 
 export type ConsoleSection =
@@ -50,9 +49,15 @@ export interface EditableProjectDraft {
   visible: boolean;
   stack: string[];
   category?: string;
+  role?: string;
+  problem?: string;
+  solution?: string;
   github?: string;
   demo?: string;
+  links?: Array<{ label: string; href: string; external: boolean }>;
   caseStudyBody: string;
+  archived?: boolean;
+  orderIndex?: number;
   createdAt?: string;
   updatedAt?: string;
 }

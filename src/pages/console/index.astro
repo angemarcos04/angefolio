@@ -8,7 +8,7 @@ const user = Astro.locals.user;
 if (!user) return Astro.redirect('/console/login');
 
 const description =
-  'Private control panel for the angefolio public Now Status.';
+  'Private control panel for angefolio Now Status and project records.';
 ---
 
 <ConsoleShell
@@ -20,7 +20,7 @@ const description =
   <SectionHeader
     eyebrow="Private control panel"
     title="Console overview"
-    description="Phase 11 keeps the surface intentionally small: one account and one editable public status."
+    description="A guarded owner workspace for the current status and database-backed project records."
     headingLevel={1}
   />
 
@@ -38,12 +38,24 @@ const description =
     </BentoCard>
 
     <BentoCard
+      accent="cyan"
+      eyebrow="Available"
+      title="Projects Manager"
+      description="Create and maintain project metadata, visibility, featured priority, links, and archive state."
+    >
+      <div class="card-footer">
+        <Tag tone="green">Protected</Tag>
+        <a href="/console/projects">Manage projects →</a>
+      </div>
+    </BentoCard>
+
+    <BentoCard
       accent="neutral"
       eyebrow="Planned"
       title="Content management"
-      description="Projects, notes, lab entries, stack groups, homepage cards, and settings remain file-based or unimplemented."
+      description="Notes, lab entries, stack groups, homepage cards, and settings remain file-based or unimplemented."
     >
-      <p class="quiet">No additional admin controls are exposed in Phase 11.</p>
+      <p class="quiet">Phase 12 does not add any other editing surface.</p>
     </BentoCard>
   </div>
 </ConsoleShell>

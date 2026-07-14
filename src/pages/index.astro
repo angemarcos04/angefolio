@@ -19,13 +19,47 @@ import {
   stackGroups,
 } from '../lib/data/home';
 import { site } from '../lib/data/site';
-import { getProjectUrl, sortProjects } from '../lib/content';
+import { getProjectSlug, getProjectUrl, sortProjects } from '../lib/content';
 import { getNoteUrl, sortNotesByDateDesc } from '../lib/notes';
 import { getPublicNowStatus } from '../lib/server/now';
+import { getPublicProjectRecords } from '../lib/server/projects';
 
-const projects = sortProjects(
+const databaseProjects = await getPublicProjectRecords();
+const collectionProjects = sortProjects(
   await getCollection('projects', ({ data }) => data.visible),
-).slice(0, 4);
+);
+const collectionProjectSlugs = new Set(collectionProjects.map(getProjectSlug));
+const projects =
+  databaseProjects.length > 0
+    ? databaseProjects.slice(0, 4).map((project) => {
+        const detailUrl = collectionProjectSlugs.has(project.slug)
+          ? `/projects/${project.slug}`
+          : undefined;
+        return {
+          href: detailUrl,
+          title: project.title,
+          description: project.description,
+          status: project.status,
+          stack: project.stack,
+          github: project.github ?? undefined,
+          demo: project.demo ?? undefined,
+          caseStudy: detailUrl,
+          category: project.category ?? undefined,
+          featured: project.featured,
+        };
+      })
+    : collectionProjects.slice(0, 4).map((project) => ({
+        href: getProjectUrl(project),
+        title: project.data.title,
+        description: project.data.description,
+        status: project.data.status,
+        stack: project.data.stack,
+        github: project.data.github,
+        demo: project.data.demo,
+        caseStudy: project.data.caseStudy,
+        category: project.data.category,
+        featured: project.data.featured,
+      }));
 const notes = sortNotesByDateDesc(
   await getCollection('notes', ({ data }) => data.published),
 ).slice(0, 3);
@@ -118,16 +152,16 @@ const navItems = [
         {
           projects.map((project) => (
             <ProjectCard
-              href={getProjectUrl(project)}
-              title={project.data.title}
-              description={project.data.description}
-              status={project.data.status}
-              stack={project.data.stack}
-              github={project.data.github}
-              demo={project.data.demo}
-              caseStudy={project.data.caseStudy}
-              category={project.data.category}
-              featured={project.data.featured}
+              href={project.href}
+              title={project.title}
+              description={project.description}
+              status={project.status}
+              stack={project.stack}
+              github={project.github}
+              demo={project.demo}
+              caseStudy={project.caseStudy}
+              category={project.category}
+              featured={project.featured}
             />
           ))
         }

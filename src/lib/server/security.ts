@@ -1,22 +1,26 @@
 import { getTrustedOrigins } from './env';
 
-const maximumFormBytes = 16 * 1024;
+const defaultMaximumFormBytes = 16 * 1024;
 
-function hasAcceptableFormSize(request: Request): boolean {
+function hasAcceptableFormSize(
+  request: Request,
+  maximumBytes: number,
+): boolean {
   const contentLength = request.headers.get('content-length');
   if (!contentLength) return true;
 
   const bytes = Number(contentLength);
-  return Number.isFinite(bytes) && bytes >= 0 && bytes <= maximumFormBytes;
+  return Number.isFinite(bytes) && bytes >= 0 && bytes <= maximumBytes;
 }
 
 export async function readUrlEncodedForm(
   request: Request,
+  maximumBytes = defaultMaximumFormBytes,
 ): Promise<URLSearchParams | null> {
   const contentType = request.headers.get('content-type')?.split(';')[0];
   if (
     contentType !== 'application/x-www-form-urlencoded' ||
-    !hasAcceptableFormSize(request) ||
+    !hasAcceptableFormSize(request, maximumBytes) ||
     !request.body
   ) {
     return null;
@@ -31,7 +35,7 @@ export async function readUrlEncodedForm(
     if (done) break;
 
     received += value.byteLength;
-    if (received > maximumFormBytes) {
+    if (received > maximumBytes) {
       await reader.cancel();
       return null;
     }

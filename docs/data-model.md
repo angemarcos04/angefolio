@@ -1,6 +1,6 @@
 # Console Data Model
 
-Phase 11 creates the first database boundary: Better Auth core tables and one `now_status` table in SQLite through Drizzle/libSQL. Projects, notes, and Lab entries remain TypeScript/MDX loaded through Astro Content Collections; their sections below are future sketches, not implemented schema.
+Phase 12 extends the database boundary: Better Auth core tables, `now_status`, and `project_records` live in SQLite through Drizzle/libSQL. Notes and Lab entries remain TypeScript/MDX loaded through Astro Content Collections. Project MDX remains the public fallback while database records are adopted deliberately.
 
 The local development candidate is SQLite through Drizzle ORM. Turso/libSQL may later provide hosted persistence. SQLite has no native array type, so early `stack` and `tags` fields can use validated JSON text; join tables can replace them if querying individual values becomes important.
 
@@ -35,7 +35,7 @@ Do not hand-edit auth data. Use Better Auth APIs and versioned migrations so has
 
 Phase 11 deliberately uses one stable row rather than inventing status history. Each JSON list is normalized to non-empty lines, limited to 12 items, and limited to 160 characters per item before persistence. The homepage returns the original static `nowItems` when this row is missing, unpublished, or unavailable.
 
-## `projects`
+## `project_records` (implemented)
 
 | Field             | Planned shape    | Notes                                                     |
 | ----------------- | ---------------- | --------------------------------------------------------- |
@@ -46,15 +46,23 @@ Phase 11 deliberately uses one stable row rather than inventing status history. 
 | `status`          | text             | Planning, Prototype, In Progress, Live, or Archived.      |
 | `featured`        | boolean          | Homepage prominence; does not imply visibility.           |
 | `visible`         | boolean          | Public-query gate. Defaults false for new drafts.         |
-| `stack`           | JSON text        | Validated ordered string array initially.                 |
+| `archived`        | boolean          | Archive gate; archived rows are always hidden/unfeatured. |
+| `stack_json`      | JSON text        | Validated ordered string array.                           |
+| `links_json`      | JSON text        | Up to eight validated HTTP(S) links.                      |
 | `category`        | text, nullable   | Public grouping label.                                    |
-| `github`          | text, nullable   | Validated HTTPS URL.                                      |
-| `demo`            | text, nullable   | Validated HTTPS URL.                                      |
-| `case_study_body` | text             | Markdown/MDX source subject to a future rendering policy. |
+| `role`            | text, nullable   | Optional owner role.                                      |
+| `problem`         | text, nullable   | Optional problem summary.                                 |
+| `solution`        | text, nullable   | Optional solution/direction summary.                      |
+| `github`          | text, nullable   | Validated HTTP(S) URL.                                    |
+| `demo`            | text, nullable   | Validated HTTP(S) URL.                                    |
+| `case_study_body` | text, nullable   | Plain text; not rendered or executed as MDX in Phase 12.  |
+| `order_index`     | integer, null    | Optional stable public ordering.                          |
 | `created_at`      | UTC timestamp    | Creation time.                                            |
 | `updated_at`      | UTC timestamp    | Last successful mutation.                                 |
 
-Current project frontmatter also contains optional role, problem, solution, highlights, links, cover, and order fields. Phase 11 must decide whether to preserve them as columns, validated JSON, or a related table before importing project content.
+Application validation limits titles, slugs, descriptions, summaries, stack items, links, URLs, body size, and ordering before writes. Only visible, non-archived rows reach public helpers. Archive is a dedicated mutation that sets status to `Archived`, hides, and unfeatures the row; Phase 12 has no hard delete or unarchive path.
+
+The public homepage and project index select this database source only when at least one public row exists; otherwise they fall back to visible MDX projects. A database card links to a detail only when visible MDX with the same slug exists, preserving prerendered case studies and Pagefind coverage without executing database content. There is no automatic seed or file/database synchronization.
 
 ## `notes`
 
@@ -114,7 +122,7 @@ Existing optional tools, featured, links, lessons, and risk metadata need an exp
 | `sort_order`  | integer          | Stable dashboard order.                                                  |
 | `config_json` | JSON text        | Card-specific validated configuration; never unvalidated arbitrary HTML. |
 
-The public homepage currently has eight deliberate cards. Phase 11 should preserve layout constraints instead of turning the page into an unrestricted page builder.
+The public homepage currently has eight deliberate cards. A future editor should preserve layout constraints instead of turning the page into an unrestricted page builder.
 
 ## `site_settings`
 

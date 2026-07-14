@@ -1,0 +1,332 @@
+---
+import type {
+  ProjectFormValues,
+  ProjectStatus,
+} from '../../lib/server/validation/projects';
+
+interface Props {
+  action: string;
+  submitLabel: string;
+  values?: Partial<ProjectFormValues>;
+  errors?: Record<string, string>;
+  archived?: boolean;
+}
+
+const {
+  action,
+  submitLabel,
+  values = {},
+  errors = {},
+  archived = false,
+} = Astro.props;
+const statuses: ProjectStatus[] = archived
+  ? ['Archived']
+  : ['Planning', 'Prototype', 'In Progress', 'Live'];
+const fieldError = (name: keyof ProjectFormValues) => errors[name];
+---
+
+<form class="project-form bento-surface" method="post" {action}>
+  <div class="form-grid">
+    <label>
+      <span>Title <strong aria-hidden="true">*</strong></span>
+      <input
+        name="title"
+        required
+        maxlength="120"
+        value={values.title ?? ''}
+        aria-invalid={Boolean(fieldError('title'))}
+      />
+      {fieldError('title') && <small>{fieldError('title')}</small>}
+    </label>
+
+    <label>
+      <span>Slug <strong aria-hidden="true">*</strong></span>
+      <input
+        name="slug"
+        required
+        maxlength="80"
+        pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+        placeholder="project-name"
+        value={values.slug ?? ''}
+        aria-invalid={Boolean(fieldError('slug'))}
+      />
+      {fieldError('slug') && <small>{fieldError('slug')}</small>}
+    </label>
+
+    <label class="full">
+      <span>Description <strong aria-hidden="true">*</strong></span>
+      <textarea
+        name="description"
+        required
+        maxlength="300"
+        rows="3"
+        aria-invalid={Boolean(fieldError('description'))}
+        >{values.description ?? ''}</textarea
+      >
+      {fieldError('description') && <small>{fieldError('description')}</small>}
+    </label>
+
+    <label>
+      <span>Status</span>
+      <select name="status" disabled={archived}>
+        {
+          statuses.map((status) => (
+            <option
+              value={status}
+              selected={(values.status ?? 'Planning') === status}
+            >
+              {status}
+            </option>
+          ))
+        }
+      </select>
+      {archived && <input type="hidden" name="status" value="Archived" />}
+      {fieldError('status') && <small>{fieldError('status')}</small>}
+    </label>
+
+    <label>
+      <span>Category</span>
+      <input name="category" maxlength="80" value={values.category ?? ''} />
+      {fieldError('category') && <small>{fieldError('category')}</small>}
+    </label>
+
+    <label>
+      <span>Role</span>
+      <input name="role" maxlength="200" value={values.role ?? ''} />
+      {fieldError('role') && <small>{fieldError('role')}</small>}
+    </label>
+
+    <label>
+      <span>Order index</span>
+      <input
+        name="orderIndex"
+        type="number"
+        min="-10000"
+        max="10000"
+        step="1"
+        value={values.orderIndex ?? ''}
+      />
+      {fieldError('orderIndex') && <small>{fieldError('orderIndex')}</small>}
+    </label>
+
+    <label class="full">
+      <span>Problem</span>
+      <textarea name="problem" maxlength="1000" rows="4"
+        >{values.problem ?? ''}</textarea
+      >
+      {fieldError('problem') && <small>{fieldError('problem')}</small>}
+    </label>
+
+    <label class="full">
+      <span>Solution / direction</span>
+      <textarea name="solution" maxlength="1000" rows="4"
+        >{values.solution ?? ''}</textarea
+      >
+      {fieldError('solution') && <small>{fieldError('solution')}</small>}
+    </label>
+
+    <label>
+      <span>Stack</span>
+      <textarea name="stack" rows="7" placeholder={'Astro\nTypeScript\nSQLite'}
+        >{values.stack ?? ''}</textarea
+      >
+      <em>One item per line; up to 20.</em>
+      {fieldError('stack') && <small>{fieldError('stack')}</small>}
+    </label>
+
+    <label>
+      <span>Additional links</span>
+      <textarea
+        name="links"
+        rows="7"
+        placeholder={'Documentation | https://example.com/docs\nDemo | https://example.com'}
+        >{values.links ?? ''}</textarea
+      >
+      <em>One HTTP(S) link per line; up to 8.</em>
+      {fieldError('links') && <small>{fieldError('links')}</small>}
+    </label>
+
+    <label>
+      <span>GitHub URL</span>
+      <input
+        name="github"
+        type="url"
+        maxlength="2048"
+        value={values.github ?? ''}
+      />
+      {fieldError('github') && <small>{fieldError('github')}</small>}
+    </label>
+
+    <label>
+      <span>Demo URL</span>
+      <input
+        name="demo"
+        type="url"
+        maxlength="2048"
+        value={values.demo ?? ''}
+      />
+      {fieldError('demo') && <small>{fieldError('demo')}</small>}
+    </label>
+
+    <label class="full">
+      <span>Case study body</span>
+      <textarea name="caseStudyBody" maxlength="30000" rows="14"
+        >{values.caseStudyBody ?? ''}</textarea
+      >
+      <em>Stored as plain text. Database content is never executed as MDX.</em>
+      {
+        fieldError('caseStudyBody') && (
+          <small>{fieldError('caseStudyBody')}</small>
+        )
+      }
+    </label>
+  </div>
+
+  <fieldset disabled={archived}>
+    <legend>Public state</legend>
+    <label class="check">
+      <input type="checkbox" name="visible" checked={values.visible ?? false} />
+      Visible on public project surfaces
+    </label>
+    <label class="check">
+      <input
+        type="checkbox"
+        name="featured"
+        checked={values.featured ?? false}
+      />
+      Prioritize in project ordering
+    </label>
+  </fieldset>
+
+  {
+    archived && (
+      <p class="archive-note">
+        Archived records remain private and cannot be republished in Phase 12.
+      </p>
+    )
+  }
+
+  <div class="form-actions">
+    <button type="submit">{submitLabel}</button>
+    <a href="/console/projects">Cancel</a>
+  </div>
+</form>
+
+<style>
+  .project-form {
+    padding: clamp(1rem, 3vw, 1.5rem);
+    box-shadow: none;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  label,
+  fieldset {
+    min-width: 0;
+  }
+  label {
+    display: grid;
+    gap: 0.4rem;
+  }
+  label > span,
+  legend {
+    color: var(--foreground);
+    font: 0.7rem var(--font-mono);
+  }
+  strong {
+    color: var(--accent-red);
+  }
+  input,
+  textarea,
+  select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--background);
+    color: var(--foreground);
+    font: 0.82rem/1.55 var(--font-sans);
+  }
+  input,
+  select {
+    min-height: 2.7rem;
+    padding: 0.65rem 0.75rem;
+  }
+  textarea {
+    resize: vertical;
+    padding: 0.75rem;
+  }
+  :is(input, textarea, select)[aria-invalid='true'] {
+    border-color: var(--accent-red);
+  }
+  small {
+    color: var(--accent-red);
+    font: 0.65rem/1.45 var(--font-mono);
+  }
+  em {
+    color: var(--muted-foreground);
+    font: normal 0.63rem/1.45 var(--font-mono);
+  }
+  .full {
+    grid-column: 1 / -1;
+  }
+  fieldset {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem 1.25rem;
+    margin: 1.25rem 0 0;
+    padding: 1rem;
+    border: 1px solid var(--border);
+  }
+  legend {
+    padding-inline: 0.35rem;
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    grid-template-columns: auto 1fr;
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+  }
+  .check input {
+    width: 1rem;
+    min-height: 1rem;
+    accent-color: var(--accent-green);
+  }
+  .archive-note {
+    margin: 1rem 0 0;
+    color: var(--accent-yellow);
+    font: 0.68rem/1.5 var(--font-mono);
+  }
+  .form-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-top: 1.25rem;
+  }
+  .form-actions :is(button, a) {
+    min-height: 2.5rem;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font: 700 0.7rem var(--font-mono);
+  }
+  button {
+    border-color: var(--accent-green);
+    background: var(--accent-green);
+    color: var(--primary-foreground);
+    cursor: pointer;
+  }
+  .form-actions a {
+    color: var(--muted-foreground);
+  }
+  @media (max-width: 720px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+    .full {
+      grid-column: auto;
+    }
+  }
+</style>

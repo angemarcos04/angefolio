@@ -1,14 +1,14 @@
 # Console Route Map
 
-Phase 11 introduces an authenticated server boundary for the smallest useful console slice. Routes marked prerendered are emitted into `dist/client`; routes marked server run through the standalone Astro Node process.
+Phase 12 extends the authenticated server boundary with project record management. Routes marked prerendered are emitted into `dist/client`; routes marked server run through the standalone Astro Node process.
 
 ## Current public routes
 
 | Route                | Rendering            | Access                                                |
 | -------------------- | -------------------- | ----------------------------------------------------- |
 | `/`                  | Server               | Public; published database Now row or static fallback |
-| `/projects`          | Prerendered          | Public visible projects only                          |
-| `/projects/[slug]`   | Prerendered          | Public visible project entries only                   |
+| `/projects`          | Server               | Public DB records or visible MDX fallback             |
+| `/projects/[slug]`   | Prerendered          | Existing visible MDX detail pages only                |
 | `/notes`             | Prerendered          | Published notes only                                  |
 | `/notes/[slug]`      | Prerendered          | Published note entries only                           |
 | `/lab`               | Prerendered          | Public visible Lab entries only                       |
@@ -21,15 +21,23 @@ Phase 11 introduces an authenticated server boundary for the smallest useful con
 
 ## Implemented console and auth routes
 
-| Method | Route                | Access               | Purpose                                                     |
-| ------ | -------------------- | -------------------- | ----------------------------------------------------------- |
-| GET    | `/console/login`     | Public               | Owner login form; redirects an active session to `/console` |
-| GET    | `/console`           | Private              | Minimal overview and signed-in identity                     |
-| GET    | `/console/now`       | Private              | Load the singleton Now Status editor                        |
-| POST   | `/console/logout`    | Private              | Invalidate the Better Auth session and redirect to login    |
-| ALL    | `/api/auth/[...all]` | Better Auth policy   | Session API; email sign-up is disabled in runtime config    |
-| POST   | `/api/console/login` | Public, same-origin  | Form bridge to Better Auth email sign-in                    |
-| POST   | `/api/console/now`   | Private, same-origin | Validate and upsert Now Status                              |
+| Method | Route                                        | Access               | Purpose                                                     |
+| ------ | -------------------------------------------- | -------------------- | ----------------------------------------------------------- |
+| GET    | `/console/login`                             | Public               | Owner login form; redirects an active session to `/console` |
+| GET    | `/console`                                   | Private              | Minimal overview and signed-in identity                     |
+| GET    | `/console/now`                               | Private              | Load the singleton Now Status editor                        |
+| POST   | `/console/logout`                            | Private              | Invalidate the Better Auth session and redirect to login    |
+| ALL    | `/api/auth/[...all]`                         | Better Auth policy   | Session API; email sign-up is disabled in runtime config    |
+| POST   | `/api/console/login`                         | Public, same-origin  | Form bridge to Better Auth email sign-in                    |
+| POST   | `/api/console/now`                           | Private, same-origin | Validate and upsert Now Status                              |
+| GET    | `/console/projects`                          | Private              | List DB project records and safe quick actions              |
+| GET    | `/console/projects/new`                      | Private              | Create-project form                                         |
+| GET    | `/console/projects/[id]`                     | Private              | Edit/archive form for one project                           |
+| POST   | `/api/console/projects/create`               | Private, same-origin | Validate and create a project row                           |
+| POST   | `/api/console/projects/[id]/update`          | Private, same-origin | Validate and update project metadata                        |
+| POST   | `/api/console/projects/[id]/archive`         | Private, same-origin | Archive, hide, and unfeature a project                      |
+| POST   | `/api/console/projects/[id]/toggle-visible`  | Private, same-origin | Toggle visibility when active                               |
+| POST   | `/api/console/projects/[id]/toggle-featured` | Private, same-origin | Toggle ordering priority when active                        |
 
 Only `/console/login` is a public console page. Auth endpoints necessarily accept unauthenticated sign-in/session requests, but Better Auth rejects sign-up and middleware guards every console mutation.
 
@@ -38,14 +46,13 @@ Only `/console/login` is a public console page. Auth endpoints necessarily accep
 These routes are not implemented:
 
 - `/console/overview`
-- `/console/projects`, `/console/projects/new`, `/console/projects/[id]`
 - `/console/notes`, `/console/notes/new`, `/console/notes/[id]`
 - `/console/lab`, `/console/lab/new`, `/console/lab/[id]`
 - `/console/stack`
 - `/console/homepage`
 - `/console/settings`
 
-Likewise, project, note, Lab, homepage, and settings POST/PATCH endpoints remain future work. No delete endpoint is planned until archive behavior, auditing, and backups are proven.
+Note, Lab, homepage, and settings write endpoints remain future work. Project hard delete and unarchive are not implemented; archive recovery, auditing, and backups must be designed first.
 
 ## Guard and response rules
 

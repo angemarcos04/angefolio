@@ -2,7 +2,7 @@
 
 The personal developer portfolio of **Angellie Marcos**, an Information Technology student building practical web systems with a Linux-minded, creative edge.
 
-This repository is currently in **Phase 11: private `/console` authentication foundation and Now Status editor**. Astro now runs through the standalone Node adapter so console sessions and writes stay server-side. Better Auth, Drizzle, and a local SQLite/libSQL database power one protected owner account and one editable homepage status; projects, notes, and Lab content remain source-controlled MDX.
+This repository is currently in **Phase 12: private `/console` Projects Manager MVP**. Astro runs through the standalone Node adapter so console sessions and writes stay server-side. Better Auth, Drizzle, and a local SQLite/libSQL database power one protected owner account, the Now Status editor, and protected project records. Notes and Lab content remain source-controlled MDX; project MDX remains an explicit public fallback.
 
 ## Tech stack
 
@@ -51,7 +51,7 @@ pnpm build
 pnpm start
 ```
 
-`pnpm start` validates production auth/database configuration and launches `dist/server/entry.mjs`. `pnpm build` remains the standard build; its `postbuild` hook writes Pagefind into `dist/client/pagefind`. Use `pnpm build:search` for an explicit Astro-plus-Pagefind build or `pnpm index` to refresh an existing SSR client artifact.
+`pnpm start` validates production auth/database configuration and launches `dist/server/entry.mjs`. `pnpm build` remains the standard build; its `postbuild` hook writes Pagefind into `dist/client/pagefind`. Use `pnpm build:search` for an explicit Astro-plus-Pagefind build or `pnpm index` to refresh an existing SSR client artifact. Run `pnpm db:migrate` after pulling a migration and before starting a non-container deployment; Docker applies committed migrations at startup.
 
 Optional checks:
 
@@ -106,7 +106,7 @@ The last command applies while the Compose service is running.
 
 ## Production build
 
-The deployable artifact is the standalone Node server plus `dist/client`, committed migrations, and runtime dependencies. A static-only host is no longer sufficient for `/console` or the live homepage status. Build with:
+The deployable artifact is the standalone Node server plus `dist/client`, committed migrations, and runtime dependencies. A static-only host is no longer sufficient for `/console`, live Now Status, or database project records. Build with:
 
 ```bash
 corepack enable
@@ -115,7 +115,7 @@ pnpm check
 pnpm build
 ```
 
-The Docker build uses `pnpm build:search` so Pagefind output is always present. Public collection/detail pages, RSS, robots, search, and the 404 page remain prerendered; `/`, `/console/*`, and console/auth endpoints run on demand. `astro preview` remains an inspection tool, while production uses the Node adapter entry point.
+The Docker build uses `pnpm build:search` so Pagefind output is always present. Project details, Notes, Lab, RSS, robots, search, and the 404 page remain prerendered. `/`, `/projects`, `/console/*`, and console/auth endpoints run on demand because public project records can change without a rebuild. `astro preview` remains an inspection tool, while production uses the Node adapter entry point.
 
 Expected public output includes project, note, and Lab indexes/details; `/search`; `/rss.xml`; `/robots.txt`; `/sitemap-index.xml`; and `/404.html`. Pagefind indexes the prerendered public HTML in `dist/client`. The homepage remains server-rendered so a published database status appears without a rebuild.
 
@@ -125,7 +125,7 @@ Copy `.env.example` to `.env` locally. `AUTH_SECRET` is server-only and must be 
 
 `ADMIN_EMAIL` and `ADMIN_PASSWORD` are one-time inputs consumed only by `pnpm console:bootstrap`; the web application never reads them. Never prefix auth, database, or bootstrap values with `PUBLIC_`.
 
-Before a real deployment, replace `https://angellie-marcos.dev` in both `astro.config.mjs` and `src/lib/data/site.ts`, then rebuild. Do not add authentication, database, or private API values until Phase 11 defines how they are generated, stored, rotated, and consumed.
+Before a real deployment, replace `https://angellie-marcos.dev` in both `astro.config.mjs` and `src/lib/data/site.ts`, then rebuild. Inject authentication and database values only as server-side runtime secrets; never commit them or expose them through `PUBLIC_` variables.
 
 ## CI
 
@@ -135,9 +135,9 @@ Before a real deployment, replace `https://angellie-marcos.dev` in both `astro.c
 
 - Deploy the Node image to a host that supports a long-running process, container port `4321`, persistent volumes, runtime secrets, and health checks.
 - Terminate HTTPS at the hosting platform or reverse proxy. Secure cookies are enabled automatically when `NODE_ENV=production`.
-- Back up `/app/data/angefolio.db` before console editing is treated as operationally important; backup automation and restore testing remain Phase 12 work.
+- Back up `/app/data/angefolio.db` before console editing is treated as operationally important; backup automation and restore testing remain future operational work.
 - Run migrations before the new server receives traffic. The Docker command does this automatically.
-- Rebuild for MDX changes so public collection pages, RSS, sitemap, and Pagefind stay synchronized; Now Status updates do not require a rebuild.
+- Rebuild for MDX changes so public collection pages, RSS, sitemap, and Pagefind stay synchronized. Now Status and database project updates do not require a rebuild, but Pagefind does not re-index those request-time changes until the next build.
 
 ## Production URL placeholder
 
@@ -204,7 +204,7 @@ All three routes share the existing layout, terminal-style navigation, responsiv
 
 ## Phase 5 project case studies
 
-Visible project entries now generate static detail pages at `/projects/[slug]`. The filename becomes the route slug, so `src/content/projects/example-project.mdx` builds as `/projects/example-project`.
+Visible project entries render detail pages at `/projects/[slug]`. The filename remains the MDX route slug, so `src/content/projects/example-project.mdx` is served as `/projects/example-project`. Phase 12 moved the route to request-time rendering so DB-only projects can coexist while preserving this MDX body behavior.
 
 The `/projects` index and homepage project cards link to these local pages. Detail pages render the MDX body inside a consistent case-study shell with project status, category, date, role, stack, optional links, summary fields, and previous/next navigation.
 
@@ -454,7 +454,20 @@ Phase 11 adds one secure end-to-end publishing path:
 - The homepage reads a published database status on the server and falls back to the existing static `nowItems` when the row is unpublished, missing, or unavailable.
 - The private pages stay `noindex`, out of Pagefind, absent from public navigation, and excluded from the sitemap.
 
-Projects, notes, Lab entries, stack groups, homepage layout, and settings have no database editor. There is no registration UI, OAuth, password reset email, multi-user management, media upload, audit log, or destructive content endpoint.
+At the completion of Phase 11, projects, notes, Lab entries, stack groups, homepage layout, and settings had no database editor. There is no registration UI, OAuth, password reset email, multi-user management, media upload, or audit log.
+
+## Phase 12 Projects Manager MVP
+
+Phase 12 adds the second narrow console module without turning angefolio into a general CMS:
+
+- `/console/projects`, `/console/projects/new`, and `/console/projects/[id]` are protected by the existing Better Auth middleware and route-level checks.
+- Authenticated, same-origin, payload-limited endpoints create and update records, toggle visibility/featured priority, and archive records. There is no hard-delete endpoint.
+- The `project_records` migration stores normalized metadata, JSON stack/link arrays, public flags, ordering, timestamps, and a plain-text case-study body that is never executed.
+- Slugs, status, lengths, list counts, integer ordering, and HTTP(S) URLs are validated on the server. New records default to private unless the owner explicitly checks visibility.
+- The homepage and `/projects` use visible, non-archived database records when at least one exists. If the database is unavailable or contains no public records, both surfaces use the existing visible MDX collection.
+- `/projects/[slug]` remains a prerendered MDX route so project case studies stay in Pagefind. A database card links locally only when a visible MDX entry has the same slug; DB-only records never emit a broken detail link, and stored bodies are not executed.
+
+Run `pnpm db:migrate` to apply `project_records`. There is intentionally no automatic seed: create records through the protected manager, and keep the MDX collection as the fallback until a deliberate content cutover. Notes, Lab, stack, homepage cards, settings, uploads, rich text, audit logging, and backups are not implemented here.
 
 ## Folder structure
 
@@ -473,14 +486,14 @@ src/
 ├── content/         # Typed starter projects, notes, and lab entries
 ├── lib/             # Shared content utilities and server-only modules
 │   ├── console/     # Future-facing type contracts
-│   └── server/      # Auth, database, validation, and public Now query
+│   └── server/      # Auth, database, validation, Now, and project queries
 ├── pages/
 │   ├── index.astro  # Eight-cell bento-dashboard homepage
-│   ├── projects/    # Public project index and static detail routes
+│   ├── projects/    # DB-first index and prerendered MDX detail routes
 │   ├── notes/       # Public note index and static detail routes
 │   ├── lab/         # Public Lab index and static detail routes
 │   ├── api/         # Better Auth and guarded console endpoints
-│   ├── console/     # Protected overview, login, logout, and Now editor
+│   ├── console/     # Protected overview, Now editor, and Projects Manager
 │   ├── search.astro # Static Pagefind search shell
 │   ├── rss.xml.ts   # Published-note RSS feed
 │   └── 404.astro    # Static not-found page
@@ -496,13 +509,14 @@ src/
 - Pagefind search is available only after a production build; the development server intentionally shows a fallback message when the index is absent.
 - The canonical production domain is still a documented placeholder and must be replaced before deployment.
 - Container TLS, DNS, secret injection, backups, and hosting-provider configuration remain external deployment concerns; the Node image serves HTTP on port `4321` behind the chosen platform or reverse proxy.
-- Only Now Status is database-backed. A single bootstrap account is supported; password recovery, passkeys/2FA, audit logging, and backup automation are not implemented yet.
-- Project detail pages are static and MDX-backed. There is no browser-based project editor or automatic synchronization with GitHub.
+- Now Status and project records are database-backed. A single bootstrap account is supported; password recovery, passkeys/2FA, audit logging, and backup automation are not implemented yet.
+- Database projects are metadata and stored plain text only. DB-only records have no detail page in Phase 12. There is no rich-text/MDX execution, media upload, hard delete, restore/unarchive workflow, bulk import, or automatic GitHub synchronization.
+- Request-time database cards are not added to Pagefind until a later indexing strategy is implemented; prerendered MDX detail pages remain part of the build-time index.
 - The optional project `cover` field is reserved for later visual treatment and is not rendered yet.
 - GitHub activity is a static visual placeholder and does not call the GitHub API.
 - Project filtering is a UI demonstration only.
 - The command menu and card visibility controls are non-production stubs.
-- Projects, notes, and Lab entries remain MDX-backed; the private console is not a general CMS.
+- Notes and Lab entries remain MDX-backed; project MDX remains the public fallback, and the private console is not a general CMS.
 
 ## Roadmap
 
@@ -517,6 +531,7 @@ src/
 - **Phase 9:** Docker hardening, production reliability, and deployment readiness (complete)
 - **Phase 10:** Private `/console` planning and safe architecture scaffold (complete)
 - **Phase 11:** Authenticated console foundation and Now Status editor (complete)
-- **Phase 12+:** Security hardening, backups/audit trail, and deliberate content migration decisions
+- **Phase 12:** Protected Projects Manager with DB-first public fallback (complete)
+- **Phase 13+:** Project operations hardening, auditing/backups, and the next deliberate content slice
 
-Next: **Phase 12 should harden the proven vertical slice before broadening the CMS.** Add tested database backup/restore, append-only auditing for Now mutations, session/guard integration tests, secret rotation and recovery guidance, and an explicit Turso/libSQL deployment decision. Keep projects, notes, Lab, stack, homepage cards, and settings file-backed until those operational controls are proven.
+Next: **Phase 13 should harden project operations before adding another editor.** Add route/session integration tests, append-only audit events for Now and project mutations, tested SQLite backup/restore, an explicit archive recovery policy, and a Turso/libSQL deployment decision. Keep Notes, Lab, stack, homepage cards, and settings file-backed until those controls are proven.

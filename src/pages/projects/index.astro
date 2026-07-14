@@ -4,13 +4,49 @@ import CollectionHeader from '../../components/astro/CollectionHeader.astro';
 import Layout from '../../components/astro/Layout.astro';
 import ProjectCard from '../../components/astro/ProjectCard.astro';
 import SectionHeader from '../../components/astro/SectionHeader.astro';
-import { getProjectUrl, getVisibleProjects } from '../../lib/content';
-
-export const prerender = true;
+import {
+  getProjectSlug,
+  getProjectUrl,
+  getVisibleProjects,
+} from '../../lib/content';
+import { getPublicProjectRecords } from '../../lib/server/projects';
 
 const description =
   "Selected systems, prototypes, and experiments I'm building while learning full-stack development, backend workflows, Linux, and AI-assisted tools.";
-const projects = await getVisibleProjects();
+const databaseProjects = await getPublicProjectRecords();
+const collectionProjects = await getVisibleProjects();
+const collectionProjectSlugs = new Set(collectionProjects.map(getProjectSlug));
+const projects =
+  databaseProjects.length > 0
+    ? databaseProjects.map((project) => {
+        const detailUrl = collectionProjectSlugs.has(project.slug)
+          ? `/projects/${project.slug}`
+          : undefined;
+        return {
+          href: detailUrl,
+          title: project.title,
+          description: project.description,
+          status: project.status,
+          category: project.category ?? undefined,
+          stack: project.stack,
+          github: project.github ?? undefined,
+          demo: project.demo ?? undefined,
+          caseStudy: detailUrl,
+          featured: project.featured,
+        };
+      })
+    : collectionProjects.map((project) => ({
+        href: getProjectUrl(project),
+        title: project.data.title,
+        description: project.data.description,
+        status: project.data.status,
+        category: project.data.category,
+        stack: project.data.stack,
+        github: project.data.github,
+        demo: project.data.demo,
+        caseStudy: project.data.caseStudy,
+        featured: project.data.featured,
+      }));
 ---
 
 <Layout title="Projects — Angellie Marcos" {description}>
@@ -36,16 +72,16 @@ const projects = await getVisibleProjects();
         <CardGrid class="collection-grid">
           {projects.map((project) => (
             <ProjectCard
-              href={getProjectUrl(project)}
-              title={project.data.title}
-              description={project.data.description}
-              status={project.data.status}
-              category={project.data.category}
-              stack={project.data.stack}
-              github={project.data.github}
-              demo={project.data.demo}
-              caseStudy={project.data.caseStudy}
-              featured={project.data.featured}
+              href={project.href}
+              title={project.title}
+              description={project.description}
+              status={project.status}
+              category={project.category}
+              stack={project.stack}
+              github={project.github}
+              demo={project.demo}
+              caseStudy={project.caseStudy}
+              featured={project.featured}
             />
           ))}
         </CardGrid>
