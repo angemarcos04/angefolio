@@ -170,8 +170,8 @@ import BentoCard from '../components/astro/BentoCard.astro';
 import Tag from '../components/astro/Tag.astro';
 ---
 
-<BentoCard title="System status" accent="green" class="lg:col-span-4">
-  <Tag tone="green">Live</Tag>
+<BentoCard title="System status" accent="strong" class="lg:col-span-4">
+  <Tag tone="accent">Live</Tag>
 </BentoCard>
 ```
 

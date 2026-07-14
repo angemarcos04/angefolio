@@ -77,7 +77,7 @@
   --card-foreground: var(--coffee);
   --muted: color-mix(in srgb, var(--platinum) 72%, var(--ivory));
   --muted-foreground: color-mix(in srgb, var(--coffee) 72%, var(--ivory));
-  --subtle-foreground: color-mix(in srgb, var(--coffee) 58%, var(--ivory));
+  --subtle-foreground: color-mix(in srgb, var(--coffee) 65%, var(--ivory));
   --accent: var(--copper);
   --accent-hover: color-mix(in srgb, var(--copper) 76%, var(--coffee));
   --accent-text: color-mix(in srgb, var(--copper) 58%, var(--coffee));
@@ -99,12 +99,18 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
   --color-accent-foreground: var(--accent-foreground);
+  --color-focus-ring: var(--focus-ring);
   --color-danger: var(--danger);
+  --color-danger-border: var(--danger-border);
   --color-danger-foreground: var(--danger-foreground);
   --font-sans: Inter, 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
@@ -152,6 +158,11 @@ a {
 
 button {
   font: inherit;
+}
+
+::placeholder {
+  color: var(--subtle-foreground);
+  opacity: 1;
 }
 
 :is(button, input, textarea, select):disabled {
