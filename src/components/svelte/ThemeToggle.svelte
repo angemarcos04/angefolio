@@ -3,11 +3,19 @@
 
   type Theme = 'light' | 'dim' | 'dark';
 
-  const themes = [
-    { value: 'light', label: 'Light' },
-    { value: 'dim', label: 'Dim' },
-    { value: 'dark', label: 'Dark' },
-  ] as const satisfies ReadonlyArray<{ value: Theme; label: string }>;
+  const themes: Theme[] = ['light', 'dim', 'dark'];
+
+  const labels: Record<Theme, string> = {
+    light: 'Light',
+    dim: 'Dim',
+    dark: 'Dark',
+  };
+
+  const icons: Record<Theme, string> = {
+    light: '☀',
+    dim: '◐',
+    dark: '●',
+  };
 
   let theme: Theme = 'dark';
 
@@ -21,7 +29,14 @@
       ?.setAttribute('content', nextTheme === 'light' ? '#f7f3e3' : '#2b2118');
   }
 
-  function selectTheme(nextTheme: Theme) {
+  function getNextTheme(currentTheme: Theme): Theme {
+    const currentIndex = themes.indexOf(currentTheme);
+    return themes[(currentIndex + 1) % themes.length];
+  }
+
+  function cycleTheme() {
+    const nextTheme = getNextTheme(theme);
+
     theme = nextTheme;
     document.documentElement.dataset.theme = nextTheme;
     updateThemeColor(nextTheme);
@@ -38,68 +53,68 @@
     theme = isTheme(initialTheme) ? initialTheme : 'dark';
     updateThemeColor(theme);
   });
+
+  $: nextTheme = getNextTheme(theme);
 </script>
 
-<div class="theme-selector" role="group" aria-label="Color theme">
-  {#each themes as option}
-    <button
-      type="button"
-      aria-pressed={theme === option.value}
-      title={`Use ${option.label.toLowerCase()} theme`}
-      onclick={() => selectTheme(option.value)}
-    >
-      <span aria-hidden="true">{theme === option.value ? '●' : '○'}</span>
-      {option.label}
-    </button>
-  {/each}
-</div>
+<button
+  type="button"
+  onclick={cycleTheme}
+  aria-label={`Current theme: ${labels[theme]}. Switch to ${labels[nextTheme]} theme.`}
+  title={`Switch to ${labels[nextTheme]} theme`}
+>
+  <span class="theme-icon" aria-hidden="true">{icons[theme]}</span>
+  <span>{labels[theme]}</span>
+</button>
 
 <style>
-  .theme-selector {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    overflow: hidden;
+  button {
+    display: inline-flex;
+    min-height: 2.35rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.7rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--muted);
-  }
-  button {
-    display: inline-flex;
-    min-height: 2.25rem;
-    align-items: center;
-    justify-content: center;
-    gap: 0.28rem;
-    padding: 0.42rem 0.5rem;
-    border: 0;
-    border-right: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted-foreground);
-    font: 0.64rem var(--font-mono);
+    color: var(--foreground);
+    font-family: var(--type-ui);
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-variant-ligatures: none;
+    font-feature-settings:
+      'calt' 0,
+      'liga' 0;
+    letter-spacing: 0.02em;
     cursor: pointer;
+    white-space: nowrap;
     transition:
-      background-color 120ms ease,
-      color 120ms ease;
-  }
-  button:last-child {
-    border-right: 0;
+      border-color 140ms ease,
+      background-color 140ms ease,
+      color 140ms ease;
   }
   button:hover {
+    border-color: var(--border-strong);
     background: var(--accent-soft);
-    color: var(--foreground);
   }
-  button[aria-pressed='true'] {
-    background: var(--card);
-    color: var(--accent-text);
-    box-shadow: inset 0 -2px 0 var(--accent);
+  button:active {
+    transform: translateY(1px);
   }
-  button span {
-    font-size: 0.55rem;
+  .theme-icon {
+    display: inline-flex;
+    width: 1em;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-hover);
+    text-align: center;
   }
-  @media (max-width: 420px) {
+  @media (prefers-reduced-motion: reduce) {
     button {
-      min-height: 2.15rem;
-      padding-inline: 0.42rem;
-      font-size: 0.61rem;
+      transition: none;
+    }
+    button:active {
+      transform: none;
     }
   }
 </style>
