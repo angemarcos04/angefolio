@@ -66,11 +66,11 @@ const links = [
     <IconLink href="/lab" label="Back to lab" />
   </div>
 
-  <BentoCard class="lab-hero subtle-grid" accent="green">
+  <BentoCard class="lab-hero subtle-grid" accent="medium">
     <div class="hero-meta">
       <StatusPill status={data.status} />
-      {data.category && <Tag tone="purple">{data.category}</Tag>}
-      {data.featured && <Tag tone="yellow">Featured experiment</Tag>}
+      {data.category && <Tag tone="accent">{data.category}</Tag>}
+      {data.featured && <Tag tone="strong">Featured experiment</Tag>}
     </div>
     <h1 class="text-balance">{data.title}</h1>
     <p class="description">{data.description}</p>
@@ -233,7 +233,7 @@ const links = [
   }
   .lesson-log p {
     margin: 0;
-    color: var(--accent-yellow);
+    color: var(--accent-text);
     font: 0.68rem var(--font-mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -271,7 +271,7 @@ const links = [
     font-weight: 650;
   }
   .lab-navigation a:hover {
-    color: var(--accent-cyan);
+    color: var(--accent-text);
   }
   .newer-entry {
     text-align: right;

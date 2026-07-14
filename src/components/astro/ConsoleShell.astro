@@ -73,7 +73,7 @@ const { title, description, active, user } = Astro.props;
     font: 700 0.9rem var(--font-mono);
   }
   .wordmark span {
-    color: var(--accent-green);
+    color: var(--accent-text);
   }
   .console-bar p {
     margin: 0.35rem 0 0;
@@ -101,7 +101,7 @@ const { title, description, active, user } = Astro.props;
     cursor: pointer;
   }
   .console-actions :is(a, button):hover {
-    border-color: var(--accent-cyan);
+    border-color: var(--border-strong);
   }
   nav {
     flex-wrap: wrap;
@@ -114,8 +114,8 @@ const { title, description, active, user } = Astro.props;
     border-radius: var(--radius-sm);
   }
   nav a[aria-current='page'] {
-    border-color: var(--accent-green);
-    color: var(--accent-green);
+    border-color: var(--accent);
+    color: var(--accent-text);
   }
   nav span {
     color: var(--muted-foreground);

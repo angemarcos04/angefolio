@@ -21,7 +21,7 @@ const description = 'Private sign-in for the angefolio console.';
 >
   <a class="wordmark" href="/"><span>~/</span>angefolio</a>
 
-  <BentoCard class="login-card subtle-grid" accent="green">
+  <BentoCard class="login-card subtle-grid" accent="strong">
     <p class="eyebrow">/console/login</p>
     <h1>Private console</h1>
     <p class="intro">
@@ -80,7 +80,7 @@ const description = 'Private sign-in for the angefolio console.';
     font: 700 0.82rem var(--font-mono);
   }
   .wordmark span {
-    color: var(--accent-green);
+    color: var(--accent-text);
   }
   :global(.login-card) {
     padding: clamp(1.4rem, 6vw, 2.5rem);
@@ -122,21 +122,22 @@ const description = 'Private sign-in for the angefolio console.';
     color: var(--foreground);
   }
   input:focus {
-    border-color: var(--accent-cyan);
+    border-color: var(--border-strong);
   }
   button {
     min-height: 2.75rem;
-    border: 1px solid var(--accent-green);
+    border: 1px solid var(--primary-background);
     border-radius: var(--radius-sm);
-    background: var(--accent-green);
-    color: #07110b;
+    background: var(--primary-background);
+    color: var(--accent-foreground);
     cursor: pointer;
     font: 700 0.78rem var(--font-mono);
   }
   .form-message {
     padding: 0.7rem 0.8rem;
-    border: 1px solid var(--accent-red);
-    color: var(--accent-red);
+    border: 1px solid var(--danger);
+    background: var(--danger);
+    color: var(--danger-foreground);
     font: 0.72rem var(--font-mono);
   }
   .setup-note {

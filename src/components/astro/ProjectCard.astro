@@ -32,8 +32,8 @@ const {
 
 <article class:list={['content-card bento-surface', className]}>
   <div class="meta">
-    <StatusPill {status} />{category && <Tag tone="purple">{category}</Tag>}{
-      featured && <Tag tone="yellow">Featured</Tag>
+    <StatusPill {status} />{category && <Tag tone="accent">{category}</Tag>}{
+      featured && <Tag tone="strong">Featured</Tag>
     }
   </div>
   <h3>{href ? <a href={href}>{title}</a> : title}</h3><p>{description}</p>
@@ -79,7 +79,7 @@ const {
     font-size: 1.1rem;
   }
   h3 a:hover {
-    color: var(--accent-cyan);
+    color: var(--accent-text);
   }
   p {
     margin: 0.45rem 0 1rem;

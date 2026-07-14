@@ -157,7 +157,7 @@ Astro presentation primitives:
 
 Svelte islands:
 
-- `ThemeToggle` provides an SSR-safe dark/dim preference.
+- `ThemeToggle` provides an SSR-safe Light/Dim/Dark segmented preference with Dark as the default.
 - `ProjectFilter` demonstrates small client-side filter state for a future projects page.
 - `CommandMenuStub` communicates planned functionality without global shortcuts.
 - `CardVisibilityDemo` is an unmounted visual prototype only; it has no admin behavior.

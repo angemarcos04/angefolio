@@ -5,7 +5,7 @@ interface Props {
   eyebrow?: string;
   description?: string;
   class?: string;
-  accent?: 'green' | 'cyan' | 'red' | 'purple' | 'yellow' | 'neutral';
+  accent?: 'none' | 'soft' | 'medium' | 'strong';
 }
 const {
   id,
@@ -13,7 +13,7 @@ const {
   eyebrow,
   description,
   class: className = '',
-  accent = 'neutral',
+  accent = 'none',
 } = Astro.props;
 ---
 
@@ -48,20 +48,14 @@ const {
     content: '';
     opacity: 0.72;
   }
-  .accent-green {
-    --card-accent: var(--accent-green);
+  .accent-soft {
+    --card-accent: color-mix(in srgb, var(--accent) 38%, var(--border));
   }
-  .accent-cyan {
-    --card-accent: var(--accent-cyan);
+  .accent-medium {
+    --card-accent: var(--accent);
   }
-  .accent-red {
-    --card-accent: var(--accent-red);
-  }
-  .accent-purple {
-    --card-accent: var(--accent-purple);
-  }
-  .accent-yellow {
-    --card-accent: var(--accent-yellow);
+  .accent-strong {
+    --card-accent: var(--accent-hover);
   }
   header {
     margin-bottom: 1rem;

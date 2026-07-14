@@ -26,7 +26,7 @@ const description = 'Edit the public homepage Now Status.';
     headingLevel={1}
   />
 
-  <BentoCard accent="yellow" class="editor-card">
+  <BentoCard accent="medium" class="editor-card">
     {
       saved && (
         <p class="message success" role="status">
@@ -158,7 +158,7 @@ const description = 'Edit the public homepage Now Status.';
     min-height: 2.75rem;
   }
   :is(input, textarea):focus {
-    border-color: var(--accent-cyan);
+    border-color: var(--border-strong);
   }
   .field-grid {
     display: grid;
@@ -177,7 +177,7 @@ const description = 'Edit the public homepage Now Status.';
     width: 1rem;
     height: 1rem;
     margin-top: 0.15rem;
-    accent-color: var(--accent-green);
+    accent-color: var(--accent);
   }
   .publish-control span {
     display: grid;
@@ -201,10 +201,10 @@ const description = 'Edit the public homepage Now Status.';
   button {
     min-height: 2.65rem;
     padding: 0.65rem 0.9rem;
-    border: 1px solid var(--accent-green);
+    border: 1px solid var(--primary-background);
     border-radius: var(--radius-sm);
-    background: var(--accent-green);
-    color: #07110b;
+    background: var(--primary-background);
+    color: var(--accent-foreground);
     cursor: pointer;
     font: 700 0.74rem var(--font-mono);
   }
@@ -215,12 +215,14 @@ const description = 'Edit the public homepage Now Status.';
     font: 0.72rem var(--font-mono);
   }
   .success {
-    border-color: var(--accent-green);
-    color: var(--accent-green);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-text);
   }
   .error {
-    border-color: var(--accent-red);
-    color: var(--accent-red);
+    border-color: var(--danger);
+    background: var(--danger);
+    color: var(--danger-foreground);
   }
   @media (max-width: 720px) {
     .field-grid {

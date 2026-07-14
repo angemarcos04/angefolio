@@ -94,7 +94,7 @@ const navItems = [
   <BentoGrid class="homepage-grid">
     <BentoCard
       class="hero subtle-grid md:col-span-2 lg:col-span-8"
-      accent="green"
+      accent="strong"
       eyebrow={site.role}
     >
       <h1 class="text-balance">Hi, I'm Angellie Marcos.</h1>
@@ -116,7 +116,7 @@ const navItems = [
 
     <BentoCard
       class="about md:col-span-2 lg:col-span-4"
-      accent="purple"
+      accent="soft"
       eyebrow="About"
       title="Practical systems, personal software."
     >
@@ -133,7 +133,7 @@ const navItems = [
         {
           aboutTags.map((tag, index) => (
             <Tag
-              tone={index === 0 ? 'green' : index === 4 ? 'cyan' : 'neutral'}
+              tone={index === 0 ? 'strong' : index === 4 ? 'accent' : 'neutral'}
             >
               {tag}
             </Tag>
@@ -143,7 +143,7 @@ const navItems = [
     </BentoCard>
     <BentoCard
       class="projects md:col-span-2 lg:col-span-12"
-      accent="cyan"
+      accent="strong"
       eyebrow="Featured Projects"
       title="Systems and ideas I am taking seriously."
       description="A mix of active school systems, prototypes, and planned personal tools."
@@ -172,7 +172,7 @@ const navItems = [
     </BentoCard>
     <BentoCard
       class="now md:col-span-1 lg:col-span-3"
-      accent="yellow"
+      accent="medium"
       eyebrow="Now"
       title="Current focus"
     >
@@ -184,7 +184,7 @@ const navItems = [
 
     <BentoCard
       class="stack md:col-span-1 lg:col-span-5"
-      accent="green"
+      accent="soft"
       eyebrow="Stack"
       title="Tools I build with"
     >
@@ -199,7 +199,7 @@ const navItems = [
 
     <BentoCard
       class="github md:col-span-2 lg:col-span-4"
-      accent="red"
+      accent="medium"
       eyebrow="GitHub Activity"
       title="Building in public"
     >
@@ -222,7 +222,7 @@ const navItems = [
     </BentoCard>
     <BentoCard
       class="notes md:col-span-2 lg:col-span-8"
-      accent="purple"
+      accent="soft"
       eyebrow="Latest Notes"
       title="Things I am learning out loud"
     >
@@ -249,7 +249,7 @@ const navItems = [
 
     <BentoCard
       class="contact md:col-span-2 lg:col-span-4"
-      accent="green"
+      accent="strong"
       eyebrow="Contact"
       title="Let us make something useful."
     >
@@ -285,7 +285,7 @@ const navItems = [
     letter-spacing: -0.02em;
   }
   .wordmark span {
-    color: var(--accent-green);
+    color: var(--accent-text);
   }
   .topbar-actions,
   nav,
@@ -307,7 +307,7 @@ const navItems = [
     font: 0.72rem var(--font-mono);
   }
   nav a:hover {
-    color: var(--accent-cyan);
+    color: var(--accent-text);
   }
   :global(.homepage-grid) {
     align-items: stretch;
@@ -328,7 +328,7 @@ const navItems = [
   .tagline {
     max-width: 43rem;
     margin: 0;
-    color: var(--accent-green);
+    color: var(--accent-text);
     font-size: clamp(1rem, 2vw, 1.25rem);
   }
   .hero-description,
@@ -397,7 +397,7 @@ const navItems = [
     left: 0;
     width: 0.35rem;
     height: 1px;
-    background: var(--accent-yellow);
+    background: var(--accent);
     content: '';
   }
   .metadata,
@@ -429,16 +429,16 @@ const navItems = [
     background: var(--muted);
   }
   .contribution-grid .level-1 {
-    background: color-mix(in srgb, var(--accent-green) 18%, var(--muted));
+    background: color-mix(in srgb, var(--accent) 18%, var(--muted));
   }
   .contribution-grid .level-2 {
-    background: color-mix(in srgb, var(--accent-green) 35%, var(--muted));
+    background: color-mix(in srgb, var(--accent) 35%, var(--muted));
   }
   .contribution-grid .level-3 {
-    background: color-mix(in srgb, var(--accent-green) 58%, var(--muted));
+    background: color-mix(in srgb, var(--accent) 58%, var(--muted));
   }
   .contribution-grid .level-4 {
-    background: color-mix(in srgb, var(--accent-green) 82%, var(--muted));
+    background: color-mix(in srgb, var(--accent) 82%, var(--muted));
   }
   .activity-meta {
     display: grid;

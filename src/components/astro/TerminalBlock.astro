@@ -20,10 +20,10 @@ const { title = 'angefolio.sh', class: className = '' } = Astro.props;
   .terminal {
     max-width: 100%;
     overflow: hidden;
-    border: 1px solid var(--border);
+    border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--coffee));
     border-radius: var(--radius-lg);
-    background: #070a0e;
-    color: #dce5df;
+    background: var(--terminal-background);
+    color: var(--terminal-foreground);
     font-family: var(--font-mono);
   }
   .bar {
@@ -38,19 +38,19 @@ const { title = 'angefolio.sh', class: className = '' } = Astro.props;
     width: 0.48rem;
     height: 0.48rem;
     border-radius: 50%;
-    background: var(--accent-red);
+    background: color-mix(in srgb, var(--accent) 25%, var(--coffee));
   }
   i:nth-child(2) {
-    background: var(--accent-yellow);
+    background: var(--accent);
   }
   i:nth-child(3) {
-    background: var(--accent-green);
+    background: var(--terminal-accent);
   }
   strong {
     min-width: 0;
     margin-left: 0.35rem;
     overflow: hidden;
-    color: var(--muted-foreground);
+    color: var(--terminal-muted);
     font-size: 0.66rem;
     font-weight: 500;
     text-overflow: ellipsis;
@@ -64,7 +64,7 @@ const { title = 'angefolio.sh', class: className = '' } = Astro.props;
     font-size: clamp(0.7rem, 2vw, 0.78rem);
   }
   .body > span {
-    color: var(--accent-green);
+    color: var(--terminal-accent);
   }
   .body > div {
     min-width: 0;
@@ -74,6 +74,6 @@ const { title = 'angefolio.sh', class: className = '' } = Astro.props;
     margin: 0.15rem 0;
   }
   .body :global(code) {
-    color: var(--accent-cyan);
+    color: var(--terminal-accent);
   }
 </style>

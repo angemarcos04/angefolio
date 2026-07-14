@@ -34,13 +34,17 @@ const {
     <SEO {title} {description} {image} {type} {canonical} {noindex} />
     <script is:inline>
       (() => {
+        const validThemes = ['light', 'dim', 'dark'];
+        let theme = 'dark';
         try {
           const savedTheme = localStorage.getItem('theme');
-          document.documentElement.dataset.theme =
-            savedTheme === 'dim' ? 'dim' : 'dark';
-        } catch {
-          document.documentElement.dataset.theme = 'dark';
-        }
+          if (savedTheme && validThemes.includes(savedTheme))
+            theme = savedTheme;
+        } catch {}
+        document.documentElement.dataset.theme = theme;
+        document
+          .querySelector('meta[name="theme-color"]')
+          ?.setAttribute('content', theme === 'light' ? '#f7f3e3' : '#2b2118');
       })();
     </script>
   </head>
@@ -70,7 +74,7 @@ const {
     left: 0.75rem;
     transform: translateY(-180%);
     padding: 0.55rem 0.75rem;
-    border: 1px solid var(--accent-cyan);
+    border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     background: var(--card);
     color: var(--foreground);

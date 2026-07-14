@@ -53,10 +53,10 @@ const readingTime = getNoteReadingTime(noteBody);
     <IconLink href="/notes" label="Back to notes" />
   </div>
 
-  <BentoCard class="note-hero subtle-grid" accent="purple">
+  <BentoCard class="note-hero subtle-grid" accent="medium">
     <div class="hero-meta">
-      <Tag tone="cyan">{data.category}</Tag>
-      {data.featured && <Tag tone="yellow">Featured</Tag>}
+      <Tag tone="accent">{data.category}</Tag>
+      {data.featured && <Tag tone="strong">Featured</Tag>}
     </div>
     <h1 class="text-balance">{data.title}</h1>
     <p class="description">{data.description}</p>
@@ -169,7 +169,7 @@ const readingTime = getNoteReadingTime(noteBody);
     box-shadow: none;
   }
   .note-summary strong {
-    color: var(--accent-green);
+    color: var(--accent-text);
     font: 0.68rem var(--font-mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -201,7 +201,7 @@ const readingTime = getNoteReadingTime(noteBody);
     font-weight: 650;
   }
   .note-navigation a:hover {
-    color: var(--accent-cyan);
+    color: var(--accent-text);
   }
   .newer-note {
     text-align: right;

@@ -129,7 +129,7 @@
     gap: 0.55rem;
   }
   label {
-    color: var(--accent-green);
+    color: var(--accent-text);
     font: 0.7rem var(--font-mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -157,9 +157,9 @@
   }
   button {
     padding: 0.65rem 1rem;
-    border-color: var(--accent-green);
-    background: var(--accent-green);
-    color: #07110b;
+    border-color: var(--primary-background);
+    background: var(--primary-background);
+    color: var(--accent-foreground);
     font-weight: 700;
     cursor: pointer;
   }
@@ -190,14 +190,14 @@
     gap: 0.15rem;
   }
   .results a:hover span {
-    color: var(--accent-cyan);
+    color: var(--accent-text);
   }
   .results a span {
     font-weight: 700;
   }
   .results small {
     overflow-wrap: anywhere;
-    color: var(--accent-purple);
+    color: var(--subtle-foreground);
     font: 0.64rem var(--font-mono);
   }
   .results p {
@@ -207,7 +207,7 @@
     font-size: 0.86rem;
   }
   .results :global(mark) {
-    background: color-mix(in srgb, var(--accent-yellow) 24%, transparent);
+    background: color-mix(in srgb, var(--accent) 24%, transparent);
     color: var(--foreground);
   }
   @media (max-width: 480px) {

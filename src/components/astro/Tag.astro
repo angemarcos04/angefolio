@@ -1,6 +1,6 @@
 ---
 interface Props {
-  tone?: 'neutral' | 'green' | 'cyan' | 'red' | 'purple' | 'yellow';
+  tone?: 'neutral' | 'accent' | 'strong' | 'danger';
   class?: string;
 }
 const { tone = 'neutral', class: className = '' } = Astro.props;
@@ -9,33 +9,35 @@ const { tone = 'neutral', class: className = '' } = Astro.props;
 <span class:list={['tag', `tone-${tone}`, className]}><slot /></span>
 <style>
   .tag {
-    --tag-color: var(--muted-foreground);
+    --tag-background: var(--muted);
+    --tag-border: var(--border);
+    --tag-foreground: var(--muted-foreground);
     display: inline-flex;
     align-items: center;
     min-height: 1.65rem;
     padding: 0.16rem 0.5rem;
-    border: 1px solid color-mix(in srgb, var(--tag-color) 34%, var(--border));
+    border: 1px solid var(--tag-border);
     border-radius: 999px;
-    background: color-mix(in srgb, var(--tag-color) 7%, transparent);
-    color: var(--tag-color);
+    background: var(--tag-background);
+    color: var(--tag-foreground);
     font: 0.68rem/1.2 var(--font-mono);
     max-width: 100%;
     overflow-wrap: anywhere;
     text-align: left;
   }
-  .tone-green {
-    --tag-color: var(--accent-green);
+  .tone-accent {
+    --tag-background: var(--accent-soft);
+    --tag-border: color-mix(in srgb, var(--accent) 48%, var(--border));
+    --tag-foreground: var(--accent-text);
   }
-  .tone-cyan {
-    --tag-color: var(--accent-cyan);
+  .tone-strong {
+    --tag-background: var(--accent-hover);
+    --tag-border: var(--accent-hover);
+    --tag-foreground: var(--accent-foreground);
   }
-  .tone-red {
-    --tag-color: var(--accent-red);
-  }
-  .tone-purple {
-    --tag-color: var(--accent-purple);
-  }
-  .tone-yellow {
-    --tag-color: var(--accent-yellow);
+  .tone-danger {
+    --tag-background: var(--danger);
+    --tag-border: var(--danger);
+    --tag-foreground: var(--danger-foreground);
   }
 </style>

@@ -62,27 +62,40 @@ const {
     font-size: 0.84rem;
   }
   .variant-primary {
-    border-color: var(--accent-green);
-    background: var(--accent-green);
-    color: #07110b;
+    border-color: var(--primary-background);
+    background: var(--primary-background);
+    color: var(--accent-foreground);
   }
   .variant-secondary {
+    border-color: var(--border-strong);
     background: var(--muted);
+    color: var(--foreground);
   }
   .variant-ghost {
     border-color: transparent;
+    background: transparent;
     color: var(--muted-foreground);
   }
   .variant-danger {
-    border-color: var(--accent-red);
-    color: var(--accent-red);
+    border-color: var(--danger);
+    background: var(--danger);
+    color: var(--danger-foreground);
   }
   .button:hover {
-    border-color: var(--accent-cyan);
+    border-color: var(--border-strong);
     color: var(--foreground);
   }
   .variant-primary:hover {
-    background: color-mix(in srgb, var(--accent-green) 86%, white);
-    color: #07110b;
+    border-color: var(--accent-text);
+    background: var(--primary-background);
+    color: var(--accent-foreground);
+  }
+  .variant-ghost:hover {
+    background: var(--accent-soft);
+  }
+  .variant-danger:hover {
+    border-color: var(--danger-border);
+    background: color-mix(in srgb, var(--danger) 88%, var(--coffee));
+    color: var(--danger-foreground);
   }
 </style>

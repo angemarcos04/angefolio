@@ -1,34 +1,97 @@
 @import 'tailwindcss';
 
 :root {
-  color-scheme: dark;
-  --background: #080a0e;
-  --foreground: #eef2f7;
-  --muted: #151920;
-  --muted-foreground: #929cab;
-  --card: #0e1218;
-  --card-foreground: #eef2f7;
-  --border: #272d36;
-  --accent-green: #79d69f;
-  --accent-cyan: #68cbd8;
-  --accent-red: #ee8197;
-  --accent-purple: #aa98e8;
-  --accent-yellow: #dfbf69;
+  --coffee: #2b2118;
+  --ivory: #f7f3e3;
+  --platinum: #ecf0f1;
+  --copper: #a8763e;
+  --lava: #6f1a07;
   --radius-sm: 0.25rem;
   --radius-md: 0.45rem;
   --radius-lg: 0.7rem;
   --radius-xl: 0.9rem;
-  --shadow-soft: 0 18px 55px rgb(0 0 0 / 0.22);
+  --danger: var(--lava);
+  --danger-foreground: var(--ivory);
+  --terminal-background: var(--coffee);
+  --terminal-foreground: var(--ivory);
+  --terminal-muted: color-mix(in srgb, var(--platinum) 65%, var(--coffee));
+  --terminal-accent: color-mix(in srgb, var(--copper) 58%, var(--ivory));
+}
+
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --background: var(--coffee);
+  --foreground: var(--ivory);
+  --card: color-mix(in srgb, var(--copper) 7%, var(--coffee));
+  --card-foreground: var(--ivory);
+  --muted: color-mix(in srgb, var(--copper) 11%, var(--coffee));
+  --muted-foreground: color-mix(in srgb, var(--platinum) 72%, var(--coffee));
+  --subtle-foreground: color-mix(in srgb, var(--platinum) 58%, var(--coffee));
+  --accent: var(--copper);
+  --accent-hover: color-mix(in srgb, var(--copper) 82%, var(--ivory));
+  --accent-text: color-mix(in srgb, var(--copper) 55%, var(--ivory));
+  --accent-foreground: var(--coffee);
+  --primary-background: var(--accent-hover);
+  --accent-soft: color-mix(in srgb, var(--copper) 13%, transparent);
+  --border: color-mix(in srgb, var(--copper) 23%, var(--coffee));
+  --border-strong: color-mix(in srgb, var(--copper) 42%, var(--coffee));
+  --focus-ring: var(--accent-hover);
+  --danger-text: color-mix(in srgb, var(--lava) 38%, var(--ivory));
+  --danger-border: color-mix(in srgb, var(--lava) 52%, var(--ivory));
+  --danger-soft: color-mix(in srgb, var(--lava) 28%, transparent);
+  --shadow-soft: 0 18px 55px rgb(0 0 0 / 0.24);
+  --primary-foreground: var(--accent-foreground);
 }
 
 :root[data-theme='dim'] {
-  --background: #11151b;
-  --foreground: #e3e8ef;
-  --muted: #1c222b;
-  --muted-foreground: #a4adba;
-  --card: #171c23;
-  --card-foreground: #e3e8ef;
-  --border: #343c47;
+  color-scheme: dark;
+  --background: var(--coffee);
+  --foreground: color-mix(in srgb, var(--platinum) 88%, var(--coffee));
+  --card: color-mix(in srgb, var(--copper) 4%, var(--coffee));
+  --card-foreground: var(--foreground);
+  --muted: color-mix(in srgb, var(--copper) 7%, var(--coffee));
+  --muted-foreground: color-mix(in srgb, var(--platinum) 64%, var(--coffee));
+  --subtle-foreground: color-mix(in srgb, var(--platinum) 51%, var(--coffee));
+  --accent: var(--copper);
+  --accent-hover: color-mix(in srgb, var(--copper) 84%, var(--ivory));
+  --accent-text: color-mix(in srgb, var(--copper) 50%, var(--ivory));
+  --accent-foreground: var(--coffee);
+  --primary-background: var(--accent-hover);
+  --accent-soft: color-mix(in srgb, var(--copper) 9%, transparent);
+  --border: color-mix(in srgb, var(--copper) 16%, var(--coffee));
+  --border-strong: color-mix(in srgb, var(--copper) 29%, var(--coffee));
+  --focus-ring: var(--accent-hover);
+  --danger-text: color-mix(in srgb, var(--lava) 32%, var(--ivory));
+  --danger-border: color-mix(in srgb, var(--lava) 46%, var(--ivory));
+  --danger-soft: color-mix(in srgb, var(--lava) 22%, transparent);
+  --shadow-soft: 0 16px 42px rgb(0 0 0 / 0.16);
+  --primary-foreground: var(--accent-foreground);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --background: var(--ivory);
+  --foreground: var(--coffee);
+  --card: var(--platinum);
+  --card-foreground: var(--coffee);
+  --muted: color-mix(in srgb, var(--platinum) 72%, var(--ivory));
+  --muted-foreground: color-mix(in srgb, var(--coffee) 72%, var(--ivory));
+  --subtle-foreground: color-mix(in srgb, var(--coffee) 58%, var(--ivory));
+  --accent: var(--copper);
+  --accent-hover: color-mix(in srgb, var(--copper) 76%, var(--coffee));
+  --accent-text: color-mix(in srgb, var(--copper) 58%, var(--coffee));
+  --accent-foreground: var(--ivory);
+  --primary-background: var(--accent-hover);
+  --accent-soft: color-mix(in srgb, var(--copper) 12%, transparent);
+  --border: color-mix(in srgb, var(--coffee) 17%, var(--ivory));
+  --border-strong: color-mix(in srgb, var(--coffee) 30%, var(--ivory));
+  --focus-ring: color-mix(in srgb, var(--copper) 65%, var(--coffee));
+  --danger-text: var(--lava);
+  --danger-border: color-mix(in srgb, var(--lava) 70%, var(--ivory));
+  --danger-soft: color-mix(in srgb, var(--lava) 10%, transparent);
+  --shadow-soft: 0 18px 48px rgb(43 33 24 / 0.12);
+  --primary-foreground: var(--accent-foreground);
 }
 
 @theme inline {
@@ -39,11 +102,10 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-border: var(--border);
-  --color-accent-green: var(--accent-green);
-  --color-accent-cyan: var(--accent-cyan);
-  --color-accent-red: var(--accent-red);
-  --color-accent-purple: var(--accent-purple);
-  --color-accent-yellow: var(--accent-yellow);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
   --font-sans: Inter, 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
 }
@@ -64,7 +126,7 @@ body {
   background:
     radial-gradient(
       circle at 12% 0%,
-      rgb(170 152 232 / 0.07),
+      color-mix(in srgb, var(--accent) 7%, transparent),
       transparent 29rem
     ),
     var(--background);
@@ -92,13 +154,18 @@ button {
   font: inherit;
 }
 
+:is(button, input, textarea, select):disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 ::selection {
-  background: color-mix(in srgb, var(--accent-cyan) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
   color: var(--foreground);
 }
 
 :focus-visible {
-  outline: 3px solid var(--accent-cyan);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 3px;
 }
 
@@ -136,6 +203,11 @@ pre {
   background: var(--card);
   color: var(--card-foreground);
   box-shadow: var(--shadow-soft);
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .text-balance {
@@ -144,19 +216,26 @@ pre {
 
 .terminal-glow {
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.025),
-    0 0 32px rgb(104 203 216 / 0.035);
+    inset 0 1px 0 color-mix(in srgb, var(--ivory) 4%, transparent),
+    0 0 32px color-mix(in srgb, var(--accent) 6%, transparent);
 }
 
 .subtle-grid {
   background-image:
-    linear-gradient(rgb(255 255 255 / 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.025) 1px, transparent 1px);
+    linear-gradient(
+      color-mix(in srgb, var(--border) 45%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--border) 45%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 28px 28px;
 }
 
 .eyebrow {
-  color: var(--accent-green);
+  color: var(--accent-text);
   font-family: var(--font-mono);
   font-size: 0.72rem;
   letter-spacing: 0.12em;
@@ -197,7 +276,7 @@ pre {
 .prose-shell li,
 .prose-shell blockquote {
   max-width: 70ch;
-  color: #c1c8d2;
+  color: var(--muted-foreground);
 }
 
 .prose-shell p {
@@ -215,17 +294,14 @@ pre {
 }
 
 .prose-shell a {
-  color: var(--accent-cyan);
+  color: var(--accent-text);
   text-decoration: underline;
-  text-decoration-color: color-mix(
-    in srgb,
-    var(--accent-cyan) 55%,
-    transparent
-  );
+  text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
 .prose-shell a:hover {
-  text-decoration-color: var(--accent-cyan);
+  color: var(--foreground);
+  text-decoration-color: var(--accent);
 }
 
 .prose-shell code:not(pre code) {
@@ -233,7 +309,7 @@ pre {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--muted);
-  color: var(--accent-green);
+  color: var(--accent-text);
   overflow-wrap: anywhere;
 }
 
@@ -246,7 +322,7 @@ pre {
 .prose-shell blockquote {
   margin: 1.25rem 0;
   padding: 0.2rem 0 0.2rem 1rem;
-  border-left: 2px solid var(--accent-purple);
+  border-left: 2px solid var(--accent);
 }
 
 .prose-shell blockquote p {

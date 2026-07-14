@@ -33,10 +33,10 @@
   }
   button:hover,
   button.active {
-    border-color: var(--accent-cyan);
+    border-color: var(--accent);
     color: var(--foreground);
   }
   button.active {
-    background: color-mix(in srgb, var(--accent-cyan) 10%, transparent);
+    background: var(--accent-soft);
   }
 </style>

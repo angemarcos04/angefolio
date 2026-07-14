@@ -66,11 +66,11 @@ const projectLinks = [
     <IconLink href="/projects" label="Back to projects" />
   </div>
 
-  <BentoCard class="project-hero subtle-grid" accent="cyan">
+  <BentoCard class="project-hero subtle-grid" accent="strong">
     <div class="hero-meta">
       <StatusPill status={data.status} />
-      {data.category && <Tag tone="purple">{data.category}</Tag>}
-      {data.featured && <Tag tone="yellow">Featured</Tag>}
+      {data.category && <Tag tone="accent">{data.category}</Tag>}
+      {data.featured && <Tag tone="strong">Featured</Tag>}
     </div>
     <h1 class="text-balance">{data.title}</h1>
     <p>{data.description}</p>
@@ -228,7 +228,7 @@ const projectLinks = [
   .case-summary p,
   .local-nav p {
     margin: 0 0 0.55rem;
-    color: var(--accent-green);
+    color: var(--accent-text);
     font: 0.65rem var(--font-mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -264,7 +264,7 @@ const projectLinks = [
     font: 0.7rem/1.4 var(--font-mono);
   }
   .local-nav a:hover {
-    color: var(--accent-cyan);
+    color: var(--accent-text);
   }
   .project-navigation {
     display: grid;
@@ -286,7 +286,7 @@ const projectLinks = [
     font-weight: 650;
   }
   .project-navigation a:hover {
-    color: var(--accent-cyan);
+    color: var(--accent-text);
   }
   .next-project {
     text-align: right;

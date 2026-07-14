@@ -66,12 +66,12 @@ const errors: Record<string, string> = {
               <div class="status-line">
                 <StatusPill status={project.status} />
                 {project.visible && !project.archived && (
-                  <Tag tone="green">Visible</Tag>
+                  <Tag tone="strong">Visible</Tag>
                 )}
                 {project.featured && !project.archived && (
-                  <Tag tone="yellow">Featured</Tag>
+                  <Tag tone="accent">Featured</Tag>
                 )}
-                {project.archived && <Tag tone="red">Archived</Tag>}
+                {project.archived && <Tag>Archived</Tag>}
               </div>
               <h2>
                 <a href={`/console/projects/${project.id}`}>{project.title}</a>
@@ -159,12 +159,14 @@ const errors: Record<string, string> = {
     font: 0.7rem var(--font-mono);
   }
   .success {
-    border-color: var(--accent-green);
-    color: var(--accent-green);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-text);
   }
   .error {
-    border-color: var(--accent-red);
-    color: var(--accent-red);
+    border-color: var(--danger);
+    background: var(--danger);
+    color: var(--danger-foreground);
   }
   .toolbar {
     display: flex;
@@ -182,9 +184,9 @@ const errors: Record<string, string> = {
   .toolbar a,
   .empty-state a {
     padding: 0.6rem 0.8rem;
-    border: 1px solid var(--accent-green);
+    border: 1px solid var(--accent);
     border-radius: var(--radius-sm);
-    color: var(--accent-green);
+    color: var(--accent-text);
     font: 700 0.7rem var(--font-mono);
   }
   .project-list {
@@ -212,7 +214,7 @@ const errors: Record<string, string> = {
     font-size: 1.05rem;
   }
   h2 a:hover {
-    color: var(--accent-cyan);
+    color: var(--accent-text);
   }
   .project-main > p {
     max-width: 72ch;
@@ -242,7 +244,9 @@ const errors: Record<string, string> = {
     display: none;
   }
   .row-actions .archive-button {
-    color: var(--accent-red);
+    border-color: var(--danger);
+    background: var(--danger);
+    color: var(--danger-foreground);
   }
   .empty-state {
     padding: 1.5rem;

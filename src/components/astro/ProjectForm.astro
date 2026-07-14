@@ -236,7 +236,7 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
     font: 0.7rem var(--font-mono);
   }
   strong {
-    color: var(--accent-red);
+    color: var(--danger-text);
   }
   input,
   textarea,
@@ -258,10 +258,10 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
     padding: 0.75rem;
   }
   :is(input, textarea, select)[aria-invalid='true'] {
-    border-color: var(--accent-red);
+    border-color: var(--danger-border);
   }
   small {
-    color: var(--accent-red);
+    color: var(--danger-text);
     font: 0.65rem/1.45 var(--font-mono);
   }
   em {
@@ -292,11 +292,11 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
   .check input {
     width: 1rem;
     min-height: 1rem;
-    accent-color: var(--accent-green);
+    accent-color: var(--accent);
   }
   .archive-note {
     margin: 1rem 0 0;
-    color: var(--accent-yellow);
+    color: var(--danger-text);
     font: 0.68rem/1.5 var(--font-mono);
   }
   .form-actions {
@@ -313,9 +313,9 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
     font: 700 0.7rem var(--font-mono);
   }
   button {
-    border-color: var(--accent-green);
-    background: var(--accent-green);
-    color: var(--primary-foreground);
+    border-color: var(--primary-background);
+    background: var(--primary-background);
+    color: var(--accent-foreground);
     cursor: pointer;
   }
   .form-actions a {
