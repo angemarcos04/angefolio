@@ -1,6 +1,6 @@
-# Future Console Data Model
+# Console Data Model
 
-Phase 10 does not create a database. These sketches describe the likely persistence boundary for a future authenticated console. The current source of truth remains TypeScript data and MDX loaded through Astro Content Collections.
+Phase 11 creates the first database boundary: Better Auth core tables and one `now_status` table in SQLite through Drizzle/libSQL. Projects, notes, and Lab entries remain TypeScript/MDX loaded through Astro Content Collections; their sections below are future sketches, not implemented schema.
 
 The local development candidate is SQLite through Drizzle ORM. Turso/libSQL may later provide hosted persistence. SQLite has no native array type, so early `stack` and `tags` fields can use validated JSON text; join tables can replace them if querying individual values becomes important.
 
@@ -14,19 +14,26 @@ The local development candidate is SQLite through Drizzle ORM. Turso/libSQL may 
 - Keep authored bodies separate from rendered HTML.
 - Record mutations in `audit_log` in the same transaction where practical.
 
-## `now_status`
+## Better Auth core tables
 
-| Field           | Planned shape    | Notes                                                      |
-| --------------- | ---------------- | ---------------------------------------------------------- |
-| `id`            | text primary key | Stable opaque identifier.                                  |
-| `current_focus` | text             | Short public summary.                                      |
-| `working_on`    | JSON text        | Ordered list of active work.                               |
-| `learning`      | JSON text        | Ordered list of current learning topics.                   |
-| `using`         | JSON text        | Current environment or tools.                              |
-| `status`        | text, nullable   | Optional mood/status label; not an availability guarantee. |
-| `updated_at`    | UTC timestamp    | Set on every successful update.                            |
+The generated migration includes Better Auth's required `user`, `session`, `account`, and `verification` tables. Password hashes live only in credential account records; session tokens live only in the server database and HTTP-only cookies. Public registration is disabled by application configuration.
 
-The MVP may keep one active row, but it should not hard-code a magic ID if a history model is likely.
+Do not hand-edit auth data. Use Better Auth APIs and versioned migrations so hashing, account links, session expiry, and cleanup retain library semantics.
+
+## `now_status` (implemented)
+
+| Field           | Planned shape    | Notes                                               |
+| --------------- | ---------------- | --------------------------------------------------- |
+| `id`            | text primary key | Phase 11 singleton key: `primary`.                  |
+| `current_focus` | text             | Short public summary.                               |
+| `working_on`    | JSON text        | Ordered list of active work.                        |
+| `learning`      | JSON text        | Ordered list of current learning topics.            |
+| `using`         | JSON text        | Current environment or tools.                       |
+| `status_note`   | text, nullable   | Optional public context, limited to 280 characters. |
+| `published`     | boolean          | Public-query gate; defaults false.                  |
+| `updated_at`    | UTC timestamp    | Set on every successful update.                     |
+
+Phase 11 deliberately uses one stable row rather than inventing status history. Each JSON list is normalized to non-empty lines, limited to 12 items, and limited to 160 characters per item before persistence. The homepage returns the original static `nowItems` when this row is missing, unpublished, or unavailable.
 
 ## `projects`
 

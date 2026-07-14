@@ -10,6 +10,8 @@ import StatusPill from '../../components/astro/StatusPill.astro';
 import Tag from '../../components/astro/Tag.astro';
 import { getVisibleLabEntries } from '../../lib/content';
 import { formatDate } from '../../lib/date';
+
+export const prerender = true;
 import { getLabSlug, getLabUrl } from '../../lib/lab';
 
 export async function getStaticPaths() {

@@ -2,133 +2,108 @@
 
 ## Purpose
 
-`/console` is planned as Angellie's private control panel for maintaining the public portfolio: current status, featured work, writing drafts, Lab entries, stack/tool groups, homepage card visibility, and site settings. The console should keep Astro as the main framework and use small Svelte islands only when focused browser interaction is useful.
+`/console` is Angellie's private control panel for maintaining public portfolio content. Phase 11 proves the architecture with one owner account and one editable **Now Status** while Astro remains the main framework.
 
-Phase 10 records the intended boundaries before the project adopts a server runtime or stores private data. The public site remains a statically generated Astro application, and its content remains source-controlled MDX and TypeScript data.
+## Phase 11 scope and non-goals
 
-## Non-goals for Phase 10
+Implemented now:
 
-- No real login, session, cookie, or route guard
-- No database, ORM, migration, or database connection
-- No CMS editor or content-editing form
-- No file or database mutation
-- No API write route, server action, or webhook
-- No Better Auth or Drizzle installation
-- No Astro Node adapter or SSR migration
-- No claim that the static `/console` placeholder is private or secure
+- Standalone Astro Node SSR for request-time sessions and data
+- Better Auth email/password authentication with public sign-up disabled
+- Drizzle over a local SQLite database through libSQL
+- One-time, single-owner command-line bootstrap
+- Server-guarded `/console` overview and Now editor
+- Origin-checked, authenticated Now Status mutation
+- Database-backed homepage status with a static fallback
 
-## Future console sections
+Still out of scope:
 
-| Section        | Intended responsibility                                                                       |
-| -------------- | --------------------------------------------------------------------------------------------- |
-| Overview       | Show publishing state, recent changes, and system health without exposing secrets.            |
-| Now Status     | Maintain current focus, active work, learning, tools, and an optional short status.           |
-| Projects       | Create drafts and manage project metadata, case-study bodies, visibility, and featured state. |
-| Notes          | Draft, preview, publish, and revise technical notes.                                          |
-| Lab            | Maintain experiment entries, status, visibility, observations, and links.                     |
-| Stack          | Maintain ordered tool groups used by the homepage.                                            |
-| Homepage Cards | Enable, disable, order, and configure the existing eight dashboard cards.                     |
-| Settings       | Maintain explicitly supported public site metadata and publishing settings.                   |
+- Projects, notes, Lab, stack, homepage-card, or settings editors
+- Public registration, OAuth, multiple administrators, or email delivery
+- File/MDX mutation, media uploads, delete endpoints, or a general CMS
+- Turso deployment, content migration, audit logging, automated backups, or recovery UI
 
-The eventual UI should feel like a compact terminal-minded control panel, not a generic SaaS administration template. The first useful version does not need dashboards full of invented metrics.
+## Console sections
 
-## Future data model
+| Section        | Phase 11 state | Intended responsibility                                        |
+| -------------- | -------------- | -------------------------------------------------------------- |
+| Overview       | Implemented    | Identify the signed-in owner and available module.             |
+| Now Status     | Implemented    | Edit focus, work, learning, tools, note, and publish state.    |
+| Projects       | Planned        | Manage project drafts, metadata, visibility, and case studies. |
+| Notes          | Planned        | Draft, preview, publish, and revise writing.                   |
+| Lab            | Planned        | Manage experiment status, visibility, observations, and links. |
+| Stack          | Planned        | Maintain ordered tool groups.                                  |
+| Homepage Cards | Planned        | Configure the existing bounded dashboard layout.               |
+| Settings       | Planned        | Maintain allow-listed public settings only.                    |
 
-The first database-backed design is expected to include:
+The console should stay a compact terminal-minded control panel, not grow into a generic SaaS dashboard.
 
-- `now_status`
-- `projects`
-- `notes`
-- `lab_entries`
-- `stack_groups`
-- `homepage_cards`
-- `site_settings`
-- `audit_log`
+## Current data model
 
-SQLite is the preferred local starting point, with Drizzle as the typed schema/query layer. Turso/libSQL is a possible later production target if its operational model fits the chosen host. The schema sketches and file-to-database migration concerns are documented in [data-model.md](./data-model.md).
+The committed Drizzle schema contains only Better Auth's `user`, `session`, `account`, and `verification` tables plus `now_status`. The singleton Now row uses the stable ID `primary`; list fields are validated arrays stored as SQLite JSON text. A `published` flag gates the public query.
 
-Current Phase 10 content is still file-based. Database records must not become a second source of truth until Phase 11 defines and tests a deliberate migration or synchronization boundary.
+Projects, notes, and Lab entries remain MDX-backed Astro Content Collections. Future table sketches and migration boundaries are recorded in [data-model.md](./data-model.md).
 
-## Future authentication plan
+## Authentication plan and current behavior
 
-Better Auth is the planned candidate, not an installed dependency. Phase 11 should validate its current Astro integration and deployment requirements before adoption.
+Better Auth owns password hashing and HTTP-only database sessions. Production enables secure cookies. Email/password sign-up is disabled in the web runtime, and login failures remain generic. The one-time bootstrap script temporarily enables the library's server-side sign-up API only after confirming that no other user exists.
 
-The minimum authentication design should include:
+`src/middleware.ts` resolves sessions only for console surfaces. It redirects unauthenticated private pages and returns `401` for private mutation endpoints. The login endpoint is same-origin, payload-limited, and protected by Better Auth's explicit rate limit. Logout invalidates the server session.
 
-1. A single explicitly provisioned owner account; no public registration.
-2. Password hashing and account/session storage managed through the chosen server-side auth integration.
-3. Secure, `HttpOnly`, `SameSite` session cookies with `Secure` enabled in production.
-4. Server-side guards on every `/console` page and every mutation endpoint.
-5. CSRF protection for state-changing requests and origin validation where appropriate.
-6. Login throttling and generic failure messages that do not reveal account existence.
-7. Session invalidation, secret rotation, and a documented account-recovery process.
+Phase 12 should add recovery and secret-rotation procedures, session/guard integration tests, and decide whether passkeys or a second factor are required.
 
-The login route is not the security boundary. Authorization must be checked again at every server entry point that reads drafts or changes content.
+## Route map
 
-## Future route map
+Current public content routes remain prerendered where practical. The homepage runs on demand because it reads the published Now row. Console and auth routes run only on the server. See [console-routes.md](./console-routes.md) for the complete access map.
 
-The public route set stays static. Future private routes live under `/console`, with future mutations under `/api/console` or an equivalently guarded server-action boundary. The detailed inventory, methods, and access expectations are in [console-routes.md](./console-routes.md).
+## Migration from static to SSR
 
-Phase 10 implements only a static `/console` planning notice. It provides no login, private data, or mutation capability.
+Phase 11 selected an integrated standalone Astro Node service:
 
-## Future migration from static to SSR
+1. `@astrojs/node` runs in standalone mode.
+2. Public collection/detail pages, RSS, robots, search, and 404 continue to prerender.
+3. Pagefind indexes `dist/client`, where the Node adapter serves static assets.
+4. The homepage, console pages, and server endpoints render per request.
+5. Docker now runs Node and persists `/app/data` instead of serving all output from Nginx.
 
-The migration should be a separate, reversible phase:
-
-1. Confirm hosting support, backup requirements, auth integration, and the SQLite versus Turso/libSQL decision.
-2. Add the Astro Node adapter and server output only after those decisions are recorded.
-3. Keep public pages prerendered where practical so the portfolio retains static performance and failure isolation.
-4. Make `/console` and its authenticated server endpoints request-time rendered.
-5. Replace the Nginx-only runtime with a Node application runtime, optionally keeping Nginx or the hosting platform in front for TLS and static assets.
-6. Add health checks that cover the Node process and, separately, database readiness.
-7. Migrate content in a tested one-way import or explicitly designed synchronization workflow; never silently merge two sources of truth.
-
-An alternative worth evaluating is a separate private console service that publishes validated content for the static public site. That would keep the public runtime simpler, but it introduces a deployment and publishing boundary that must be secured and backed up.
+This choice is reversible at the content layer because projects, notes, and Lab were not migrated to the database.
 
 ## Security rules
 
 - Never rely on an unlinked or secret route as access control.
-- Require real authentication and authorization.
-- Enforce route guards on the server, not only in client-side navigation.
-- Use secure session cookies and short, intentional session lifetimes.
-- Keep auth secrets and database URLs in server environment variables.
-- Never expose auth secrets, database credentials, or privileged data in client bundles.
-- Exclude drafts, hidden entries, and private settings from every public query by default.
-- Validate and normalize all input on the server before persistence.
-- Protect state-changing requests against CSRF and unauthorized replay.
-- Record meaningful mutations in `audit_log` without logging secrets or full sensitive payloads.
-- Add tested backups and restore instructions before console-based editing is enabled.
-- Escape or sanitize authored output according to its rendering context.
-- Return conservative errors; do not expose stack traces, SQL, or configuration in production.
+- Enforce authentication at server entry points; client navigation is not a guard.
+- Keep auth secrets, database URLs, password inputs, and session tokens out of client code and logs.
+- Disable public registration and refuse a second bootstrap account.
+- Use HTTP-only sessions, secure production cookies, same-origin mutation checks, conservative errors, and request-size limits.
+- Exclude console pages from Pagefind and the sitemap and mark them `noindex`; treat those only as crawler controls.
+- Keep unpublished database status and all MDX drafts out of public queries.
+- Validate and normalize all input before persistence.
+- Add append-only audit records and tested backup/restore before adding more editors.
+- Never store application secrets in `site_settings` or content tables.
 
 ## Deployment implications
 
-Phase 10 does not change deployment: Astro builds static files and Nginx serves them. The commented future environment names in `.env.example` are unused.
+The application now requires a long-running Node process, runtime secret injection, persistent `/app/data`, migration execution, TLS termination, and health monitoring. Docker applies committed migrations at startup and runs as the unprivileged `node` user with a read-only root filesystem plus the database volume.
 
-A real console will require a long-running server runtime, persistent storage, secret injection, TLS, database migrations, backups, monitoring, and a deployment process that can roll back application and schema changes safely. The current read-only Nginx container cannot host authentication or database-backed routes and should not be made writable as a shortcut.
+Production must provide a random `AUTH_SECRET`, `DATABASE_URL`, and a browser-visible `PUBLIC_SITE_URL`/`AUTH_TRUSTED_ORIGIN`. A static-only hosting provider is no longer sufficient. Back up the SQLite volume before depending on console edits.
 
-## Phase 11 MVP recommendation
+## Phase 12 MVP recommendation
 
-Build one authenticated, end-to-end vertical slice for **Now Status** before attempting a full CMS:
+Harden this slice before expanding it:
 
-1. Write an architecture decision record for integrated SSR versus a separate console service.
-2. Add the Node adapter and a development SQLite database in that isolated phase.
-3. Integrate Better Auth for one owner account with server-side guards.
-4. Define `now_status` and `audit_log` with Drizzle migrations.
-5. Implement read, validate, update, and audit behavior for Now Status only.
-6. Keep projects, notes, Lab, stack, homepage cards, and settings file-backed.
-7. Add authorization, CSRF, backup/restore, migration, and end-to-end tests before deployment.
-
-This slice is small enough to test the runtime and security model without prematurely migrating all public content.
+1. Add integration tests for login, logout, redirect guards, unauthorized API access, origin rejection, validation, and homepage fallback.
+2. Add append-only `audit_log` entries for Now mutations.
+3. Document and test SQLite backup and restore, including Docker volume recovery.
+4. Document auth-secret rotation and owner account recovery.
+5. Decide whether production remains volume-backed SQLite or moves to Turso/libSQL.
+6. Add a health/readiness split that can report migration or database failure without leaking details.
+7. Keep every other content area file-backed until these controls are proven.
 
 ## Open questions
 
-- Should the private console share the public Astro deployment or run as a separate service?
 - Which host will provide persistent storage, TLS, secret management, and rollback support?
-- Is local SQLite with a production Turso/libSQL replica the right operational tradeoff?
-- Should console publishing update database-backed public queries, generate MDX, or trigger a static rebuild?
-- How will image and other media uploads be stored, validated, and backed up?
-- What is the backup retention and restore-testing schedule?
-- Is password-only owner authentication sufficient, or should the MVP require passkeys or another second factor?
-- Which settings are safe to expose to the public build, and which must remain server-only?
-- How will draft previews remain authenticated and excluded from search, RSS, sitemap, and caches?
+- Is volume-backed SQLite sufficient, or should production use Turso/libSQL?
+- What backup retention and restore-test schedule is appropriate?
+- Is password-only owner authentication sufficient, or should a second factor be required?
+- Should future publishing query the database directly, generate MDX, or trigger a static rebuild?
+- How will draft previews and future media remain authenticated, private, validated, and backed up?

@@ -1,0 +1,234 @@
+---
+import BentoCard from '../../components/astro/BentoCard.astro';
+import ConsoleShell from '../../components/astro/ConsoleShell.astro';
+import SectionHeader from '../../components/astro/SectionHeader.astro';
+import { getEditableNowStatus } from '../../lib/server/now';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/console/login');
+
+const status = await getEditableNowStatus();
+const saved = Astro.url.searchParams.get('saved') === '1';
+const error = Astro.url.searchParams.get('error');
+const description = 'Edit the public homepage Now Status.';
+---
+
+<ConsoleShell
+  title="Now Status — angefolio console"
+  {description}
+  active="now"
+  {user}
+>
+  <SectionHeader
+    eyebrow="First editable module"
+    title="Now Status"
+    description="Write one item per line. Changes reach the homepage only while Published is enabled."
+    headingLevel={1}
+  />
+
+  <BentoCard accent="yellow" class="editor-card">
+    {
+      saved && (
+        <p class="message success" role="status">
+          Now Status saved.
+        </p>
+      )
+    }
+    {
+      error && (
+        <p class="message error" role="alert">
+          The status was not saved. Check field lengths and try again.
+        </p>
+      )
+    }
+
+    <form action="/api/console/now" method="post">
+      <label>
+        <span>Current focus</span>
+        <input
+          name="currentFocus"
+          value={status?.currentFocus ?? ''}
+          maxlength="160"
+          required
+        />
+        <small>One required summary item, up to 160 characters.</small>
+      </label>
+
+      <div class="field-grid">
+        <label>
+          <span>Working on</span>
+          <textarea name="workingOn" rows="5" maxlength="2000"
+            >{status?.workingOn.join('\n') ?? ''}</textarea
+          >
+          <small>Up to 12 lines.</small>
+        </label>
+        <label>
+          <span>Learning</span>
+          <textarea name="learning" rows="5" maxlength="2000"
+            >{status?.learning.join('\n') ?? ''}</textarea
+          >
+          <small>Up to 12 lines.</small>
+        </label>
+        <label>
+          <span>Using</span>
+          <textarea name="using" rows="5" maxlength="2000"
+            >{status?.using.join('\n') ?? ''}</textarea
+          >
+          <small>Up to 12 lines.</small>
+        </label>
+        <label>
+          <span>Status note</span>
+          <textarea name="statusNote" rows="5" maxlength="280"
+            >{status?.statusNote ?? ''}</textarea
+          >
+          <small>Optional context, up to 280 characters.</small>
+        </label>
+      </div>
+
+      <label class="publish-control">
+        <input
+          type="checkbox"
+          name="published"
+          checked={status?.published ?? false}
+        />
+        <span>
+          <strong>Published</strong>
+          <small>
+            When off—or if the database is unavailable—the homepage uses its
+            static fallback.
+          </small>
+        </span>
+      </label>
+
+      <div class="form-footer">
+        <p>
+          {
+            status
+              ? `Last saved ${status.updatedAt.toLocaleString()}`
+              : 'No database status yet.'
+          }
+        </p>
+        <button type="submit">Save Now Status</button>
+      </div>
+    </form>
+  </BentoCard>
+</ConsoleShell>
+
+<style>
+  :global(.editor-card) {
+    overflow: visible;
+  }
+  form,
+  label {
+    display: grid;
+  }
+  form {
+    gap: 1.2rem;
+  }
+  label {
+    gap: 0.4rem;
+  }
+  label > span,
+  small,
+  .form-footer p {
+    font-family: var(--font-mono);
+  }
+  label > span {
+    font-size: 0.75rem;
+    font-weight: 650;
+  }
+  small,
+  .form-footer p {
+    color: var(--muted-foreground);
+    font-size: 0.64rem;
+  }
+  input:not([type='checkbox']),
+  textarea {
+    width: 100%;
+    padding: 0.7rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    outline: none;
+    background: var(--muted);
+    color: var(--foreground);
+    font: 0.82rem/1.6 var(--font-sans);
+    resize: vertical;
+  }
+  input:not([type='checkbox']) {
+    min-height: 2.75rem;
+  }
+  :is(input, textarea):focus {
+    border-color: var(--accent-cyan);
+  }
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .publish-control {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    padding: 0.9rem;
+    border: 1px solid var(--border);
+    background: var(--muted);
+  }
+  .publish-control input {
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.15rem;
+    accent-color: var(--accent-green);
+  }
+  .publish-control span {
+    display: grid;
+    gap: 0.25rem;
+  }
+  .publish-control small {
+    max-width: 62ch;
+    font-weight: 400;
+  }
+  .form-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .form-footer p {
+    margin: 0;
+  }
+  button {
+    min-height: 2.65rem;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--accent-green);
+    border-radius: var(--radius-sm);
+    background: var(--accent-green);
+    color: #07110b;
+    cursor: pointer;
+    font: 700 0.74rem var(--font-mono);
+  }
+  .message {
+    margin: 0 0 1rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid;
+    font: 0.72rem var(--font-mono);
+  }
+  .success {
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+  }
+  .error {
+    border-color: var(--accent-red);
+    color: var(--accent-red);
+  }
+  @media (max-width: 720px) {
+    .field-grid {
+      grid-template-columns: 1fr;
+    }
+    .form-footer {
+      align-items: stretch;
+      flex-direction: column;
+    }
+  }
+</style>

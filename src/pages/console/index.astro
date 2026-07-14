@@ -1,90 +1,80 @@
 ---
 import BentoCard from '../../components/astro/BentoCard.astro';
-import Button from '../../components/astro/Button.astro';
-import CollectionHeader from '../../components/astro/CollectionHeader.astro';
-import Layout from '../../components/astro/Layout.astro';
+import ConsoleShell from '../../components/astro/ConsoleShell.astro';
+import SectionHeader from '../../components/astro/SectionHeader.astro';
 import Tag from '../../components/astro/Tag.astro';
 
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/console/login');
+
 const description =
-  'A static planning notice for the future private angefolio console.';
+  'Private control panel for the angefolio public Now Status.';
 ---
 
-<Layout
-  title="Console planned — Angellie Marcos"
+<ConsoleShell
+  title="Console — Angellie Marcos"
   {description}
-  noindex
-  searchable={false}
-  class="console-placeholder"
+  active="overview"
+  {user}
 >
-  <CollectionHeader />
+  <SectionHeader
+    eyebrow="Private control panel"
+    title="Console overview"
+    description="Phase 11 keeps the surface intentionally small: one account and one editable public status."
+    headingLevel={1}
+  />
 
-  <BentoCard class="console-notice subtle-grid" accent="yellow">
-    <div class="status-line">
-      <Tag tone="yellow">Planning only</Tag>
-      <span>static / no auth / no data</span>
-    </div>
-    <p class="eyebrow">/console</p>
-    <h1 class="text-balance">Console planned</h1>
-    <p class="lead">Private dashboard is not implemented yet.</p>
-    <p>
-      This page is a planning placeholder, not an admin panel. It has no login,
-      private content, database connection, editing controls, or security
-      boundary.
-    </p>
-    <div class="public-links" aria-label="Return to public portfolio pages">
-      <Button href="/" variant="primary">Return home</Button>
-      <Button href="/projects">Projects</Button>
-      <Button href="/notes">Notes</Button>
-      <Button href="/lab">Lab</Button>
-    </div>
-  </BentoCard>
-</Layout>
+  <div class="console-grid">
+    <BentoCard
+      accent="yellow"
+      eyebrow="Available"
+      title="Now Status"
+      description="Update the focus list shown on the public homepage, with an explicit publish switch and a static fallback."
+    >
+      <div class="card-footer">
+        <Tag tone="green">Protected</Tag>
+        <a href="/console/now">Open editor →</a>
+      </div>
+    </BentoCard>
+
+    <BentoCard
+      accent="neutral"
+      eyebrow="Planned"
+      title="Content management"
+      description="Projects, notes, lab entries, stack groups, homepage cards, and settings remain file-based or unimplemented."
+    >
+      <p class="quiet">No additional admin controls are exposed in Phase 11.</p>
+    </BentoCard>
+  </div>
+</ConsoleShell>
 
 <style>
-  :global(.console-placeholder) {
-    max-width: 58rem;
+  .console-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
   }
-  :global(.console-notice) {
-    padding: clamp(1.5rem, 6vw, 3.5rem);
-  }
-  .status-line,
-  .public-links {
+  .card-footer {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 0.55rem;
-  }
-  .status-line {
     justify-content: space-between;
-    margin-bottom: clamp(2.5rem, 8vw, 5rem);
-  }
-  .status-line > span {
-    color: var(--muted-foreground);
-    font: 0.66rem var(--font-mono);
-  }
-  .eyebrow {
-    margin: 0 0 0.45rem;
-  }
-  h1 {
-    max-width: 12ch;
-    margin: 0;
-    font-size: clamp(2.5rem, 9vw, 5.25rem);
-    line-height: 0.96;
-    letter-spacing: -0.06em;
-  }
-  .lead {
-    margin: 1.1rem 0 0;
-    color: var(--accent-yellow);
-    font: 0.9rem/1.6 var(--font-mono);
-  }
-  .console-notice > p:not(.eyebrow, .lead) {
-    max-width: 62ch;
-    margin: 0.8rem 0 0;
-    color: var(--muted-foreground);
-  }
-  .public-links {
-    margin-top: 1.5rem;
-    padding-top: 1.25rem;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
     border-top: 1px solid var(--border);
+  }
+  .card-footer a {
+    color: var(--accent-cyan);
+    font: 0.72rem var(--font-mono);
+  }
+  .quiet {
+    margin: 1.25rem 0 0;
+    color: var(--muted-foreground);
+    font-size: 0.82rem;
+  }
+  @media (max-width: 720px) {
+    .console-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

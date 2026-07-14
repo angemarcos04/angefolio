@@ -5,12 +5,24 @@ services:
       dockerfile: Dockerfile
     container_name: angefolio
     ports:
-      - '4321:80'
+      - '4321:4321'
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4321
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:4321}
+      AUTH_TRUSTED_ORIGIN: ${AUTH_TRUSTED_ORIGIN:-http://localhost:4321}
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      DATABASE_URL: file:/app/data/angefolio.db
+    volumes:
+      - portfolio_data:/app/data
     restart: unless-stopped
     read_only: true
     security_opt:
       - no-new-privileges:true
     tmpfs:
-      - /var/cache/nginx
-      - /var/run
+      - /tmp
     stop_grace_period: 10s
+
+volumes:
+  portfolio_data:

@@ -2,16 +2,18 @@
 
 The personal developer portfolio of **Angellie Marcos**, an Information Technology student building practical web systems with a Linux-minded, creative edge.
 
-This repository is currently in **Phase 10: private `/console` planning and safe architecture scaffold**. It builds on the static Astro portfolio and hardened Phase 9 deployment without adding a database, authentication, writable CMS, API mutations, or an SSR runtime.
+This repository is currently in **Phase 11: private `/console` authentication foundation and Now Status editor**. Astro now runs through the standalone Node adapter so console sessions and writes stay server-side. Better Auth, Drizzle, and a local SQLite/libSQL database power one protected owner account and one editable homepage status; projects, notes, and Lab content remain source-controlled MDX.
 
 ## Tech stack
 
-- Astro with TypeScript and static output
+- Astro with TypeScript and standalone Node SSR
 - Svelte for interactive islands only
 - Tailwind CSS v4
 - MDX and Astro Content Collections
 - Expressive Code
 - Pagefind and Sharp
+- Better Auth with email/password sessions
+- Drizzle ORM with local SQLite through libSQL
 - pnpm
 - Docker
 
@@ -27,19 +29,29 @@ pnpm install
 Start development:
 
 ```bash
+cp .env.example .env
+pnpm db:migrate
 pnpm dev
 ```
 
 Open `http://localhost:4321`.
 
-Build and preview production output locally:
+Create the one allowed administrator once, after filling `AUTH_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` in the local environment:
+
+```bash
+pnpm console:bootstrap
+```
+
+Remove the two `ADMIN_` values immediately afterward. Public sign-up is disabled, and the bootstrap refuses to add a second account.
+
+Build the production server and search index:
 
 ```bash
 pnpm build
-pnpm preview --host 0.0.0.0 --port 4321
+pnpm start
 ```
 
-`pnpm build` remains the standard production build and its existing `postbuild` hook generates the Pagefind index. For an explicit, self-contained search build that does not depend on lifecycle behavior, use `pnpm build:search`. To regenerate only the index for an existing `dist/`, use `pnpm index`.
+`pnpm start` validates production auth/database configuration and launches `dist/server/entry.mjs`. `pnpm build` remains the standard build; its `postbuild` hook writes Pagefind into `dist/client/pagefind`. Use `pnpm build:search` for an explicit Astro-plus-Pagefind build or `pnpm index` to refresh an existing SSR client artifact.
 
 Optional checks:
 
@@ -50,7 +62,7 @@ pnpm format:check
 
 ## Docker
 
-The production image uses three stages: a pnpm dependency stage, a static Astro/Pagefind build stage, and an Nginx runtime containing only `dist/` and the server configuration. Node.js, pnpm, source files, and development dependencies do not ship in the runtime image. Nginx serves the generated routes directly; there is no SPA fallback or SSR process.
+The production image uses three Node 22 Alpine stages: frozen dependency installation, Astro/Pagefind build, and the standalone Node runtime. Container startup applies committed Drizzle migrations before launching Astro. The server listens on port `4321`; the database lives at `/app/data/angefolio.db` on a named volume.
 
 Build and run the image directly:
 
@@ -59,7 +71,7 @@ pnpm docker:build
 pnpm docker:run
 ```
 
-The equivalent raw commands are `docker build -t angefolio .` and `docker run --rm -p 4321:80 angefolio`.
+`pnpm docker:run` reads runtime values from an uncommitted `.env`, maps `4321:4321`, and mounts the `angefolio_data` volume.
 
 Or build and run the `portfolio` Compose service:
 
@@ -69,7 +81,18 @@ docker compose up --build
 
 Open `http://localhost:4321`. Stop it with `docker compose down`.
 
-The container is named `angefolio`, maps host port `4321` to Nginx port `80`, and uses `unless-stopped`. Compose also enables the image health check, a read-only root filesystem, temporary Nginx cache/run mounts, and `no-new-privileges`. No database volumes, backend services, runtime environment variables, or secrets are required.
+The container is named `angefolio`, maps `4321:4321`, and uses `unless-stopped`. Compose preserves the read-only root filesystem and `no-new-privileges`, adds a writable `/tmp`, and mounts `portfolio_data` only at `/app/data`. Set a real `AUTH_SECRET` and deployment origins in an uncommitted `.env` before `docker compose up --build`.
+
+Bootstrap the owner inside the Compose environment once:
+
+```bash
+docker compose run --rm \
+  -e ADMIN_EMAIL="you@example.com" \
+  -e ADMIN_PASSWORD="use-a-long-random-password" \
+  portfolio ./node_modules/.bin/tsx scripts/create-admin.ts
+```
+
+Do not place bootstrap credentials in `compose.yml` or leave them in `.env`.
 
 Useful validation commands:
 
@@ -83,7 +106,7 @@ The last command applies while the Compose service is running.
 
 ## Production build
 
-The deployable artifact is the generated `dist/` directory. A non-container static host can publish that directory after this workflow:
+The deployable artifact is the standalone Node server plus `dist/client`, committed migrations, and runtime dependencies. A static-only host is no longer sufficient for `/console` or the live homepage status. Build with:
 
 ```bash
 corepack enable
@@ -92,33 +115,35 @@ pnpm check
 pnpm build
 ```
 
-The Docker build uses `pnpm build:search` so Pagefind output is always present in the runtime image. `astro preview` remains available for local inspection, but the production container intentionally uses Nginx instead of the Astro preview server.
+The Docker build uses `pnpm build:search` so Pagefind output is always present. Public collection/detail pages, RSS, robots, search, and the 404 page remain prerendered; `/`, `/console/*`, and console/auth endpoints run on demand. `astro preview` remains an inspection tool, while production uses the Node adapter entry point.
 
-Expected public output includes the homepage; project, note, and Lab indexes and detail pages; `/search`; `/rss.xml`; `/robots.txt`; `/sitemap-index.xml`; and `/404.html`. Nginx uses normal file/directory resolution and returns the generated 404 page with a 404 response instead of rewriting unknown paths to the homepage.
+Expected public output includes project, note, and Lab indexes/details; `/search`; `/rss.xml`; `/robots.txt`; `/sitemap-index.xml`; and `/404.html`. Pagefind indexes the prerendered public HTML in `dist/client`. The homepage remains server-rendered so a published database status appears without a rebuild.
 
 ## Environment
 
-Phase 10 does not require environment variables. `.env.example` keeps the current empty runtime contract and documents commented names that a future console may use. `AUTH_SECRET`, `DATABASE_URL`, and `PUBLIC_SITE_URL` are not read by the application and must not be populated until the corresponding authenticated server architecture exists.
+Copy `.env.example` to `.env` locally. `AUTH_SECRET` is server-only and must be at least 32 random characters in production. `DATABASE_URL` defaults to `file:./data/angefolio.db` only in development. `PUBLIC_SITE_URL` and `AUTH_TRUSTED_ORIGIN` must match the browser-visible origin so Better Auth and the same-origin write checks agree.
+
+`ADMIN_EMAIL` and `ADMIN_PASSWORD` are one-time inputs consumed only by `pnpm console:bootstrap`; the web application never reads them. Never prefix auth, database, or bootstrap values with `PUBLIC_`.
 
 Before a real deployment, replace `https://angellie-marcos.dev` in both `astro.config.mjs` and `src/lib/data/site.ts`, then rebuild. Do not add authentication, database, or private API values until Phase 11 defines how they are generated, stored, rotated, and consumed.
 
 ## CI
 
-`.github/workflows/ci.yml` validates pushes and pull requests targeting `main` on Node.js 22. It installs the frozen pnpm lockfile, runs Astro checks, verifies formatting, builds the static site and Pagefind index, and builds the production Docker image. It does not deploy, publish an image, use secrets, or assume a hosting provider.
+`.github/workflows/ci.yml` validates pushes and pull requests targeting `main` on Node.js 22. It installs the frozen lockfile, runs Astro checks, verifies formatting, builds the SSR server and Pagefind client index, and builds the production image. Auth is lazy at runtime, so CI needs no real secret and performs no deployment.
 
 ## Deployment notes
 
-- Deploy the Nginx image to any container host that can expose container port `80` and honor its health check.
-- Alternatively, publish `dist/` to a static hosting provider. Configure that provider to serve generated directories normally and use `404.html` for missing routes; do not enable a blanket SPA rewrite.
-- Terminate HTTPS and configure the public domain at the hosting platform or reverse proxy. The repository intentionally contains no domain-specific proxy labels.
-- Rebuild for every content change so Astro pages, RSS, sitemap, and Pagefind stay synchronized.
-- Preserve `/pagefind/`, `/_astro/`, XML, text, image, and font files when copying the artifact.
+- Deploy the Node image to a host that supports a long-running process, container port `4321`, persistent volumes, runtime secrets, and health checks.
+- Terminate HTTPS at the hosting platform or reverse proxy. Secure cookies are enabled automatically when `NODE_ENV=production`.
+- Back up `/app/data/angefolio.db` before console editing is treated as operationally important; backup automation and restore testing remain Phase 12 work.
+- Run migrations before the new server receives traffic. The Docker command does this automatically.
+- Rebuild for MDX changes so public collection pages, RSS, sitemap, and Pagefind stay synchronized; Now Status updates do not require a rebuild.
 
 ## Production URL placeholder
 
 Astro currently uses `https://angellie-marcos.dev` as a clearly documented placeholder in `astro.config.mjs` and `src/lib/data/site.ts`. Sitemap, RSS, canonical URLs, robots metadata, and social metadata need an absolute origin, but this repository does not yet confirm a deployed domain.
 
-Replace both placeholder values with the real public origin before deployment. No environment variable or secret is required for the static build.
+Replace both placeholder values with the real public origin before deployment, and set the matching `PUBLIC_SITE_URL`/`AUTH_TRUSTED_ORIGIN` at runtime. These public origin values are not secrets.
 
 ## Phase 2 design system
 
@@ -393,7 +418,7 @@ The accessibility pass preserves the skip link and semantic landmarks, strengthe
 
 ## Phase 9 deployment readiness
 
-The production path is now explicitly static and container-friendly:
+Phase 9 established the original static, container-friendly production path:
 
 - A multi-stage Dockerfile installs from the frozen pnpm lockfile, builds Astro plus Pagefind, and copies only the generated output into Nginx.
 - Nginx serves real generated files and directories, applies conservative cache lifetimes, emits basic security headers, and exposes a container health check.
@@ -401,21 +426,35 @@ The production path is now explicitly static and container-friendly:
 - Docker build/run scripts and a separate `build:search` command make local and automated workflows reproducible.
 - GitHub Actions checks types, formatting, the production build, and the Docker image without deploying anything.
 
-This runtime serves only the public portfolio. It does not provide API routes, on-demand rendering, authentication, content editing, or a private `/console`.
+Phase 11 replaces that Nginx-only runtime with the Node service documented above. The Phase 9 notes remain here as project history.
 
 ## Phase 10 private console planning
 
-Phase 10 creates a careful boundary for a future private portfolio CMS while leaving the deployed site static:
+Phase 10 created the planning boundary that Phase 11 now implements as a narrow first slice:
 
 - [Private Console Plan](docs/console-plan.md) records purpose, non-goals, future sections, authentication/security boundaries, SSR migration choices, deployment implications, and the recommended Phase 11 slice.
 - [Future Console Data Model](docs/data-model.md) sketches `now_status`, projects, notes, Lab entries, stack groups, homepage cards, site settings, and an audit log without creating a database.
 - [Future Console Route Map](docs/console-routes.md) separates current public routes from planned guarded pages and mutation endpoints.
 - `src/lib/console/types.ts` provides future-facing TypeScript contracts only; it contains no database or auth access.
-- `/console` is a static, noindex, Pagefind-excluded planning notice. It is not linked from public navigation, is excluded from the sitemap, and explicitly does not claim privacy or security.
+- The original `/console` holding route has been replaced by the protected Phase 11 overview.
 
-The future console is intended to manage Now/status content, featured projects, note drafts, Lab entries, stack groups, homepage card visibility, and supported site settings. Content is still edited through source-controlled MDX, Astro Content Collections, and TypeScript data in Phase 10.
+The longer-term console is intended to manage Now/status content, featured projects, note drafts, Lab entries, stack groups, homepage card visibility, and supported site settings. Phase 11 implements only Now Status.
 
-There is no Better Auth integration, Drizzle schema, SQLite database, Turso connection, Node adapter, login, session, route guard, form submission, server action, or API write route in this phase. A working `/console` will require authenticated SSR or a separate secured service, persistent storage, backups, and a revised deployment strategy.
+The planning documents remain the source for future boundaries and have been updated with what Phase 11 actually shipped.
+
+## Phase 11 private console MVP
+
+Phase 11 adds one secure end-to-end publishing path:
+
+- Astro uses `@astrojs/node` in standalone server mode. Public content routes remain prerendered where they do not need runtime data.
+- Better Auth provides hashed email/password credentials, HTTP-only server sessions, secure production cookies, trusted-origin checks, and login rate limiting. Public sign-up is disabled.
+- Drizzle and local libSQL/SQLite persist Better Auth's core tables plus one `now_status` row. Migrations are committed under `drizzle/`.
+- `src/middleware.ts` guards `/console/*` except login and every `/api/console/*` mutation route. Endpoints also check authentication, request origin, size, and field limits.
+- `/console`, `/console/now`, and `POST /console/logout` are private. `/console/login` is the only public console page.
+- The homepage reads a published database status on the server and falls back to the existing static `nowItems` when the row is unpublished, missing, or unavailable.
+- The private pages stay `noindex`, out of Pagefind, absent from public navigation, and excluded from the sitemap.
+
+Projects, notes, Lab entries, stack groups, homepage layout, and settings have no database editor. There is no registration UI, OAuth, password reset email, multi-user management, media upload, audit log, or destructive content endpoint.
 
 ## Folder structure
 
@@ -423,21 +462,25 @@ There is no Better Auth integration, Drizzle schema, SQLite database, Turso conn
 docs/
 ├── console-plan.md    # Console architecture and security plan
 ├── console-routes.md  # Current and future route boundaries
-└── data-model.md      # Future persistence sketches
+└── data-model.md      # Implemented and future persistence models
 
+drizzle/               # Versioned SQLite migrations
+scripts/               # Start validation and one-time owner bootstrap
 src/
 ├── components/
 │   ├── astro/       # Layout, content cards, and presentation primitives
 │   └── svelte/      # Small interactive islands and future-facing stubs
 ├── content/         # Typed starter projects, notes, and lab entries
-├── lib/             # Shared site identity and content utilities
-│   └── console/     # Future-facing type contracts only
+├── lib/             # Shared content utilities and server-only modules
+│   ├── console/     # Future-facing type contracts
+│   └── server/      # Auth, database, validation, and public Now query
 ├── pages/
 │   ├── index.astro  # Eight-cell bento-dashboard homepage
 │   ├── projects/    # Public project index and static detail routes
 │   ├── notes/       # Public note index and static detail routes
 │   ├── lab/         # Public Lab index and static detail routes
-│   ├── console/     # Static noindex planning placeholder
+│   ├── api/         # Better Auth and guarded console endpoints
+│   ├── console/     # Protected overview, login, logout, and Now editor
 │   ├── search.astro # Static Pagefind search shell
 │   ├── rss.xml.ts   # Published-note RSS feed
 │   └── 404.astro    # Static not-found page
@@ -452,14 +495,14 @@ src/
 - Notes are source-controlled MDX files. There is no browser editor, comments system, or category/tag route yet.
 - Pagefind search is available only after a production build; the development server intentionally shows a fallback message when the index is absent.
 - The canonical production domain is still a documented placeholder and must be replaced before deployment.
-- Container TLS, DNS, and hosting-provider configuration remain external deployment concerns; the image serves HTTP on port `80` behind the chosen platform or reverse proxy.
-- `/console` is only a public static planning notice. No route in Phase 10 is private, authenticated, or capable of changing content.
+- Container TLS, DNS, secret injection, backups, and hosting-provider configuration remain external deployment concerns; the Node image serves HTTP on port `4321` behind the chosen platform or reverse proxy.
+- Only Now Status is database-backed. A single bootstrap account is supported; password recovery, passkeys/2FA, audit logging, and backup automation are not implemented yet.
 - Project detail pages are static and MDX-backed. There is no browser-based project editor or automatic synchronization with GitHub.
 - The optional project `cover` field is reserved for later visual treatment and is not rendered yet.
 - GitHub activity is a static visual placeholder and does not call the GitHub API.
 - Project filtering is a UI demonstration only.
 - The command menu and card visibility controls are non-production stubs.
-- There is no database, authentication, Node adapter, private console, or CMS. The planned console may eventually manage project, note, and Lab content, but Phase 10 adds only documentation, types, and a non-functional holding page.
+- Projects, notes, and Lab entries remain MDX-backed; the private console is not a general CMS.
 
 ## Roadmap
 
@@ -473,6 +516,7 @@ src/
 - **Phase 8:** Search, SEO, accessibility, RSS, and polish (complete)
 - **Phase 9:** Docker hardening, production reliability, and deployment readiness (complete)
 - **Phase 10:** Private `/console` planning and safe architecture scaffold (complete)
-- **Phase 11+:** Authenticated console vertical slice and content migration decisions
+- **Phase 11:** Authenticated console foundation and Now Status editor (complete)
+- **Phase 12+:** Security hardening, backups/audit trail, and deliberate content migration decisions
 
-Next: **Phase 11 should decide between integrated Astro SSR and a separate private console service, then implement one secured Now Status vertical slice.** That phase should add the Node adapter, Better Auth, Drizzle, SQLite, server-side guards, CSRF protection, audit logging, and backup/restore tests only after the deployment and data-source decisions are recorded. Projects, notes, Lab, stack, homepage cards, and settings should remain file-backed until the first slice proves the security and operational model.
+Next: **Phase 12 should harden the proven vertical slice before broadening the CMS.** Add tested database backup/restore, append-only auditing for Now mutations, session/guard integration tests, secret rotation and recovery guidance, and an explicit Turso/libSQL deployment decision. Keep projects, notes, Lab, stack, homepage cards, and settings file-backed until those operational controls are proven.

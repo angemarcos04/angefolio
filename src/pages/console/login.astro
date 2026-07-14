@@ -1,0 +1,147 @@
+---
+import BentoCard from '../../components/astro/BentoCard.astro';
+import Layout from '../../components/astro/Layout.astro';
+
+const errors: Record<string, string> = {
+  invalid: 'Email or password was not accepted.',
+  unavailable:
+    'Console services are unavailable. Check the server configuration.',
+};
+const error = Astro.url.searchParams.get('error');
+const message = error ? errors[error] : undefined;
+const description = 'Private sign-in for the angefolio console.';
+---
+
+<Layout
+  title="Console login — Angellie Marcos"
+  {description}
+  noindex
+  searchable={false}
+  class="console-login"
+>
+  <a class="wordmark" href="/"><span>~/</span>angefolio</a>
+
+  <BentoCard class="login-card subtle-grid" accent="green">
+    <p class="eyebrow">/console/login</p>
+    <h1>Private console</h1>
+    <p class="intro">
+      Sign in with the single administrator account. Public registration is
+      disabled.
+    </p>
+
+    {
+      message && (
+        <p class="form-message" role="alert">
+          {message}
+        </p>
+      )
+    }
+
+    <form action="/api/console/login" method="post">
+      <label>
+        <span>Email</span>
+        <input
+          type="email"
+          name="email"
+          autocomplete="username"
+          maxlength="254"
+          required
+        />
+      </label>
+      <label>
+        <span>Password</span>
+        <input
+          type="password"
+          name="password"
+          autocomplete="current-password"
+          minlength="12"
+          maxlength="128"
+          required
+        />
+      </label>
+      <button type="submit">Sign in</button>
+    </form>
+
+    <p class="setup-note">
+      No account yet? Use the documented one-time bootstrap command on the
+      server. There is no browser sign-up flow.
+    </p>
+  </BentoCard>
+</Layout>
+
+<style>
+  :global(.console-login) {
+    max-width: 34rem;
+  }
+  .wordmark {
+    display: inline-block;
+    margin-bottom: 1rem;
+    color: var(--foreground);
+    font: 700 0.82rem var(--font-mono);
+  }
+  .wordmark span {
+    color: var(--accent-green);
+  }
+  :global(.login-card) {
+    padding: clamp(1.4rem, 6vw, 2.5rem);
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(2rem, 7vw, 3.25rem);
+    letter-spacing: -0.05em;
+  }
+  .intro,
+  .setup-note {
+    color: var(--muted-foreground);
+  }
+  .intro {
+    margin: 0.75rem 0 1.5rem;
+  }
+  form,
+  label {
+    display: grid;
+  }
+  form {
+    gap: 1rem;
+  }
+  label {
+    gap: 0.4rem;
+  }
+  label span,
+  .setup-note {
+    font: 0.7rem/1.6 var(--font-mono);
+  }
+  input {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    outline: none;
+    background: var(--muted);
+    color: var(--foreground);
+  }
+  input:focus {
+    border-color: var(--accent-cyan);
+  }
+  button {
+    min-height: 2.75rem;
+    border: 1px solid var(--accent-green);
+    border-radius: var(--radius-sm);
+    background: var(--accent-green);
+    color: #07110b;
+    cursor: pointer;
+    font: 700 0.78rem var(--font-mono);
+  }
+  .form-message {
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--accent-red);
+    color: var(--accent-red);
+    font: 0.72rem var(--font-mono);
+  }
+  .setup-note {
+    margin: 1.25rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+</style>

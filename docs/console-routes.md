@@ -1,78 +1,58 @@
-# Future Console Route Map
+# Console Route Map
 
-This document is a plan, not an implemented API contract. In Phase 10 the application remains static. The only `/console` output is a noindex planning placeholder; no login, private page, API mutation route, or server action exists.
+Phase 11 introduces an authenticated server boundary for the smallest useful console slice. Routes marked prerendered are emitted into `dist/client`; routes marked server run through the standalone Astro Node process.
 
 ## Current public routes
 
-| Route                | Rendering                   | Access                              |
-| -------------------- | --------------------------- | ----------------------------------- |
-| `/`                  | Static                      | Public                              |
-| `/projects`          | Static                      | Public visible projects only        |
-| `/projects/[slug]`   | Static                      | Public visible project entries only |
-| `/notes`             | Static                      | Published notes only                |
-| `/notes/[slug]`      | Static                      | Published note entries only         |
-| `/lab`               | Static                      | Public visible Lab entries only     |
-| `/lab/[slug]`        | Static                      | Public visible Lab entries only     |
-| `/search`            | Static plus Pagefind island | Public indexed content only         |
-| `/rss.xml`           | Static endpoint             | Published notes only                |
-| `/robots.txt`        | Static endpoint             | Public crawler policy               |
-| `/sitemap-index.xml` | Build-generated             | Public route discovery              |
-| `/404.html`          | Static                      | Public recovery page                |
+| Route                | Rendering            | Access                                                |
+| -------------------- | -------------------- | ----------------------------------------------------- |
+| `/`                  | Server               | Public; published database Now row or static fallback |
+| `/projects`          | Prerendered          | Public visible projects only                          |
+| `/projects/[slug]`   | Prerendered          | Public visible project entries only                   |
+| `/notes`             | Prerendered          | Published notes only                                  |
+| `/notes/[slug]`      | Prerendered          | Published note entries only                           |
+| `/lab`               | Prerendered          | Public visible Lab entries only                       |
+| `/lab/[slug]`        | Prerendered          | Public visible Lab entries only                       |
+| `/search`            | Prerendered + island | Public Pagefind index only                            |
+| `/rss.xml`           | Prerendered endpoint | Published notes only                                  |
+| `/robots.txt`        | Prerendered endpoint | Public crawler policy                                 |
+| `/sitemap-index.xml` | Build-generated      | Public route discovery; console excluded              |
+| `/404.html`          | Prerendered          | Public recovery page                                  |
 
-The static `/console` placeholder is intentionally excluded from Pagefind and the sitemap and carries `noindex, nofollow`. Those measures are crawler controls, not access controls.
+## Implemented console and auth routes
 
-## Future private page routes
+| Method | Route                | Access               | Purpose                                                     |
+| ------ | -------------------- | -------------------- | ----------------------------------------------------------- |
+| GET    | `/console/login`     | Public               | Owner login form; redirects an active session to `/console` |
+| GET    | `/console`           | Private              | Minimal overview and signed-in identity                     |
+| GET    | `/console/now`       | Private              | Load the singleton Now Status editor                        |
+| POST   | `/console/logout`    | Private              | Invalidate the Better Auth session and redirect to login    |
+| ALL    | `/api/auth/[...all]` | Better Auth policy   | Session API; email sign-up is disabled in runtime config    |
+| POST   | `/api/console/login` | Public, same-origin  | Form bridge to Better Auth email sign-in                    |
+| POST   | `/api/console/now`   | Private, same-origin | Validate and upsert Now Status                              |
 
-Every route in this table is future work and must be guarded on the server before it reads private data.
+Only `/console/login` is a public console page. Auth endpoints necessarily accept unauthenticated sign-in/session requests, but Better Auth rejects sign-up and middleware guards every console mutation.
 
-| Route                    | Purpose                                                                      |
-| ------------------------ | ---------------------------------------------------------------------------- |
-| `/console`               | Authenticated entry point; redirect to login or overview as appropriate.     |
-| `/console/login`         | Owner login. No public registration.                                         |
-| `/console/overview`      | Publishing state, recent audited changes, and operational notices.           |
-| `/console/now`           | Edit current status data.                                                    |
-| `/console/projects`      | List project drafts and public entries.                                      |
-| `/console/projects/new`  | Create an unpublished project draft.                                         |
-| `/console/projects/[id]` | Edit one project by stable ID.                                               |
-| `/console/notes`         | List note drafts and published notes.                                        |
-| `/console/notes/new`     | Create an unpublished note draft.                                            |
-| `/console/notes/[id]`    | Edit one note by stable ID.                                                  |
-| `/console/lab`           | List hidden and visible Lab entries.                                         |
-| `/console/lab/new`       | Create a hidden Lab draft.                                                   |
-| `/console/lab/[id]`      | Edit one Lab entry by stable ID.                                             |
-| `/console/stack`         | Maintain ordered stack/tool groups.                                          |
-| `/console/homepage`      | Maintain enabled state, order, and bounded configuration for homepage cards. |
-| `/console/settings`      | Maintain allow-listed public site settings.                                  |
+## Planned private routes
 
-Use opaque IDs for console edit routes. Slugs remain editable public identifiers and should not be treated as stable database keys.
+These routes are not implemented:
 
-## Future API or server-action routes
+- `/console/overview`
+- `/console/projects`, `/console/projects/new`, `/console/projects/[id]`
+- `/console/notes`, `/console/notes/new`, `/console/notes/[id]`
+- `/console/lab`, `/console/lab/new`, `/console/lab/[id]`
+- `/console/stack`
+- `/console/homepage`
+- `/console/settings`
 
-These endpoints are **not implemented in Phase 10**. The final architecture may use equivalent Astro server actions, but the same authorization, validation, CSRF, transaction, and audit requirements apply.
-
-| Method and route                   | Intended operation                          |
-| ---------------------------------- | ------------------------------------------- |
-| `POST /api/console/now`            | Validate and update the current Now Status. |
-| `POST /api/console/projects`       | Create a non-visible project draft.         |
-| `PATCH /api/console/projects/[id]` | Update an existing project.                 |
-| `POST /api/console/notes`          | Create an unpublished note draft.           |
-| `PATCH /api/console/notes/[id]`    | Update an existing note.                    |
-| `POST /api/console/lab`            | Create a hidden Lab draft.                  |
-| `PATCH /api/console/lab/[id]`      | Update an existing Lab entry.               |
-| `POST /api/console/homepage`       | Update bounded homepage card configuration. |
-| `POST /api/console/settings`       | Update allow-listed public site settings.   |
-
-Deletion is intentionally absent from the first route plan. Archive/visibility transitions and backup behavior should be proven before destructive operations are designed.
+Likewise, project, note, Lab, homepage, and settings POST/PATCH endpoints remain future work. No delete endpoint is planned until archive behavior, auditing, and backups are proven.
 
 ## Guard and response rules
 
-- Guard every `/console` route except the future login route on the server.
-- Guard every `/api/console/*` endpoint independently; a hidden button or client redirect is not authorization.
-- Return `401` when authentication is missing and `403` when an authenticated actor lacks permission.
-- Validate route parameters and request bodies before database access.
-- Use transactions for content mutation plus audit logging where possible.
-- Protect state-changing requests against CSRF and validate request origin as appropriate.
-- Default new projects and Lab entries to hidden and new notes to unpublished.
-- Never return drafts or private settings from public endpoints or static collection queries.
-- Apply request size limits and a separate, explicit policy before accepting media uploads.
-- Do not cache authenticated HTML or private API responses in public/CDN caches.
+- Middleware guards every `/console` path except login and every `/api/console/*` route except the login bridge.
+- Private pages redirect missing sessions to `/console/login`; private APIs return `401`.
+- Console infrastructure failures return a conservative `503` or login notice without SQL/configuration details.
+- Mutation endpoints repeat the authentication check, reject untrusted origins and oversized forms, and validate every field.
+- Login failures do not reveal whether an account exists.
+- Console HTML is `noindex`, Pagefind-excluded, absent from public navigation, and filtered from the sitemap.
+- Authenticated HTML and private API responses must not be placed in public caches.

@@ -1,0 +1,128 @@
+---
+import Layout from './Layout.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  active?: 'overview' | 'now';
+  user: {
+    name: string;
+    email: string;
+  };
+}
+
+const { title, description, active, user } = Astro.props;
+---
+
+<Layout {title} {description} noindex searchable={false} class="console-shell">
+  <header class="console-bar">
+    <div>
+      <a class="wordmark" href="/console"><span>~/</span>console</a>
+      <p>{user.name} <span aria-hidden="true">·</span> {user.email}</p>
+    </div>
+    <div class="console-actions">
+      <a href="/">Public site</a>
+      <form action="/console/logout" method="post">
+        <button type="submit">Log out</button>
+      </form>
+    </div>
+  </header>
+
+  <nav aria-label="Console navigation">
+    <a
+      href="/console"
+      aria-current={active === 'overview' ? 'page' : undefined}
+    >
+      Overview
+    </a>
+    <a href="/console/now" aria-current={active === 'now' ? 'page' : undefined}>
+      Now Status
+    </a>
+    <span>Projects · planned</span>
+    <span>Notes · planned</span>
+    <span>Lab · planned</span>
+  </nav>
+
+  <slot />
+</Layout>
+
+<style>
+  :global(.console-shell) {
+    max-width: 72rem;
+  }
+  .console-bar,
+  .console-actions,
+  nav {
+    display: flex;
+    align-items: center;
+  }
+  .console-bar {
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .wordmark {
+    color: var(--foreground);
+    font: 700 0.9rem var(--font-mono);
+  }
+  .wordmark span {
+    color: var(--accent-green);
+  }
+  .console-bar p {
+    margin: 0.35rem 0 0;
+    color: var(--muted-foreground);
+    font: 0.65rem var(--font-mono);
+  }
+  .console-actions {
+    gap: 0.55rem;
+  }
+  .console-actions a,
+  button,
+  nav :is(a, span) {
+    font: 0.7rem var(--font-mono);
+  }
+  .console-actions a,
+  button {
+    min-height: 2.25rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--muted);
+    color: var(--foreground);
+  }
+  button {
+    cursor: pointer;
+  }
+  .console-actions :is(a, button):hover {
+    border-color: var(--accent-cyan);
+  }
+  nav {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+  }
+  nav :is(a, span) {
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  nav a[aria-current='page'] {
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+  }
+  nav span {
+    color: var(--muted-foreground);
+    opacity: 0.65;
+  }
+  form {
+    margin: 0;
+  }
+  @media (max-width: 620px) {
+    .console-bar {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>

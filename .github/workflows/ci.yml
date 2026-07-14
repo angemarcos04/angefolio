@@ -36,7 +36,7 @@ jobs:
       - name: Check formatting
         run: pnpm format:check
 
-      - name: Build static site and search index
+      - name: Build SSR server and public search index
         run: pnpm build
 
       - name: Build production container

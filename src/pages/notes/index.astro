@@ -8,6 +8,8 @@ import Tag from '../../components/astro/Tag.astro';
 import { getPublishedNotes } from '../../lib/content';
 import { getAllCategories, getAllTags, getNoteUrl } from '../../lib/notes';
 
+export const prerender = true;
+
 const description =
   'Project logs, Linux fixes, web development notes, and thoughts from building things.';
 const notes = await getPublishedNotes();

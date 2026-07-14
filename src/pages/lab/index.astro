@@ -6,6 +6,8 @@ import Layout from '../../components/astro/Layout.astro';
 import SectionHeader from '../../components/astro/SectionHeader.astro';
 import Tag from '../../components/astro/Tag.astro';
 import { getVisibleLabEntries } from '../../lib/content';
+
+export const prerender = true;
 import {
   getAllLabCategories,
   getAllLabTags,

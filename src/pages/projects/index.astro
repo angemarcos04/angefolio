@@ -6,6 +6,8 @@ import ProjectCard from '../../components/astro/ProjectCard.astro';
 import SectionHeader from '../../components/astro/SectionHeader.astro';
 import { getProjectUrl, getVisibleProjects } from '../../lib/content';
 
+export const prerender = true;
+
 const description =
   "Selected systems, prototypes, and experiments I'm building while learning full-stack development, backend workflows, Linux, and AI-assisted tools.";
 const projects = await getVisibleProjects();

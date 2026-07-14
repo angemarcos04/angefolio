@@ -4,29 +4,44 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.13.1",
+  "pnpm": {
+    "overrides": {
+      "esbuild": "0.28.1"
+    }
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "postbuild": "pagefind --site dist",
-    "index": "pagefind --site dist",
-    "build:search": "astro build && pagefind --site dist",
+    "postbuild": "pagefind --site dist/client",
+    "index": "pagefind --site dist/client",
+    "build:search": "astro build && pagefind --site dist/client",
     "preview": "astro preview",
+    "start": "node scripts/start.mjs",
     "astro": "astro",
     "check": "astro check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "console:bootstrap": "tsx scripts/create-admin.ts",
     "docker:build": "docker build -t angefolio .",
-    "docker:run": "docker run --rm -p 4321:80 angefolio"
+    "docker:run": "docker run --rm --env-file .env -p 4321:4321 -v angefolio_data:/app/data angefolio"
   },
   "dependencies": {
     "@astrojs/mdx": "latest",
+    "@astrojs/node": "^11.0.2",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
     "@astrojs/svelte": "latest",
+    "@better-auth/drizzle-adapter": "^1.6.23",
+    "@libsql/client": "^0.17.4",
     "@tailwindcss/vite": "latest",
     "astro": "latest",
     "astro-expressive-code": "latest",
+    "better-auth": "^1.6.23",
     "clsx": "latest",
+    "drizzle-orm": "^0.45.2",
     "lucide-svelte": "latest",
     "pagefind": "latest",
     "sharp": "latest",
@@ -36,9 +51,12 @@
   },
   "devDependencies": {
     "@astrojs/check": "latest",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
     "prettier": "latest",
     "prettier-plugin-astro": "latest",
     "prettier-plugin-svelte": "latest",
+    "tsx": "^4.23.1",
     "typescript": "5.9.3"
   }
 }

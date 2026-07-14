@@ -21,6 +21,7 @@ import {
 import { site } from '../lib/data/site';
 import { getProjectUrl, sortProjects } from '../lib/content';
 import { getNoteUrl, sortNotesByDateDesc } from '../lib/notes';
+import { getPublicNowStatus } from '../lib/server/now';
 
 const projects = sortProjects(
   await getCollection('projects', ({ data }) => data.visible),
@@ -28,6 +29,14 @@ const projects = sortProjects(
 const notes = sortNotesByDateDesc(
   await getCollection('notes', ({ data }) => data.published),
 ).slice(0, 3);
+const publicNowStatus = await getPublicNowStatus();
+const renderedNowItems = publicNowStatus?.items ?? nowItems;
+const nowMetadata = publicNowStatus
+  ? (publicNowStatus.statusNote ??
+    `Updated ${publicNowStatus.updatedAt.toLocaleDateString('en', {
+      dateStyle: 'medium',
+    })}.`)
+  : 'Static fallback.';
 const navItems = [
   { label: 'Projects', href: '/projects' },
   { label: 'Notes', href: '/notes' },
@@ -134,9 +143,9 @@ const navItems = [
       title="Current focus"
     >
       <ul class="status-list">
-        {nowItems.map((item) => <li>{item}</li>)}
+        {renderedNowItems.map((item) => <li>{item}</li>)}
       </ul>
-      <p class="metadata">Updated manually.</p>
+      <p class="metadata">{nowMetadata}</p>
     </BentoCard>
 
     <BentoCard

@@ -4,6 +4,8 @@ import { getPublishedNotes } from '../lib/content';
 import { getNoteUrl } from '../lib/notes';
 import { site } from '../lib/data/site';
 
+export const prerender = true;
+
 export async function GET(context: APIContext) {
   const notes = await getPublishedNotes();
 

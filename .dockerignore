@@ -12,6 +12,14 @@ coverage
 .env
 .env.*
 !.env.example
+data/*.db
+data/*.db-*
+data/*.sqlite
+data/*.sqlite-*
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
 
 # Editor and operating-system files
 .DS_Store

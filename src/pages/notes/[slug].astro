@@ -6,6 +6,8 @@ import IconLink from '../../components/astro/IconLink.astro';
 import Layout from '../../components/astro/Layout.astro';
 import Tag from '../../components/astro/Tag.astro';
 import { getPublishedNotes } from '../../lib/content';
+
+export const prerender = true;
 import {
   formatDate,
   getNoteReadingTime,
