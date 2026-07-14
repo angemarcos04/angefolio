@@ -38,61 +38,67 @@
   --radius-xl: 0.9rem;
   --danger: var(--lava);
   --danger-foreground: var(--ivory);
-  --terminal-background: var(--coffee);
-  --terminal-foreground: var(--ivory);
-  --terminal-muted: color-mix(in srgb, var(--platinum) 65%, var(--coffee));
-  --terminal-accent: color-mix(in srgb, var(--copper) 58%, var(--ivory));
 }
 
 :root,
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --background: var(--coffee);
+  --background: #080b10;
   --foreground: var(--ivory);
-  --card: color-mix(in srgb, var(--copper) 7%, var(--coffee));
+  --card: #11161d;
   --card-foreground: var(--ivory);
-  --muted: color-mix(in srgb, var(--copper) 11%, var(--coffee));
-  --muted-foreground: color-mix(in srgb, var(--platinum) 72%, var(--coffee));
-  --subtle-foreground: color-mix(in srgb, var(--platinum) 58%, var(--coffee));
+  --muted: #171e27;
+  --muted-foreground: #b6c0ca;
+  --subtle-foreground: #8c98a5;
   --accent: var(--copper);
-  --accent-hover: color-mix(in srgb, var(--copper) 82%, var(--ivory));
-  --accent-text: color-mix(in srgb, var(--copper) 55%, var(--ivory));
-  --accent-foreground: var(--coffee);
+  --accent-hover: #d2a06a;
+  --accent-text: #d6a66f;
+  --accent-foreground: #080b10;
   --primary-background: var(--accent-hover);
-  --accent-soft: color-mix(in srgb, var(--copper) 13%, transparent);
-  --border: color-mix(in srgb, var(--copper) 23%, var(--coffee));
-  --border-strong: color-mix(in srgb, var(--copper) 42%, var(--coffee));
-  --focus-ring: var(--accent-hover);
-  --danger-text: color-mix(in srgb, var(--lava) 38%, var(--ivory));
-  --danger-border: color-mix(in srgb, var(--lava) 52%, var(--ivory));
-  --danger-soft: color-mix(in srgb, var(--lava) 28%, transparent);
-  --shadow-soft: 0 18px 55px rgb(0 0 0 / 0.24);
   --primary-foreground: var(--accent-foreground);
+  --accent-soft: rgb(168 118 62 / 0.14);
+  --border: #27303a;
+  --border-strong: #3b4653;
+  --focus-ring: #d6a66f;
+  --danger-text: color-mix(in srgb, var(--lava) 32%, var(--ivory));
+  --danger-border: color-mix(in srgb, var(--lava) 50%, var(--ivory));
+  --danger-soft: color-mix(in srgb, var(--lava) 26%, transparent);
+  --shadow-soft: 0 20px 60px rgb(0 0 0 / 0.38);
+  --ambient-glow: rgb(93 120 145 / 0.055);
+  --terminal-background: #05070a;
+  --terminal-foreground: var(--ivory);
+  --terminal-muted: #aab4be;
+  --terminal-accent: #d6a66f;
 }
 
 :root[data-theme='dim'] {
   color-scheme: dark;
-  --background: var(--coffee);
-  --foreground: color-mix(in srgb, var(--platinum) 88%, var(--coffee));
-  --card: color-mix(in srgb, var(--copper) 4%, var(--coffee));
-  --card-foreground: var(--foreground);
-  --muted: color-mix(in srgb, var(--copper) 7%, var(--coffee));
-  --muted-foreground: color-mix(in srgb, var(--platinum) 64%, var(--coffee));
-  --subtle-foreground: color-mix(in srgb, var(--platinum) 51%, var(--coffee));
+  --background: #1b2430;
+  --foreground: #dde3ea;
+  --card: #222e3b;
+  --card-foreground: #dde3ea;
+  --muted: #2a3745;
+  --muted-foreground: #aab4c0;
+  --subtle-foreground: #8995a3;
   --accent: var(--copper);
-  --accent-hover: color-mix(in srgb, var(--copper) 84%, var(--ivory));
-  --accent-text: color-mix(in srgb, var(--copper) 50%, var(--ivory));
-  --accent-foreground: var(--coffee);
+  --accent-hover: #c9945a;
+  --accent-text: #d2a06a;
+  --accent-foreground: #111820;
   --primary-background: var(--accent-hover);
-  --accent-soft: color-mix(in srgb, var(--copper) 9%, transparent);
-  --border: color-mix(in srgb, var(--copper) 16%, var(--coffee));
-  --border-strong: color-mix(in srgb, var(--copper) 29%, var(--coffee));
-  --focus-ring: var(--accent-hover);
-  --danger-text: color-mix(in srgb, var(--lava) 32%, var(--ivory));
+  --primary-foreground: var(--accent-foreground);
+  --accent-soft: rgb(168 118 62 / 0.12);
+  --border: #354353;
+  --border-strong: #4a5b6d;
+  --focus-ring: #d2a06a;
+  --danger-text: color-mix(in srgb, var(--lava) 30%, var(--ivory));
   --danger-border: color-mix(in srgb, var(--lava) 46%, var(--ivory));
   --danger-soft: color-mix(in srgb, var(--lava) 22%, transparent);
-  --shadow-soft: 0 16px 42px rgb(0 0 0 / 0.16);
-  --primary-foreground: var(--accent-foreground);
+  --shadow-soft: 0 16px 42px rgb(3 8 14 / 0.22);
+  --ambient-glow: rgb(91 120 151 / 0.08);
+  --terminal-background: #111923;
+  --terminal-foreground: var(--platinum);
+  --terminal-muted: #9eabb8;
+  --terminal-accent: #d2a06a;
 }
 
 :root[data-theme='light'] {
@@ -118,6 +124,11 @@
   --danger-soft: color-mix(in srgb, var(--lava) 10%, transparent);
   --shadow-soft: 0 18px 48px rgb(43 33 24 / 0.12);
   --primary-foreground: var(--accent-foreground);
+  --ambient-glow: rgb(168 118 62 / 0.07);
+  --terminal-background: var(--coffee);
+  --terminal-foreground: var(--ivory);
+  --terminal-muted: color-mix(in srgb, var(--platinum) 65%, var(--coffee));
+  --terminal-accent: color-mix(in srgb, var(--copper) 58%, var(--ivory));
 }
 
 @theme inline {
@@ -159,11 +170,7 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(
-      circle at 12% 0%,
-      color-mix(in srgb, var(--accent) 7%, transparent),
-      transparent 29rem
-    ),
+    radial-gradient(circle at 12% 0%, var(--ambient-glow), transparent 29rem),
     var(--background);
   color: var(--foreground);
   font-family: var(--type-body);

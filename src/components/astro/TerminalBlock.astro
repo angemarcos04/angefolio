@@ -20,7 +20,7 @@ const { title = 'angefolio.sh', class: className = '' } = Astro.props;
   .terminal {
     max-width: 100%;
     overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--coffee));
+    border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
     border-radius: var(--radius-lg);
     background: var(--terminal-background);
     color: var(--terminal-foreground);
@@ -42,7 +42,11 @@ const { title = 'angefolio.sh', class: className = '' } = Astro.props;
     width: 0.48rem;
     height: 0.48rem;
     border-radius: 50%;
-    background: color-mix(in srgb, var(--accent) 25%, var(--coffee));
+    background: color-mix(
+      in srgb,
+      var(--accent) 25%,
+      var(--terminal-background)
+    );
   }
   i:nth-child(2) {
     background: var(--accent);

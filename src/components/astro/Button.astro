@@ -65,7 +65,7 @@ const {
   .variant-primary {
     border-color: var(--primary-background);
     background: var(--primary-background);
-    color: var(--accent-foreground);
+    color: var(--primary-foreground);
   }
   .variant-secondary {
     border-color: var(--border-strong);
@@ -89,14 +89,14 @@ const {
   .variant-primary:hover {
     border-color: var(--accent-text);
     background: var(--primary-background);
-    color: var(--accent-foreground);
+    color: var(--primary-foreground);
   }
   .variant-ghost:hover {
     background: var(--accent-soft);
   }
   .variant-danger:hover {
     border-color: var(--danger-border);
-    background: color-mix(in srgb, var(--danger) 88%, var(--coffee));
+    background: color-mix(in srgb, var(--danger) 88%, var(--background));
     color: var(--danger-foreground);
   }
 </style>

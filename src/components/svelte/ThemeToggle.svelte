@@ -17,6 +17,12 @@
     dark: '●',
   };
 
+  const themeColors = {
+    light: '#f7f3e3',
+    dim: '#1b2430',
+    dark: '#080b10',
+  } satisfies Record<Theme, string>;
+
   let theme: Theme = 'dark';
 
   function isTheme(value: string | undefined): value is Theme {
@@ -26,7 +32,7 @@
   function updateThemeColor(nextTheme: Theme) {
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', nextTheme === 'light' ? '#f7f3e3' : '#2b2118');
+      ?.setAttribute('content', themeColors[nextTheme]);
   }
 
   function getNextTheme(currentTheme: Theme): Theme {
