@@ -96,23 +96,40 @@ const navItems = [
       accent="strong"
       eyebrow={site.role}
     >
-      <h1 class="hero-heading text-balance">Hi, I'm Angellie Marcos.</h1>
-      <p class="tagline">{site.tagline}</p>
-      <p class="role-line">
-        <span class="sr-only">
-          Roles: IT student, Linux user, System builder, Full-stack dev.
-        </span>
+      <div class="hero-intro">
+        <figure class="hero-portrait">
+          <img
+            src="/angellie.jpg"
+            alt="Angellie Marcos"
+            width="1080"
+            height="1080"
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
+            class="hero-portrait-image"
+          />
+        </figure>
 
-        <span class="role-cycle" aria-hidden="true">
-          <span class="role role-1">IT student.</span>
-          <span class="role role-2">Linux user.</span>
-          <span class="role role-3">System builder.</span>
-          <span class="role role-4">Full-stack dev.</span>
-        </span>
-      </p>
-      <div class="actions">
-        <Button href="/projects" variant="primary">Projects</Button>
-        <Button href={'mailto:' + site.email} variant="ghost">Email</Button>
+        <div class="hero-copy">
+          <h1 class="hero-heading text-balance">Hi, I'm Angellie Marcos.</h1>
+          <p class="tagline">{site.tagline}</p>
+          <p class="role-line">
+            <span class="sr-only">
+              Roles: IT student, Linux user, System builder, Full-stack dev.
+            </span>
+
+            <span class="role-cycle" aria-hidden="true">
+              <span class="role role-1">IT student.</span>
+              <span class="role role-2">Linux user.</span>
+              <span class="role role-3">System builder.</span>
+              <span class="role role-4">Full-stack dev.</span>
+            </span>
+          </p>
+          <div class="actions">
+            <Button href="/projects" variant="primary">Projects</Button>
+            <Button href={'mailto:' + site.email} variant="ghost">Email</Button>
+          </div>
+        </div>
       </div>
       <TerminalBlock title="whoami" class="hero-terminal">
         <p><code>~/angefolio $ whoami</code></p>
@@ -315,6 +332,34 @@ const navItems = [
     min-height: 29rem;
     flex-direction: column;
     justify-content: flex-end;
+  }
+  .hero-intro {
+    display: grid;
+    grid-template-columns: minmax(11rem, 0.75fr) minmax(0, 1.7fr);
+    align-items: center;
+    gap: clamp(1.25rem, 3vw, 2.25rem);
+  }
+  .hero-portrait {
+    position: relative;
+    width: min(100%, 15rem);
+    aspect-ratio: 4 / 5;
+    align-self: end;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--muted);
+  }
+  .hero-portrait-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+  .hero-copy {
+    min-width: 0;
+    align-self: center;
   }
   .hero-heading {
     max-width: 48rem;
@@ -532,6 +577,14 @@ const navItems = [
     :global(.hero) {
       min-height: 0;
     }
+    .hero-intro {
+      grid-template-columns: 1fr;
+      align-items: start;
+    }
+    .hero-portrait {
+      width: min(12.5rem, 62vw);
+      justify-self: start;
+    }
     .project-grid,
     .note-grid {
       grid-template-columns: 1fr;
@@ -554,6 +607,11 @@ const navItems = [
     .stack-groups,
     .contact-links {
       grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 420px) {
+    .hero-portrait {
+      width: min(11rem, 62vw);
     }
   }
 </style>
