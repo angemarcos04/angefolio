@@ -4,8 +4,6 @@ export const site = {
   defaultTitle: 'Angellie Marcos — angefolio',
   role: 'Information Technology Student',
   tagline: 'Coding, tinkering, and convincing computers to do my bidding.',
-  description:
-    'I code full-stack apps, wrestle with backend systems, call the Linux terminal home, and experiment with AI, data, and tools that actually do the job.',
   seoDescription:
     'The personal developer portfolio of Angellie Marcos, an IT student building practical web systems with a Linux-minded, creative edge.',
   url: 'https://angellie-marcos.dev',

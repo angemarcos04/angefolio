@@ -98,11 +98,6 @@ const navItems = [
     >
       <h1 class="text-balance">Hi, I'm Angellie Marcos.</h1>
       <p class="tagline">{site.tagline}</p>
-      <p class="hero-description">{site.description}</p>
-      <p class="support-line">
-        Information Technology student building practical web systems, backend
-        workflows, and personal software projects.
-      </p>
       <div class="actions">
         <Button href="/projects" variant="primary">Projects</Button>
         <Button href={'mailto:' + site.email} variant="ghost">Email</Button>
@@ -322,26 +317,18 @@ const navItems = [
     color: var(--accent-text);
     font-size: clamp(1rem, 2vw, 1.25rem);
   }
-  .hero-description,
-  .support-line,
   .about p,
   .github > p,
   .contact > p {
     color: var(--muted-foreground);
   }
-  .hero-description {
-    max-width: 48rem;
-    margin: 0.7rem 0 0;
-  }
-  .support-line {
-    max-width: 48rem;
-    margin: 0.45rem 0 1.2rem;
-    font-size: 0.88rem;
-  }
   .actions,
   .tags {
     flex-wrap: wrap;
     gap: 0.5rem;
+  }
+  .actions {
+    margin-top: 1.2rem;
   }
   :global(.hero-terminal) {
     margin-top: 1.35rem;
