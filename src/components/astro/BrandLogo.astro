@@ -1,7 +1,7 @@
 ---
 interface Props {
   href?: string;
-  placement?: 'header' | 'standalone';
+  placement?: 'header' | 'footer' | 'standalone';
   class?: string;
   priority?: boolean;
 }
@@ -14,9 +14,8 @@ const {
 } = Astro.props;
 
 const imageAttributes = {
-  src: '/angefolio_terminal_logo.svg',
-  width: 408,
-  height: 148,
+  width: 690,
+  height: 250,
   loading: priority ? 'eager' : 'lazy',
   decoding: 'async',
   fetchpriority: priority ? 'high' : 'auto',
@@ -30,11 +29,41 @@ const imageAttributes = {
       class:list={['brand-logo', `brand-logo--${placement}`, className]}
       aria-label="Angefolio home"
     >
-      <img {...imageAttributes} alt="" />
+      <span class="logo-frame" aria-hidden="true">
+        <img
+          {...imageAttributes}
+          class="logo-image logo-light"
+          src="/angefolio_logo_dropcap_light.svg"
+          alt=""
+        />
+        <img
+          {...imageAttributes}
+          class="logo-image logo-dark"
+          src="/angefolio_logo_dropcap_dark.svg"
+          alt=""
+        />
+      </span>
     </a>
   ) : (
-    <span class:list={['brand-logo', `brand-logo--${placement}`, className]}>
-      <img {...imageAttributes} alt="Angefolio" />
+    <span
+      class:list={['brand-logo', `brand-logo--${placement}`, className]}
+      role="img"
+      aria-label="Angefolio"
+    >
+      <span class="logo-frame" aria-hidden="true">
+        <img
+          {...imageAttributes}
+          class="logo-image logo-light"
+          src="/angefolio_logo_dropcap_light.svg"
+          alt=""
+        />
+        <img
+          {...imageAttributes}
+          class="logo-image logo-dark"
+          src="/angefolio_logo_dropcap_dark.svg"
+          alt=""
+        />
+      </span>
     </span>
   )
 }
@@ -53,20 +82,50 @@ const imageAttributes = {
     outline: 3px solid var(--focus-ring);
     outline-offset: 4px;
   }
-  .brand-logo img {
+  .logo-frame {
+    display: grid;
+    width: 100%;
+    aspect-ratio: 690 / 250;
+  }
+  .logo-image {
+    grid-area: 1 / 1;
     display: block;
+    width: 100%;
     max-width: 100%;
     height: auto;
   }
-  .brand-logo--header img {
-    width: clamp(9.5rem, 14vw, 10.5rem);
+  .logo-light {
+    display: none;
   }
-  .brand-logo--standalone img {
-    width: clamp(9.5rem, 50vw, 11rem);
+  .logo-dark {
+    display: block;
+  }
+  :global(html[data-theme='light']) .logo-light {
+    display: block;
+  }
+  :global(html[data-theme='light']) .logo-dark {
+    display: none;
+  }
+  :global(html[data-theme='dim']) .logo-light,
+  :global(html[data-theme='dark']) .logo-light {
+    display: none;
+  }
+  :global(html[data-theme='dim']) .logo-dark,
+  :global(html[data-theme='dark']) .logo-dark {
+    display: block;
+  }
+  .brand-logo--header .logo-frame {
+    width: clamp(10.5rem, 15vw, 12rem);
+  }
+  .brand-logo--footer .logo-frame {
+    width: clamp(12rem, 24vw, 15rem);
+  }
+  .brand-logo--standalone .logo-frame {
+    width: clamp(10.5rem, 50vw, 12rem);
   }
   @media (max-width: 480px) {
-    .brand-logo--header img {
-      width: clamp(8rem, 38vw, 9rem);
+    .brand-logo--header .logo-frame {
+      width: clamp(9rem, 44vw, 10.5rem);
     }
   }
 </style>
