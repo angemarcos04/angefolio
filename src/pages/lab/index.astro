@@ -113,18 +113,18 @@ const tags = getAllLabTags(entries);
     padding-block: 0.75rem;
     border-block: 1px solid var(--border);
   }
-  .collection-summary p,
-  .collection-summary span {
+  .collection-summary p {
     margin: 0;
     color: var(--muted-foreground);
-    font: 0.72rem/1.5 var(--font-mono);
+    font: 1rem/1.65 var(--type-body);
   }
   .collection-summary p {
-    max-width: 67ch;
+    max-width: 64ch;
   }
   .collection-summary span {
     flex: none;
     color: var(--accent-text);
+    font: 500 0.72rem/1.5 var(--type-ui);
   }
   :global(.collection-grid .content-card) {
     height: 100%;
@@ -182,7 +182,7 @@ const tags = getAllLabTags(entries);
   .status-group h2 {
     margin: 0;
     font-size: 1rem;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.02em;
   }
   .status-group small {
     color: var(--muted-foreground);
@@ -194,7 +194,7 @@ const tags = getAllLabTags(entries);
     border: 1px dashed var(--border);
     background: var(--card);
     color: var(--muted-foreground);
-    font: 0.8rem var(--font-mono);
+    font: 1rem/1.65 var(--type-body);
   }
   @media (max-width: 560px) {
     .collection-summary,

@@ -144,7 +144,7 @@
     min-height: 2.75rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    font: 0.78rem var(--font-mono);
+    font: 0.9rem var(--type-body);
   }
   input {
     min-width: 0;
@@ -160,7 +160,8 @@
     border-color: var(--primary-background);
     background: var(--primary-background);
     color: var(--accent-foreground);
-    font-weight: 700;
+    font-family: var(--type-ui);
+    font-weight: 600;
     cursor: pointer;
   }
   button:disabled {
@@ -170,7 +171,7 @@
   .status {
     margin: 0.9rem 0 0;
     color: var(--muted-foreground);
-    font: 0.7rem/1.5 var(--font-mono);
+    font: 0.875rem/1.5 var(--type-body);
   }
   .results {
     display: grid;
@@ -193,7 +194,9 @@
     color: var(--accent-text);
   }
   .results a span {
+    font-family: var(--type-heading);
     font-weight: 700;
+    letter-spacing: 0.02em;
   }
   .results small {
     overflow-wrap: anywhere;
@@ -201,10 +204,11 @@
     font: 0.64rem var(--font-mono);
   }
   .results p {
-    max-width: 75ch;
+    max-width: 64ch;
     margin: 0.45rem 0 0;
     color: var(--muted-foreground);
-    font-size: 0.86rem;
+    font-size: 1rem;
+    line-height: 1.65;
   }
   .results :global(mark) {
     background: color-mix(in srgb, var(--accent) 24%, transparent);

@@ -217,10 +217,11 @@ const errors: Record<string, string> = {
     color: var(--accent-text);
   }
   .project-main > p {
-    max-width: 72ch;
+    max-width: 64ch;
     margin: 0.35rem 0;
     color: var(--muted-foreground);
-    font-size: 0.8rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
   }
   small {
     color: var(--muted-foreground);
@@ -262,7 +263,7 @@ const errors: Record<string, string> = {
     margin: 0.75rem 0 0;
     padding: 0.85rem;
     color: var(--muted-foreground);
-    font: 0.67rem/1.55 var(--font-mono);
+    font: 0.875rem/1.55 var(--type-body);
   }
   @media (max-width: 760px) {
     .project-row {

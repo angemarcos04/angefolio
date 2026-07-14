@@ -29,6 +29,12 @@ importers:
       '@better-auth/drizzle-adapter':
         specifier: ^1.6.23
         version: 1.6.23(@better-auth/core@1.6.23(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.3)(nanostores@1.4.0))(@better-auth/utils@0.4.2)(drizzle-orm@0.45.2(@libsql/client@0.17.4)(kysely@0.29.3))
+      '@fontsource-variable/fira-code':
+        specifier: ^5.2.7
+        version: 5.2.7
+      '@fontsource-variable/inconsolata':
+        specifier: ^5.2.8
+        version: 5.2.8
       '@libsql/client':
         specifier: ^0.17.4
         version: 0.17.4
@@ -595,6 +601,12 @@ packages:
 
   '@expressive-code/plugin-text-markers@0.44.0':
     resolution: {integrity: sha512-0/m3A5b+lz2upyNq+wzZ1S69HRoJmyFs5LsR42lVZ9pmGRlBiSBYQpvqlji4DBj1+Riamxc0AvcCr5kuzOQeWA==}
+
+  '@fontsource-variable/fira-code@5.2.7':
+    resolution: {integrity: sha512-J2bxN7fz5rd8WpQYyau4o19WqTzxoTqaNj9jhsv4p21GSu1Rf34tbqsxqjyDCR+wDMHM3SajyFqtq+5uvRUQ7w==}
+
+  '@fontsource-variable/inconsolata@5.2.8':
+    resolution: {integrity: sha512-IXXYUznF45QyPG05Q7NgsVFa4i1HnVyqbfEGLlHidZRElO0T3PCq6y+Vlz9nT4rnqsLqAkdi4wjhsoJey6pYTg==}
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -3470,6 +3482,10 @@ snapshots:
   '@expressive-code/plugin-text-markers@0.44.0':
     dependencies:
       '@expressive-code/core': 0.44.0
+
+  '@fontsource-variable/fira-code@5.2.7': {}
+
+  '@fontsource-variable/inconsolata@5.2.8': {}
 
   '@img/colour@1.1.0': {}
 

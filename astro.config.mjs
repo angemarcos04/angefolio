@@ -15,7 +15,12 @@ export default defineConfig({
   }),
   integrations: [
     svelte(),
-    expressiveCode(),
+    expressiveCode({
+      styleOverrides: {
+        codeFontFamily: 'var(--type-code)',
+        uiFontFamily: 'var(--type-ui)',
+      },
+    }),
     mdx(),
     sitemap({
       // Private console routes must never be advertised by the public sitemap.

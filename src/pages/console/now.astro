@@ -128,9 +128,7 @@ const description = 'Edit the public homepage Now Status.';
   label {
     gap: 0.4rem;
   }
-  label > span,
-  small,
-  .form-footer p {
+  label > span {
     font-family: var(--font-mono);
   }
   label > span {
@@ -140,7 +138,8 @@ const description = 'Edit the public homepage Now Status.';
   small,
   .form-footer p {
     color: var(--muted-foreground);
-    font-size: 0.64rem;
+    font-family: var(--type-body);
+    font-size: 0.875rem;
   }
   input:not([type='checkbox']),
   textarea {
@@ -206,7 +205,7 @@ const description = 'Edit the public homepage Now Status.';
     background: var(--primary-background);
     color: var(--accent-foreground);
     cursor: pointer;
-    font: 700 0.74rem var(--font-mono);
+    font: 600 0.74rem var(--type-ui);
   }
   .message {
     margin: 0 0 1rem;

@@ -1,6 +1,32 @@
 @import 'tailwindcss';
 
+@font-face {
+  font-family: 'Fira Code';
+  src: url('@fontsource-variable/fira-code/files/fira-code-latin-wght-normal.woff2')
+    format('woff2-variations');
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inconsolata';
+  src: url('@fontsource-variable/inconsolata/files/inconsolata-latin-wght-normal.woff2')
+    format('woff2-variations');
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+}
+
 :root {
+  --type-heading:
+    'Fira Code', 'Cascadia Code', 'JetBrains Mono', ui-monospace,
+    SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --type-body:
+    'Inconsolata', 'IBM Plex Mono', 'Liberation Mono', 'Courier New',
+    ui-monospace, monospace;
+  --type-code: var(--type-heading);
+  --type-ui: var(--type-heading);
   --coffee: #2b2118;
   --ivory: #f7f3e3;
   --platinum: #ecf0f1;
@@ -112,8 +138,11 @@
   --color-danger: var(--danger);
   --color-danger-border: var(--danger-border);
   --color-danger-foreground: var(--danger-foreground);
-  --font-sans: Inter, 'Segoe UI', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+  --font-heading: var(--type-heading);
+  --font-body: var(--type-body);
+  --font-ui: var(--type-ui);
+  --font-sans: var(--type-body);
+  --font-mono: var(--type-code);
 }
 
 * {
@@ -137,8 +166,15 @@ body {
     ),
     var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
-  line-height: 1.6;
+  font-family: var(--type-body);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
+  font-variant-ligatures: none;
+  font-feature-settings:
+    'calt' 0,
+    'liga' 0;
   text-rendering: optimizeLegibility;
   transition:
     background-color 160ms ease,
@@ -156,8 +192,41 @@ a {
   text-underline-offset: 0.2em;
 }
 
-button {
-  font: inherit;
+button,
+input[type='button'],
+input[type='submit'],
+input[type='reset'],
+nav,
+label,
+.eyebrow,
+.tag,
+.status-pill,
+.metadata,
+.wordmark,
+.theme-selector,
+.terminal-command {
+  font-family: var(--type-ui);
+  font-variant-ligatures: none;
+  font-feature-settings:
+    'calt' 0,
+    'liga' 0;
+}
+
+button,
+input[type='button'],
+input[type='submit'],
+input[type='reset'] {
+  font-size: inherit;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+nav,
+.tag,
+.status-pill,
+.metadata,
+.wordmark {
+  letter-spacing: 0.02em;
 }
 
 ::placeholder {
@@ -180,9 +249,43 @@ button {
   outline-offset: 3px;
 }
 
+input,
+textarea,
+select {
+  font-family: var(--type-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--type-heading);
+  font-variant-ligatures: none;
+  font-feature-settings:
+    'calt' 0,
+    'liga' 0;
+  letter-spacing: 0.02em;
+}
+
+h1,
+h2 {
+  font-weight: 700;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
+}
+
 code,
-pre {
-  font-family: var(--font-mono);
+pre,
+kbd,
+samp {
+  font-family: var(--type-code);
 }
 code {
   font-size: 0.9em;
@@ -190,6 +293,24 @@ code {
 pre {
   max-width: 100%;
   overflow-x: auto;
+}
+
+:not(pre) > code,
+kbd,
+samp {
+  font-variant-ligatures: none;
+  font-feature-settings:
+    'calt' 0,
+    'liga' 0;
+}
+
+pre code,
+.expressive-code pre code,
+.expressive-code .ec-line {
+  font-variant-ligatures: contextual;
+  font-feature-settings:
+    'calt' 1,
+    'liga' 1;
 }
 
 .container-shell {
@@ -247,7 +368,7 @@ pre {
 
 .eyebrow {
   color: var(--accent-text);
-  font-family: var(--font-mono);
+  font-family: var(--type-ui);
   font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -256,6 +377,7 @@ pre {
 .prose-shell {
   min-width: 0;
   padding: clamp(1.35rem, 5vw, 3rem);
+  font-family: var(--type-body);
   box-shadow: none;
 }
 
@@ -273,7 +395,7 @@ pre {
   border-bottom: 1px solid var(--border);
   font-size: clamp(1.35rem, 3vw, 1.8rem);
   line-height: 1.2;
-  letter-spacing: -0.03em;
+  letter-spacing: 0.02em;
   scroll-margin-top: 1rem;
 }
 
@@ -286,8 +408,11 @@ pre {
 .prose-shell p,
 .prose-shell li,
 .prose-shell blockquote {
-  max-width: 70ch;
+  max-width: 64ch;
   color: var(--muted-foreground);
+  font-family: var(--type-body);
+  font-size: clamp(1rem, 0.97rem + 0.15vw, 1.075rem);
+  line-height: 1.72;
 }
 
 .prose-shell p {
@@ -366,6 +491,12 @@ pre {
 .prose-shell th {
   background: var(--muted);
   color: var(--foreground);
+  font-family: var(--type-ui);
+  font-weight: 600;
+  font-variant-ligatures: none;
+  font-feature-settings:
+    'calt' 0,
+    'liga' 0;
 }
 
 @media (max-width: 640px) {

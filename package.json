@@ -35,6 +35,8 @@
     "@astrojs/sitemap": "^3.7.3",
     "@astrojs/svelte": "latest",
     "@better-auth/drizzle-adapter": "^1.6.23",
+    "@fontsource-variable/fira-code": "^5.2.7",
+    "@fontsource-variable/inconsolata": "^5.2.8",
     "@libsql/client": "^0.17.4",
     "@tailwindcss/vite": "latest",
     "astro": "latest",

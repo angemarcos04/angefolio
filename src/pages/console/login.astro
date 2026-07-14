@@ -88,7 +88,7 @@ const description = 'Private sign-in for the angefolio console.';
   h1 {
     margin: 0;
     font-size: clamp(2rem, 7vw, 3.25rem);
-    letter-spacing: -0.05em;
+    letter-spacing: 0.02em;
   }
   .intro,
   .setup-note {
@@ -107,9 +107,11 @@ const description = 'Private sign-in for the angefolio console.';
   label {
     gap: 0.4rem;
   }
-  label span,
-  .setup-note {
+  label span {
     font: 0.7rem/1.6 var(--font-mono);
+  }
+  .setup-note {
+    font: 0.875rem/1.6 var(--type-body);
   }
   input {
     width: 100%;
@@ -131,7 +133,7 @@ const description = 'Private sign-in for the angefolio console.';
     background: var(--primary-background);
     color: var(--accent-foreground);
     cursor: pointer;
-    font: 700 0.78rem var(--font-mono);
+    font: 600 0.78rem var(--type-ui);
   }
   .form-message {
     padding: 0.7rem 0.8rem;

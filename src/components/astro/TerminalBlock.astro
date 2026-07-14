@@ -24,7 +24,11 @@ const { title = 'angefolio.sh', class: className = '' } = Astro.props;
     border-radius: var(--radius-lg);
     background: var(--terminal-background);
     color: var(--terminal-foreground);
-    font-family: var(--font-mono);
+    font-family: var(--type-code);
+    font-variant-ligatures: none;
+    font-feature-settings:
+      'calt' 0,
+      'liga' 0;
   }
   .bar {
     display: flex;
