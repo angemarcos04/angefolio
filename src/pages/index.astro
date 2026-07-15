@@ -101,6 +101,14 @@ const navItems = [
     >
       <div class="hero-intro">
         <figure class="hero-portrait">
+          <div class="hero-portrait-titlebar" aria-hidden="true">
+            <span class="hero-portrait-controls">
+              <span class="hero-portrait-control"></span>
+              <span class="hero-portrait-control"></span>
+              <span class="hero-portrait-control"></span>
+            </span>
+            <span class="hero-portrait-filename">portrait.jpg</span>
+          </div>
           <img
             src="/angellie.jpg"
             alt="Angellie Marcos"
@@ -347,20 +355,64 @@ const navItems = [
     gap: clamp(1.5rem, 3vw, 2.5rem);
   }
   .hero-portrait {
-    position: relative;
+    display: flex;
+    flex-direction: column;
     width: 100%;
     max-width: 13rem;
     aspect-ratio: 4 / 5;
     margin: 0;
     overflow: hidden;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-strong);
     border-radius: var(--radius-md);
-    background: var(--muted);
+    background: var(--terminal-background);
+  }
+  .hero-portrait-titlebar {
+    display: flex;
+    min-height: 1.85rem;
+    align-items: center;
+    gap: 0.55rem;
+    padding-inline: 0.65rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--terminal-background);
+    color: var(--terminal-muted);
+  }
+  .hero-portrait-controls {
+    display: inline-flex;
+    flex: none;
+    gap: 0.3rem;
+  }
+  .hero-portrait-control {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 50%;
+    background: color-mix(
+      in srgb,
+      var(--accent) 25%,
+      var(--terminal-background)
+    );
+  }
+  .hero-portrait-control:nth-child(2) {
+    background: var(--accent);
+    opacity: 0.75;
+  }
+  .hero-portrait-control:nth-child(3) {
+    background: var(--terminal-accent);
+    opacity: 0.5;
+  }
+  .hero-portrait-filename {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--terminal-muted);
+    font: 500 0.66rem var(--type-code);
+    letter-spacing: 0.04em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .hero-portrait-image {
     display: block;
     width: 100%;
-    height: 100%;
+    min-height: 0;
+    flex: 1;
     object-fit: cover;
     object-position: center;
   }
