@@ -9,15 +9,6 @@ export interface ContactLink {
   external?: boolean;
 }
 
-export const aboutTags = [
-  'IT Student',
-  'Full-stack',
-  'Linux',
-  'Backend',
-  'AI/Data',
-  'Digital Garden',
-];
-
 export const nowItems = [
   'Building this portfolio in Astro + Svelte.',
   'Working on CSPAMS and Aulert.',
