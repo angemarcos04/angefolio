@@ -302,7 +302,7 @@
   bind:this={triggerElement}
   type="button"
   class="terminal-preview terminal-glow"
-  aria-label="Open the interactive angefolio terminal"
+  aria-label="Open the angefolio portfolio terminal"
   aria-haspopup="dialog"
   aria-expanded={open}
   aria-controls="portfolio-terminal-dialog"
