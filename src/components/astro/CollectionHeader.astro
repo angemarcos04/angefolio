@@ -1,18 +1,13 @@
 ---
 import BrandLogo from './BrandLogo.astro';
 import ThemeToggle from '../svelte/ThemeToggle.svelte';
+import { collectionNavigationRoutes } from '../../lib/data/publicNavigation';
 
 interface Props {
   active?: 'projects' | 'notes' | 'lab' | 'search';
 }
 
 const { active } = Astro.props;
-const navItems = [
-  { label: 'Projects', href: '/projects', key: 'projects' },
-  { label: 'Notes', href: '/notes', key: 'notes' },
-  { label: 'Lab', href: '/lab', key: 'lab' },
-  { label: 'Search', href: '/search', key: 'search' },
-] as const;
 ---
 
 <header class="collection-topbar" data-pagefind-ignore>
@@ -20,7 +15,7 @@ const navItems = [
   <div class="topbar-actions">
     <nav aria-label="Primary navigation">
       {
-        navItems.map((item) => (
+        collectionNavigationRoutes.map((item) => (
           <a
             href={item.href}
             aria-current={active === item.key ? 'page' : undefined}

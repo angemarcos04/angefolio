@@ -2,6 +2,7 @@
 import '../../styles/global.css';
 import { site } from '../../lib/data/site';
 import Footer from './Footer.astro';
+import PageRail from './PageRail.astro';
 import SEO from './SEO.astro';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
   canonical?: string | URL;
   noindex?: boolean;
   searchable?: boolean;
+  showPageRail?: boolean;
   class?: string;
 }
 
@@ -23,6 +25,7 @@ const {
   canonical,
   noindex = false,
   searchable = true,
+  showPageRail = true,
   class: className = '',
 } = Astro.props;
 ---
@@ -55,6 +58,7 @@ const {
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
+    {showPageRail && <PageRail />}
     <main
       id="main-content"
       class:list={['container-shell', className]}

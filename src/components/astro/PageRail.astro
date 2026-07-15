@@ -1,0 +1,162 @@
+---
+import {
+  normalizePathname,
+  primaryPublicRoutes,
+} from '../../lib/data/publicNavigation';
+
+const pathname = normalizePathname(Astro.url.pathname);
+---
+
+<nav class="page-rail" aria-label="Primary page navigation">
+  <ol class="page-rail__list">
+    {
+      primaryPublicRoutes.map((route) => {
+        const active = route.matches(pathname);
+
+        return (
+          <li class="page-rail__item">
+            <a
+              href={route.href}
+              class:list={['page-rail__link', { 'is-active': active }]}
+              aria-current={active ? 'page' : undefined}
+              aria-label={route.label}
+              data-label={route.label}
+              title={route.label}
+            >
+              <span class="page-rail__dot" aria-hidden="true" />
+              <span class="sr-only">{route.label}</span>
+            </a>
+          </li>
+        );
+      })
+    }
+  </ol>
+</nav>
+
+<style>
+  .page-rail {
+    position: fixed;
+    z-index: 20;
+    top: 50%;
+    left: max(1rem, calc((100vw - 1180px) / 2 - 2.125rem));
+    display: none;
+    transform: translateY(-50%);
+    color: var(--foreground);
+  }
+
+  .page-rail__list {
+    position: relative;
+    display: grid;
+    gap: 1.35rem;
+    margin: 0;
+    padding: 0.25rem 0;
+    list-style: none;
+  }
+
+  .page-rail__list::before {
+    position: absolute;
+    top: 1rem;
+    right: 50%;
+    bottom: 1rem;
+    width: 1px;
+    transform: translateX(50%);
+    background: color-mix(in srgb, var(--border) 78%, transparent);
+    content: '';
+    pointer-events: none;
+  }
+
+  .page-rail__item {
+    position: relative;
+  }
+
+  .page-rail__link {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 2rem;
+    block-size: 2rem;
+    border-radius: 999px;
+    color: inherit;
+    outline: none;
+  }
+
+  .page-rail__dot {
+    position: relative;
+    z-index: 1;
+    width: 0.62rem;
+    height: 0.62rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: color-mix(in srgb, var(--muted-foreground) 34%, var(--card));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--background) 82%, transparent);
+    transition:
+      transform 140ms ease,
+      background-color 140ms ease,
+      border-color 140ms ease,
+      box-shadow 140ms ease;
+  }
+
+  .page-rail__link:hover .page-rail__dot,
+  .page-rail__link:focus-visible .page-rail__dot {
+    transform: scale(1.08);
+    border-color: var(--accent-text);
+    background: color-mix(in srgb, var(--muted-foreground) 48%, var(--card));
+  }
+
+  .page-rail__link.is-active .page-rail__dot {
+    width: 0.92rem;
+    height: 0.92rem;
+    border-color: color-mix(in srgb, var(--danger) 70%, var(--background));
+    background: var(--danger);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--background) 82%, transparent);
+  }
+
+  .page-rail__link.is-active:hover .page-rail__dot,
+  .page-rail__link.is-active:focus-visible .page-rail__dot {
+    transform: scale(1.04);
+    border-color: var(--danger);
+  }
+
+  .page-rail__link::after {
+    position: absolute;
+    left: calc(100% + 0.6rem);
+    top: 50%;
+    width: max-content;
+    max-width: 10rem;
+    padding: 0.34rem 0.52rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    color: var(--foreground);
+    box-shadow: var(--shadow-soft);
+    content: attr(data-label);
+    font: 0.66rem var(--font-mono);
+    letter-spacing: 0.06em;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(0, -50%) translateX(-0.2rem);
+    transition:
+      opacity 140ms ease,
+      transform 140ms ease;
+    white-space: nowrap;
+  }
+
+  .page-rail__link:hover::after,
+  .page-rail__link:focus-visible::after {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+
+  @media (min-width: 1280px) {
+    .page-rail {
+      display: block;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .page-rail__dot,
+    .page-rail__link::after {
+      transition: none;
+    }
+  }
+</style>
