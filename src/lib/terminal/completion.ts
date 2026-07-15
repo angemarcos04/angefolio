@@ -30,7 +30,10 @@ export function completeInput(
 
   const command = tokens[0]?.toLowerCase();
   let candidates: string[];
-  if (command === 'project') {
+  if (
+    command === 'project' ||
+    (command === 'git' && tokens[1]?.toLowerCase() === 'show')
+  ) {
     candidates = context.projectSlugs.filter((slug) => slug.startsWith(active));
   } else if (command === 'open') {
     candidates = [...context.routeNames, ...context.projectSlugs].filter(
@@ -54,11 +57,21 @@ function applyCompletion(
   active: string,
   candidates: string[],
 ): CompletionResult {
-  if (candidates.length !== 1) return { value, candidates };
-  const replacement = candidates[0];
+  if (candidates.length === 0) return { value, candidates };
+  const replacement =
+    candidates.length === 1 ? candidates[0] : longestCommonPrefix(candidates);
+  if (!replacement || replacement === active) return { value, candidates };
   const base = active ? value.slice(0, -active.length) : value;
   return {
-    value: `${base}${replacement}${replacement.endsWith('/') ? '' : ' '}`,
+    value: `${base}${replacement}${candidates.length === 1 && !replacement.endsWith('/') ? ' ' : ''}`,
     candidates,
   };
+}
+
+function longestCommonPrefix(values: string[]): string {
+  return values.slice(1).reduce((prefix, value) => {
+    let index = 0;
+    while (index < prefix.length && prefix[index] === value[index]) index += 1;
+    return prefix.slice(0, index);
+  }, values[0] ?? '');
 }

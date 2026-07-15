@@ -8,6 +8,7 @@ import {
   resolvePath,
 } from '../src/lib/terminal/filesystem';
 import { parseCommandLine } from '../src/lib/terminal/parser';
+import { appendHistory } from '../src/lib/terminal/history';
 import type { PortfolioTerminalData } from '../src/lib/terminal/types';
 
 const data: PortfolioTerminalData = {
@@ -16,6 +17,7 @@ const data: PortfolioTerminalData = {
   hostname: 'angefolio',
   email: 'ange@example.com',
   github: 'https://github.com/angemarcos04',
+  repositoryUrl: 'https://github.com/angemarcos04/angefolio',
   about: 'Portfolio owner.',
   nowItems: ['Building angefolio.', 'Working on CSPAMS and Aulert.'],
   projects: [
@@ -187,8 +189,16 @@ test('completion handles commands, known targets, themes, and virtual paths', ()
   };
   assert.equal(completeInput('pw', context).value, 'pwd ');
   assert.equal(completeInput('project cs', context).value, 'project cspams ');
+  assert.equal(completeInput('git show cs', context).value, 'git show cspams ');
   assert.equal(completeInput('theme da', context).value, 'theme dark ');
   assert.equal(completeInput('cd pro', context).value, 'cd projects/');
+});
+
+test('history ignores empty and consecutive duplicate commands and stays bounded', () => {
+  assert.deepEqual(appendHistory(['help'], '  '), ['help']);
+  assert.deepEqual(appendHistory(['help'], 'help'), ['help']);
+  assert.deepEqual(appendHistory(['help'], ' pwd '), ['help', 'pwd']);
+  assert.deepEqual(appendHistory(['one', 'two'], 'three', 2), ['two', 'three']);
 });
 
 test('navigation and theme results remain explicitly allowlisted', () => {
@@ -196,8 +206,34 @@ test('navigation and theme results remain explicitly allowlisted', () => {
   assert.equal(run('open', ['cspams']).navigate?.url, '/projects/cspams');
   assert.equal(run('open', ['github']).navigate?.url, data.github);
   assert.equal(run('open', ['javascript:alert(1)']).ok, false);
+  const unsafeData = {
+    ...data,
+    routes: {
+      ...data.routes,
+      unsafe: 'javascript:alert(1)',
+      resume: 'javascript:alert(1)',
+    },
+  };
+  assert.equal(
+    executeCommand('open', ['unsafe'], {
+      data: unsafeData,
+      filesystem: buildFilesystem(unsafeData),
+      cwd: '',
+      history: [],
+    }).ok,
+    false,
+  );
   assert.equal(run('theme', ['dim']).theme, 'dim');
   assert.equal(run('theme', ['sepia']).ok, false);
+  assert.match(
+    executeCommand('resume', [], {
+      data: unsafeData,
+      filesystem: buildFilesystem(unsafeData),
+      cwd: '',
+      history: [],
+    }).lines![0].text,
+    /not published/,
+  );
 });
 
 test('git-inspired commands use supplied metadata without invented hashes', () => {
@@ -207,9 +243,24 @@ test('git-inspired commands use supplied metadata without invented hashes', () =
   );
   assert.match(run('git', ['log']).lines![0].text, /^content 2026-06-01/);
   assert.match(run('git', ['log', '-1']).lines![0].text, /^content 2026-06-01/);
-  assert.equal(run('git', ['branch']).lines![0].text, '* portfolio/main');
+  assert.equal(
+    run('git', ['branch']).lines![0].text,
+    'branch metadata unavailable in this build',
+  );
+  assert.equal(
+    executeCommand('git', ['branch'], {
+      data: { ...data, buildBranch: 'agent/terminal-fix' },
+      filesystem,
+      cwd: '',
+      history: [],
+    }).lines![0].text,
+    '* agent/terminal-fix',
+  );
   assert.equal(run('git', ['show', 'cspams']).lines![0].text, 'CSPAMS');
-  assert.match(run('git', ['remote', '-v']).lines![0].text, /github\.com/);
+  assert.match(
+    run('git', ['remote', '-v']).lines![0].text,
+    /angemarcos04\/angefolio/,
+  );
 });
 
 test('unknown commands offer a useful close-match suggestion', () => {

@@ -39,6 +39,7 @@ export interface PortfolioTerminalData {
   hostname: string;
   email: string;
   github: string;
+  repositoryUrl: string;
   about: string;
   nowItems: string[];
   projects: TerminalProject[];
@@ -47,6 +48,7 @@ export interface PortfolioTerminalData {
   stack: TerminalStackGroup[];
   routes: Record<string, string>;
   buildCommit?: string;
+  buildBranch?: string;
   buildDate?: string;
   latestUpdate?: {
     label: string;

@@ -110,6 +110,10 @@ const buildCommit =
   import.meta.env.VERCEL_GIT_COMMIT_SHA ??
   import.meta.env.CF_PAGES_COMMIT_SHA ??
   import.meta.env.GITHUB_SHA;
+const buildBranch =
+  import.meta.env.VERCEL_GIT_COMMIT_REF ??
+  import.meta.env.CF_PAGES_BRANCH ??
+  import.meta.env.GITHUB_REF_NAME;
 const buildDate = import.meta.env.BUILD_DATE;
 const latestUpdate = terminalNotes[0]
   ? {
@@ -133,6 +137,7 @@ const terminalData: PortfolioTerminalData = {
   hostname: 'angefolio',
   email: site.email,
   github: site.github,
+  repositoryUrl: `${site.github}/angefolio`,
   about:
     'An information technology student focused on web and backend development, Linux-oriented workflows, and pragmatic tools.',
   nowItems: renderedNowItems,
@@ -152,6 +157,7 @@ const terminalData: PortfolioTerminalData = {
     contact: '/#contact',
   },
   buildCommit,
+  buildBranch,
   buildDate,
   latestUpdate,
   portfolioSince: 2023,

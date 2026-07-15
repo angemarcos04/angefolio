@@ -3,6 +3,7 @@
   import { commandNames, executeCommand } from '../../lib/terminal/commands';
   import { completeInput } from '../../lib/terminal/completion';
   import { buildFilesystem, displayPath } from '../../lib/terminal/filesystem';
+  import { appendHistory } from '../../lib/terminal/history';
   import { parseCommandLine } from '../../lib/terminal/parser';
   import type {
     PortfolioTerminalData,
@@ -49,6 +50,7 @@
   let dialogElement: HTMLDialogElement;
   let returnFocus: HTMLElement | null = null;
   let previousBodyOverflow = '';
+  let bodyScrollLocked = false;
 
   const prompt = () => `${data.username}@${data.hostname}:${displayPath(cwd)}$`;
 
@@ -64,23 +66,40 @@
     void tick().then(() => inputElement?.focus());
   }
 
+  function lockBodyScroll() {
+    if (bodyScrollLocked) return;
+    previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    bodyScrollLocked = true;
+  }
+
+  function restoreBodyScroll() {
+    if (!bodyScrollLocked) return;
+    document.body.style.overflow = previousBodyOverflow;
+    bodyScrollLocked = false;
+  }
+
   function openTerminal() {
     if (open) return;
     returnFocus =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : triggerElement;
-    previousBodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
     open = true;
+    liveMessage = 'Terminal opened';
     focusInput();
     scrollToNewest();
   }
 
   function closeTerminal() {
-    if (!open) return;
+    if (!open) {
+      restoreBodyScroll();
+      return;
+    }
     open = false;
-    document.body.style.overflow = previousBodyOverflow;
+    restoreBodyScroll();
+    liveMessage = 'Terminal closed';
     void tick().then(() => (returnFocus ?? triggerElement)?.focus());
   }
 
@@ -92,6 +111,14 @@
   }
 
   function followNavigation(url: string, external = false) {
+    const safeInternal = url.startsWith('/') && !url.startsWith('//');
+    const safeExternal = /^https?:\/\//i.test(url);
+    const safeEmail = /^mailto:/i.test(url);
+    if (!safeInternal && !safeExternal && !safeEmail) {
+      addBlock([{ text: 'Navigation target was rejected.', kind: 'error' }]);
+      return;
+    }
+
     if (external) {
       window.open(url, '_blank', 'noopener,noreferrer');
     } else {
@@ -103,7 +130,7 @@
     const commandLine = input.trim();
     if (!commandLine) return;
 
-    history = [...history, commandLine];
+    history = appendHistory(history, commandLine);
     historyIndex = history.length;
     historyDraft = '';
     input = '';
@@ -127,10 +154,16 @@
         history,
       });
 
-      if (result.clear) output = [];
+      if (result.clear) {
+        output = [];
+        liveMessage = 'Terminal output cleared';
+      }
       if (result.cwd !== undefined) cwd = result.cwd;
       if (result.lines?.length) addBlock(result.lines);
-      if (result.theme) applyTheme(result.theme);
+      if (result.theme) {
+        applyTheme(result.theme);
+        liveMessage = `Theme changed to ${result.theme}`;
+      }
       if (result.navigate) {
         followNavigation(result.navigate.url, result.navigate.external);
       }
@@ -155,6 +188,7 @@
     input = '';
     historyIndex = history.length;
     historyDraft = '';
+    liveMessage = 'Command cancelled';
     scrollToNewest();
   }
 
@@ -208,6 +242,7 @@
     } else if (event.ctrlKey && event.key.toLowerCase() === 'l') {
       event.preventDefault();
       output = [];
+      liveMessage = 'Terminal output cleared';
     } else if (event.ctrlKey && event.key.toLowerCase() === 'c') {
       event.preventDefault();
       cancelInput();
@@ -219,7 +254,12 @@
   }
 
   function handleGlobalKeydown(event: KeyboardEvent) {
-    if (event.ctrlKey && event.code === 'Backquote') {
+    if (
+      event.ctrlKey &&
+      !event.altKey &&
+      !event.metaKey &&
+      event.code === 'Backquote'
+    ) {
       event.preventDefault();
       open ? closeTerminal() : openTerminal();
       return;
@@ -253,7 +293,7 @@
 
     return () => {
       window.removeEventListener('keydown', handleGlobalKeydown);
-      if (open) document.body.style.overflow = previousBodyOverflow;
+      restoreBodyScroll();
     };
   });
 </script>
@@ -265,6 +305,7 @@
   aria-label="Open the interactive angefolio terminal"
   aria-haspopup="dialog"
   aria-expanded={open}
+  aria-controls="portfolio-terminal-dialog"
   onclick={openTerminal}
   data-pagefind-ignore
 >
@@ -287,6 +328,7 @@
 
 {#if open}
   <dialog
+    id="portfolio-terminal-dialog"
     bind:this={dialogElement}
     open
     class="terminal-dialog"
@@ -364,12 +406,11 @@
       <p class="terminal-help">
         Tab complete · ↑↓ history · Ctrl+L clear · Esc close
       </p>
-      <span class="sr-only" aria-live="polite" aria-atomic="true"
-        >{liveMessage}</span
-      >
     </section>
   </dialog>
 {/if}
+
+<span class="sr-only" aria-live="polite" aria-atomic="true">{liveMessage}</span>
 
 <style>
   .terminal-preview {

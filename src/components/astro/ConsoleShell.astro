@@ -14,14 +14,7 @@ interface Props {
 const { title, description, active, user } = Astro.props;
 ---
 
-<Layout
-  {title}
-  {description}
-  noindex
-  searchable={false}
-  showPageRail={false}
-  class="console-shell"
->
+<Layout {title} {description} noindex searchable={false} class="console-shell">
   <header class="console-bar">
     <div>
       <a class="wordmark" href="/console"><span>~/</span>console</a>

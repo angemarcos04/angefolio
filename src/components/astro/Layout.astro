@@ -12,7 +12,6 @@ interface Props {
   canonical?: string | URL;
   noindex?: boolean;
   searchable?: boolean;
-  showPageRail?: boolean;
   class?: string;
 }
 
@@ -24,11 +23,8 @@ const {
   canonical,
   noindex = false,
   searchable = true,
-  showPageRail = true,
   class: className = '',
 } = Astro.props;
-
-void showPageRail;
 ---
 
 <!doctype html>

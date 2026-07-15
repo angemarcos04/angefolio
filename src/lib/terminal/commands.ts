@@ -9,6 +9,7 @@ import {
 import type {
   PortfolioTerminalData,
   PortfolioTheme,
+  TerminalLink,
   TerminalLine,
   TerminalProject,
   TerminalResult,
@@ -38,16 +39,25 @@ const error = (text: string): TerminalResult => ({
   ok: false,
 });
 
+function safeLink(
+  label: string,
+  url: string,
+  external = false,
+): TerminalLink | undefined {
+  const internal = url.startsWith('/') && !url.startsWith('//');
+  const http = /^https?:\/\//i.test(url);
+  const email = /^mailto:/i.test(url);
+  if (!internal && !http && !email) return undefined;
+
+  return { label, url, external: http ? true : external || undefined };
+}
+
 function projectLines(project: TerminalProject): TerminalLine[] {
   const links = [
-    project.url ? { label: 'case study', url: project.url } : undefined,
-    project.github
-      ? { label: 'github', url: project.github, external: true }
-      : undefined,
-    project.demo
-      ? { label: 'demo', url: project.demo, external: true }
-      : undefined,
-  ].filter((link): link is NonNullable<typeof link> => Boolean(link));
+    project.url ? safeLink('case study', project.url) : undefined,
+    project.github ? safeLink('github', project.github, true) : undefined,
+    project.demo ? safeLink('demo', project.demo, true) : undefined,
+  ].filter((link): link is TerminalLink => Boolean(link));
 
   return [
     line(project.title, 'accent'),
@@ -60,26 +70,23 @@ function projectLines(project: TerminalProject): TerminalLine[] {
 }
 
 function knownTargets(data: PortfolioTerminalData) {
-  const targets = new Map<
-    string,
-    { label: string; url: string; external?: boolean }
-  >();
+  const targets = new Map<string, TerminalLink>();
+  const addTarget = (name: string, label: string, url: string) => {
+    const link = safeLink(label, url);
+    if (link) targets.set(name.toLowerCase(), link);
+  };
+
   Object.entries(data.routes).forEach(([name, url]) =>
-    targets.set(name.toLowerCase(), { label: name, url }),
+    addTarget(name, name, url),
   );
   data.projects.forEach((project) => {
-    if (project.url)
-      targets.set(project.slug, { label: project.title, url: project.url });
+    if (project.url) addTarget(project.slug, project.title, project.url);
   });
   data.socials.forEach((social) =>
-    targets.set(social.label.toLowerCase(), {
-      label: social.label,
-      url: social.url,
-      external: /^https?:\/\//.test(social.url),
-    }),
+    addTarget(social.label, social.label, social.url),
   );
-  targets.set('github', { label: 'GitHub', url: data.github, external: true });
-  targets.set('email', { label: 'Email', url: `mailto:${data.email}` });
+  addTarget('github', 'GitHub', data.github);
+  addTarget('email', 'Email', `mailto:${data.email}`);
   return targets;
 }
 
@@ -441,8 +448,9 @@ const commands: CommandDefinition[] = [
     summary: 'Open a published resume when available.',
     execute: (_args, context) => {
       const resumeUrl = context.data.routes.resume;
-      return resumeUrl
-        ? { navigate: { label: 'resume', url: resumeUrl } }
+      const destination = resumeUrl ? safeLink('resume', resumeUrl) : undefined;
+      return destination
+        ? { navigate: destination }
         : {
             lines: [
               line(
@@ -486,7 +494,11 @@ const commands: CommandDefinition[] = [
       if (subcommand === 'status') {
         return {
           lines: [
-            line('On branch portfolio/main'),
+            line(
+              context.data.buildBranch
+                ? `Build branch: ${context.data.buildBranch}`
+                : 'Build branch metadata unavailable in this build.',
+            ),
             line('Virtual portfolio state: read-only and public-data only.'),
             line(
               `${context.data.projects.length} projects and ${context.data.notes.length} notes indexed.`,
@@ -498,7 +510,16 @@ const commands: CommandDefinition[] = [
         return { lines: gitLogLines(context.data, args.includes('-1')) };
       }
       if (subcommand === 'branch') {
-        return { lines: [line('* portfolio/main', 'accent')] };
+        return {
+          lines: [
+            line(
+              context.data.buildBranch
+                ? `* ${context.data.buildBranch}`
+                : 'branch metadata unavailable in this build',
+              context.data.buildBranch ? 'accent' : 'muted',
+            ),
+          ],
+        };
       }
       if (subcommand === 'show') {
         const slug = args[0];
@@ -513,8 +534,8 @@ const commands: CommandDefinition[] = [
       if (subcommand === 'remote' && args[0] === '-v') {
         return {
           lines: [
-            line(`origin  ${context.data.github} (fetch)`),
-            line(`origin  ${context.data.github} (push)`),
+            line(`origin  ${context.data.repositoryUrl} (fetch)`),
+            line(`origin  ${context.data.repositoryUrl} (push)`),
           ],
         };
       }
