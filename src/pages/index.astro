@@ -9,11 +9,9 @@ import Layout from '../components/astro/Layout.astro';
 import NoteCard from '../components/astro/NoteCard.astro';
 import ProjectCard from '../components/astro/ProjectCard.astro';
 import StackGroup from '../components/astro/StackGroup.astro';
-import Tag from '../components/astro/Tag.astro';
 import TerminalBlock from '../components/astro/TerminalBlock.astro';
 import ThemeToggle from '../components/svelte/ThemeToggle.svelte';
 import {
-  aboutTags,
   activityLevels,
   contactLinks,
   nowItems,
@@ -111,7 +109,7 @@ const navItems = [
         </figure>
 
         <div class="hero-copy">
-          <h1 class="hero-heading text-balance">Hi, I'm Angellie Marcos.</h1>
+          <h1 class="hero-heading text-balance">Angellie D. Marcos</h1>
           <p class="tagline">{site.tagline}</p>
           <p class="role-line">
             <span class="sr-only">
@@ -152,17 +150,6 @@ const navItems = [
         I like building tools that feel practical, personal, and slightly
         strange.
       </p>
-      <div class="tags">
-        {
-          aboutTags.map((tag, index) => (
-            <Tag
-              tone={index === 0 ? 'strong' : index === 4 ? 'accent' : 'neutral'}
-            >
-              {tag}
-            </Tag>
-          ))
-        }
-      </div>
     </BentoCard>
     <BentoCard
       class="projects md:col-span-2 lg:col-span-12"
