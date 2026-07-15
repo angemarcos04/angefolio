@@ -1,9 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-
-  type Theme = 'light' | 'dim' | 'dark';
-
-  const themes: Theme[] = ['light', 'dim', 'dark'];
+  import {
+    applyTheme,
+    getCurrentTheme,
+    isTheme,
+    themeChangeEvent,
+    themes,
+  } from '../../lib/theme';
+  import type { PortfolioTheme as Theme } from '../../lib/terminal/types';
 
   const labels: Record<Theme, string> = {
     light: 'Light',
@@ -17,23 +21,7 @@
     dark: '●',
   };
 
-  const themeColors = {
-    light: '#f7f3e3',
-    dim: '#1b2430',
-    dark: '#080b10',
-  } satisfies Record<Theme, string>;
-
   let theme: Theme = 'dark';
-
-  function isTheme(value: string | undefined): value is Theme {
-    return value === 'light' || value === 'dim' || value === 'dark';
-  }
-
-  function updateThemeColor(nextTheme: Theme) {
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', themeColors[nextTheme]);
-  }
 
   function getNextTheme(currentTheme: Theme): Theme {
     const currentIndex = themes.indexOf(currentTheme);
@@ -44,20 +32,19 @@
     const nextTheme = getNextTheme(theme);
 
     theme = nextTheme;
-    document.documentElement.dataset.theme = nextTheme;
-    updateThemeColor(nextTheme);
-
-    try {
-      localStorage.setItem('theme', nextTheme);
-    } catch {
-      /* Storage is optional. */
-    }
+    applyTheme(nextTheme);
   }
 
   onMount(() => {
-    const initialTheme = document.documentElement.dataset.theme;
-    theme = isTheme(initialTheme) ? initialTheme : 'dark';
-    updateThemeColor(theme);
+    theme = getCurrentTheme();
+
+    const syncTheme = (event: Event) => {
+      const nextTheme = (event as CustomEvent<string>).detail;
+      if (isTheme(nextTheme)) theme = nextTheme;
+    };
+
+    window.addEventListener(themeChangeEvent, syncTheme);
+    return () => window.removeEventListener(themeChangeEvent, syncTheme);
   });
 
   $: nextTheme = getNextTheme(theme);

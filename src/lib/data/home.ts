@@ -9,13 +9,9 @@ export interface ContactLink {
   external?: boolean;
 }
 
-export const aboutTags = [
-  'IT Student',
-  'Full-stack',
-  'Linux',
-  'Backend',
-  'AI/Data',
-  'Digital Garden',
+export const aboutMetadata = [
+  { label: 'domains', value: 'linux  backend  ai/data  digital gardens' },
+  { label: 'focus', value: 'practical tools  privacy-first systems' },
 ];
 
 export const nowItems = [

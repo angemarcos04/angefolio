@@ -9,12 +9,11 @@ import Layout from '../components/astro/Layout.astro';
 import NoteCard from '../components/astro/NoteCard.astro';
 import ProjectCard from '../components/astro/ProjectCard.astro';
 import StackGroup from '../components/astro/StackGroup.astro';
-import Tag from '../components/astro/Tag.astro';
-import TerminalBlock from '../components/astro/TerminalBlock.astro';
 import HomeProgressRail from '../components/svelte/HomeProgressRail.svelte';
+import PortfolioTerminal from '../components/svelte/PortfolioTerminal.svelte';
 import ThemeToggle from '../components/svelte/ThemeToggle.svelte';
 import {
-  aboutTags,
+  aboutMetadata,
   activityLevels,
   contactLinks,
   nowItems,
@@ -26,20 +25,27 @@ import { getProjectSlug, getProjectUrl, sortProjects } from '../lib/content';
 import { getNoteUrl, sortNotesByDateDesc } from '../lib/notes';
 import { getPublicNowStatus } from '../lib/server/now';
 import { getPublicProjectRecords } from '../lib/server/projects';
+import type {
+  PortfolioTerminalData,
+  TerminalNote,
+  TerminalProject,
+} from '../lib/terminal/types';
 
 const databaseProjects = await getPublicProjectRecords();
 const collectionProjects = sortProjects(
   await getCollection('projects', ({ data }) => data.visible),
 );
 const collectionProjectSlugs = new Set(collectionProjects.map(getProjectSlug));
-const projects =
+const allProjects =
   databaseProjects.length > 0
-    ? databaseProjects.slice(0, 4).map((project) => {
+    ? databaseProjects.map((project) => {
         const detailUrl = collectionProjectSlugs.has(project.slug)
           ? `/projects/${project.slug}`
           : undefined;
         return {
+          slug: project.slug,
           href: detailUrl,
+          url: detailUrl,
           title: project.title,
           description: project.description,
           status: project.status,
@@ -49,23 +55,32 @@ const projects =
           caseStudy: detailUrl,
           category: project.category ?? undefined,
           featured: project.featured,
+          updatedAt: project.updatedAt.toISOString(),
         };
       })
-    : collectionProjects.slice(0, 4).map((project) => ({
-        href: getProjectUrl(project),
-        title: project.data.title,
-        description: project.data.description,
-        status: project.data.status,
-        stack: project.data.stack,
-        github: project.data.github,
-        demo: project.data.demo,
-        caseStudy: project.data.caseStudy,
-        category: project.data.category,
-        featured: project.data.featured,
-      }));
-const notes = sortNotesByDateDesc(
+    : collectionProjects.map((project) => {
+        const detailUrl = getProjectUrl(project);
+        return {
+          slug: getProjectSlug(project),
+          href: detailUrl,
+          url: detailUrl,
+          title: project.data.title,
+          description: project.data.description,
+          status: project.data.status,
+          stack: project.data.stack,
+          github: project.data.github,
+          demo: project.data.demo,
+          caseStudy: project.data.caseStudy,
+          category: project.data.category,
+          featured: project.data.featured,
+          updatedAt: project.data.date.toISOString(),
+        };
+      });
+const projects = allProjects.slice(0, 4);
+const publishedNotes = sortNotesByDateDesc(
   await getCollection('notes', ({ data }) => data.published),
-).slice(0, 3);
+);
+const notes = publishedNotes.slice(0, 3);
 const publicNowStatus = await getPublicNowStatus();
 const renderedNowItems = publicNowStatus?.items ?? nowItems;
 const nowMetadata = publicNowStatus
@@ -80,6 +95,67 @@ const navItems = [
   { label: 'Lab', href: '/lab' },
   { label: 'Search', href: '/search' },
 ];
+const terminalProjects: TerminalProject[] = allProjects.map(
+  ({ href: _href, caseStudy: _caseStudy, ...project }) => project,
+);
+const terminalNotes: TerminalNote[] = publishedNotes.map((note) => ({
+  slug: note.id.replace(/\.(md|mdx)$/, ''),
+  title: note.data.title,
+  summary: note.data.summary ?? note.data.description,
+  url: getNoteUrl(note),
+  createdAt: note.data.createdAt.toISOString(),
+  updatedAt: note.data.updatedAt?.toISOString(),
+}));
+const buildCommit =
+  import.meta.env.VERCEL_GIT_COMMIT_SHA ??
+  import.meta.env.CF_PAGES_COMMIT_SHA ??
+  import.meta.env.GITHUB_SHA;
+const buildDate = import.meta.env.BUILD_DATE;
+const latestUpdate = terminalNotes[0]
+  ? {
+      label: `note: ${terminalNotes[0].title}`,
+      date: (terminalNotes[0].updatedAt ?? terminalNotes[0].createdAt).slice(
+        0,
+        10,
+      ),
+      url: terminalNotes[0].url,
+    }
+  : terminalProjects[0]
+    ? {
+        label: `project: ${terminalProjects[0].title}`,
+        date: terminalProjects[0].updatedAt?.slice(0, 10),
+        url: terminalProjects[0].url,
+      }
+    : undefined;
+const terminalData: PortfolioTerminalData = {
+  name: 'Angellie D. Marcos',
+  username: 'ange',
+  hostname: 'angefolio',
+  email: site.email,
+  github: site.github,
+  about:
+    'An information technology student focused on web and backend development, Linux-oriented workflows, and pragmatic tools.',
+  nowItems: renderedNowItems,
+  projects: terminalProjects,
+  notes: terminalNotes,
+  socials: contactLinks.map((link) => ({
+    label: link.label,
+    url: link.href,
+  })),
+  stack: stackGroups,
+  routes: {
+    home: '/',
+    projects: '/projects',
+    notes: '/notes',
+    lab: '/lab',
+    search: '/search',
+    contact: '/#contact',
+  },
+  buildCommit,
+  buildDate,
+  latestUpdate,
+  portfolioSince: 2023,
+};
 ---
 
 <Layout title={site.defaultTitle} description={site.seoDescription}>
@@ -122,18 +198,19 @@ const navItems = [
         </figure>
 
         <div class="hero-copy">
-          <p class="hero-eyebrow eyebrow">{site.role}</p>
+          <p class="hero-eyebrow eyebrow">~/angefolio $ status</p>
           <h1 class="hero-heading text-balance">Angellie D. Marcos</h1>
           <p class="role-line">
             <span class="sr-only">
-              Roles: IT student, Linux user, System builder, Full-stack dev.
+              Specialties: Full-stack developer, Backend systems builder, Linux
+              workflow tinkerer, Privacy-first toolmaker.
             </span>
 
             <span class="role-cycle" aria-hidden="true">
-              <span class="role role-1">IT student.</span>
-              <span class="role role-2">Linux user.</span>
-              <span class="role role-3">System builder.</span>
-              <span class="role role-4">Full-stack dev.</span>
+              <span class="role role-1">Full-stack developer.</span>
+              <span class="role role-2">Backend systems builder.</span>
+              <span class="role role-3">Linux workflow tinkerer.</span>
+              <span class="role role-4">Privacy-first toolmaker.</span>
             </span>
           </p>
           <div class="actions">
@@ -142,39 +219,33 @@ const navItems = [
           </div>
         </div>
       </div>
-      <TerminalBlock title="whoami" class="hero-terminal">
-        <p><code>~/angefolio $ whoami</code></p>
-        <p>angellie :: it-student :: linux-user :: system-builder</p>
-      </TerminalBlock>
+      <PortfolioTerminal client:load data={terminalData} />
     </BentoCard>
 
     <BentoCard
       class="about md:col-span-2 lg:col-span-4"
       accent="soft"
       eyebrow="About"
-      title="Coding, tinkering, and convincing computers to do my bidding."
+      title="Coding, tinkering, and convincing computers to do her bidding."
     >
       <p>
-        She is studying information technology at AMA Computer College and is a
-        member of JPCS in the Philippines, where her specialty includes web
-        development with an emphasis on back-end, Linux platforms, and the less
-        obvious areas of full-stack development.
+        She studies information technology at AMA Computer College and builds
+        web and backend systems through Linux-oriented workflows.
       </p>
       <p>
-        Her projects revolve around developing tools which are pragmatic,
-        personalized, and quite unconventional.
+        Her working style favors pragmatic, personalized, and sometimes
+        unconventional tools that keep the person using them in control.
       </p>
-      <div class="tags">
+      <dl class="about-metadata" aria-label="About focus areas">
         {
-          aboutTags.map((tag, index) => (
-            <Tag
-              tone={index === 0 ? 'strong' : index === 4 ? 'accent' : 'neutral'}
-            >
-              {tag}
-            </Tag>
+          aboutMetadata.map((item) => (
+            <div>
+              <dt>{item.label}</dt>
+              <dd>{item.value}</dd>
+            </div>
           ))
         }
-      </div>
+      </dl>
     </BentoCard>
     <BentoCard
       id="featured-projects"
@@ -321,8 +392,7 @@ const navItems = [
   }
   .topbar-actions,
   nav,
-  .actions,
-  .tags {
+  .actions {
     display: flex;
     align-items: center;
   }
@@ -450,7 +520,7 @@ const navItems = [
   .role-cycle {
     position: relative;
     display: inline-block;
-    inline-size: 16ch;
+    inline-size: min(100%, 28ch);
     height: 1.4em;
     vertical-align: bottom;
     white-space: nowrap;
@@ -479,22 +549,36 @@ const navItems = [
   .contact > p {
     color: var(--muted-foreground);
   }
-  .actions,
-  .tags {
+  .actions {
     flex-wrap: wrap;
     gap: 0.5rem;
   }
   .actions {
     margin-top: 1.2rem;
   }
-  :global(.hero-terminal) {
-    margin-top: 1.35rem;
-  }
   .about p {
     margin: 0 0 0.85rem;
   }
-  .about .tags {
+  .about-metadata {
+    display: grid;
+    gap: 0.45rem;
     margin-top: 1.15rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border);
+    font: 0.68rem/1.55 var(--font-mono);
+  }
+  .about-metadata div {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: 0.65rem;
+  }
+  .about-metadata dt {
+    color: var(--accent-text);
+  }
+  .about-metadata dd {
+    margin: 0;
+    color: var(--muted-foreground);
+    overflow-wrap: anywhere;
   }
   .project-grid {
     display: grid;
