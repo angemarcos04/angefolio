@@ -11,6 +11,7 @@ import ProjectCard from '../components/astro/ProjectCard.astro';
 import StackGroup from '../components/astro/StackGroup.astro';
 import Tag from '../components/astro/Tag.astro';
 import TerminalBlock from '../components/astro/TerminalBlock.astro';
+import HomeProgressRail from '../components/svelte/HomeProgressRail.svelte';
 import ThemeToggle from '../components/svelte/ThemeToggle.svelte';
 import {
   aboutTags,
@@ -20,6 +21,7 @@ import {
   stackGroups,
 } from '../lib/data/home';
 import { site } from '../lib/data/site';
+import { homeProgressSections } from '../lib/data/homeProgress';
 import { getProjectSlug, getProjectUrl, sortProjects } from '../lib/content';
 import { getNoteUrl, sortNotesByDateDesc } from '../lib/notes';
 import { getPublicNowStatus } from '../lib/server/now';
@@ -81,6 +83,7 @@ const navItems = [
 ---
 
 <Layout title={site.defaultTitle} description={site.seoDescription}>
+  <HomeProgressRail client:load sections={homeProgressSections} />
   <header class="topbar" data-pagefind-ignore>
     <BrandLogo href="/" placement="header" priority />
     <div class="topbar-actions">
@@ -92,7 +95,8 @@ const navItems = [
   </header>
   <BentoGrid class="homepage-grid">
     <BentoCard
-      class="hero subtle-grid md:col-span-2 lg:col-span-8"
+      id="introduction"
+      class="hero home-anchor subtle-grid md:col-span-2 lg:col-span-8"
       accent="strong"
     >
       <div class="hero-intro">
@@ -112,7 +116,6 @@ const navItems = [
         <div class="hero-copy">
           <p class="hero-eyebrow eyebrow">{site.role}</p>
           <h1 class="hero-heading text-balance">Hi, I'm Angellie Marcos.</h1>
-          <p class="tagline">{site.tagline}</p>
           <p class="role-line">
             <span class="sr-only">
               Roles: IT student, Linux user, System builder, Full-stack dev.
@@ -141,16 +144,17 @@ const navItems = [
       class="about md:col-span-2 lg:col-span-4"
       accent="soft"
       eyebrow="About"
-      title="Practical systems, personal software."
+      title="Coding, tinkering, and convincing computers to do my bidding."
     >
       <p>
-        I'm an IT student from the Philippines focused on full-stack
-        development, backend systems, Linux workflows, and creative software
-        projects.
+        She is studying information technology at AMA Computer College and is a
+        member of JPCS in the Philippines, where her specialty includes web
+        development with an emphasis on back-end, Linux platforms, and the less
+        obvious areas of full-stack development.
       </p>
       <p>
-        I like building tools that feel practical, personal, and slightly
-        strange.
+        Her projects revolve around developing tools which are pragmatic,
+        personalized, and quite unconventional.
       </p>
       <div class="tags">
         {
@@ -165,7 +169,8 @@ const navItems = [
       </div>
     </BentoCard>
     <BentoCard
-      class="projects md:col-span-2 lg:col-span-12"
+      id="featured-projects"
+      class="projects home-anchor md:col-span-2 lg:col-span-12"
       accent="strong"
       eyebrow="Featured Projects"
       title="Systems and ideas I am taking seriously."
@@ -194,7 +199,8 @@ const navItems = [
       </div>
     </BentoCard>
     <BentoCard
-      class="now md:col-span-1 lg:col-span-3"
+      id="current-focus"
+      class="now home-anchor md:col-span-1 lg:col-span-3"
       accent="medium"
       eyebrow="Now"
       title="Current focus"
@@ -221,7 +227,8 @@ const navItems = [
     </BentoCard>
 
     <BentoCard
-      class="github md:col-span-2 lg:col-span-4"
+      id="github-activity"
+      class="github home-anchor md:col-span-2 lg:col-span-4"
       accent="medium"
       eyebrow="GitHub Activity"
       title="Building in public"
@@ -244,7 +251,8 @@ const navItems = [
       <IconLink href={site.github} label="GitHub" external />
     </BentoCard>
     <BentoCard
-      class="notes md:col-span-2 lg:col-span-8"
+      id="latest-notes"
+      class="notes home-anchor md:col-span-2 lg:col-span-8"
       accent="soft"
       eyebrow="Latest Notes"
       title="Things I am learning out loud"
@@ -271,7 +279,8 @@ const navItems = [
     </BentoCard>
 
     <BentoCard
-      class="contact md:col-span-2 lg:col-span-4"
+      id="contact"
+      class="contact home-anchor md:col-span-2 lg:col-span-4"
       accent="strong"
       eyebrow="Contact"
       title="Let us make something useful."
@@ -370,11 +379,8 @@ const navItems = [
     line-height: 1.15;
     letter-spacing: 0.01em;
   }
-  .tagline {
-    max-width: 43rem;
-    margin: 0;
-    color: var(--accent-text);
-    font-size: clamp(1rem, 2vw, 1.25rem);
+  :global(.home-anchor) {
+    scroll-margin-top: clamp(1.5rem, 4vw, 3rem);
   }
   .role-line {
     min-height: 1.4em;
