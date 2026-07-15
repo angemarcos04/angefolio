@@ -92,7 +92,7 @@ function gitLogLines(
     const shortCommit = data.buildCommit.slice(0, 8);
     entries.push(
       line(
-        `${shortCommit} build${data.buildDate ? ` ${data.buildDate}` : ''} angefolio deployment`,
+        `${shortCommit} build${data.buildDate ? ` ${data.buildDate}` : ''} angefolio build commit`,
       ),
     );
   } else if (data.latestUpdate) {

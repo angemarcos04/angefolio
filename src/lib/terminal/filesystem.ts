@@ -75,7 +75,7 @@ export function buildFilesystem(data: PortfolioTerminalData): VirtualDirectory {
 export function resolvePath(cwd: string, target = '.'): string {
   const raw = target.trim() || '.';
   const parts =
-    raw.startsWith('/') || raw.startsWith('~') ? [] : cwd.split('/');
+    raw.startsWith('/') || raw.startsWith('~') || !cwd ? [] : cwd.split('/');
   const incoming = raw.replace(/^~\/?/, '').replace(/^\/+/, '').split('/');
 
   for (const part of incoming) {

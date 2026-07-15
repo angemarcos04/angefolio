@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount, tick } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { commandNames, executeCommand } from '../../lib/terminal/commands';
   import { completeInput } from '../../lib/terminal/completion';
   import { buildFilesystem, displayPath } from '../../lib/terminal/filesystem';
@@ -30,7 +30,7 @@
   const previewQueue =
     data.nowItems.slice(1, 3).join(' · ') || 'No queued items.';
   const previewLog = data.buildCommit
-    ? `${data.buildCommit.slice(0, 8)} angefolio deployment`
+    ? `${data.buildCommit.slice(0, 8)} angefolio build commit`
     : data.latestUpdate
       ? `${data.latestUpdate.date ?? 'content'} ${data.latestUpdate.label}`
       : 'commit metadata unavailable in this build';
@@ -230,6 +230,7 @@
       closeTerminal();
       return;
     }
+    if (event.defaultPrevented) return;
     if (event.key !== 'Tab') return;
 
     const focusable = dialogElement?.querySelectorAll<HTMLElement>(
@@ -249,11 +250,11 @@
 
   onMount(() => {
     window.addEventListener('keydown', handleGlobalKeydown);
-  });
 
-  onDestroy(() => {
-    window.removeEventListener('keydown', handleGlobalKeydown);
-    if (open) document.body.style.overflow = previousBodyOverflow;
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeydown);
+      if (open) document.body.style.overflow = previousBodyOverflow;
+    };
   });
 </script>
 

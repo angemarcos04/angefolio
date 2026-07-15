@@ -19,6 +19,7 @@
     "start": "node scripts/start.mjs",
     "astro": "astro",
     "check": "astro check",
+    "test:terminal": "tsx --test tests/terminal.test.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
