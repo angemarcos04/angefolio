@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { commandNames, executeCommand } from '../src/lib/terminal/commands';
+import {
+  commandNames,
+  executeCommand,
+  getKnownOpenTargets,
+} from '../src/lib/terminal/commands';
 import { completeInput } from '../src/lib/terminal/completion';
 import {
   buildFilesystem,
@@ -185,13 +189,24 @@ test('completion handles commands, known targets, themes, and virtual paths', ()
     cwd: '',
     filesystem,
     projectSlugs: data.projects.map((project) => project.slug),
-    routeNames: Object.keys(data.routes),
+    routeNames: [...getKnownOpenTargets(data).keys()],
   };
   assert.equal(completeInput('pw', context).value, 'pwd ');
   assert.equal(completeInput('project cs', context).value, 'project cspams ');
   assert.equal(completeInput('git show cs', context).value, 'git show cspams ');
   assert.equal(completeInput('theme da', context).value, 'theme dark ');
   assert.equal(completeInput('cd pro', context).value, 'cd projects/');
+  assert.equal(completeInput('cat /abo', context).value, 'cat /about.md ');
+  const openProject = completeInput('open cs', context);
+  assert.equal(openProject.value, 'open cspams');
+  assert.equal(
+    openProject.candidates.filter((candidate) => candidate === 'cspams').length,
+    1,
+  );
+  assert.equal(
+    completeInput('open buil', context).value,
+    'open building-angefolio ',
+  );
 });
 
 test('history ignores empty and consecutive duplicate commands and stays bounded', () => {
@@ -205,7 +220,23 @@ test('navigation and theme results remain explicitly allowlisted', () => {
   assert.equal(run('open', ['projects']).navigate?.url, '/projects');
   assert.equal(run('open', ['cspams']).navigate?.url, '/projects/cspams');
   assert.equal(run('open', ['github']).navigate?.url, data.github);
-  assert.equal(run('open', ['javascript:alert(1)']).ok, false);
+  assert.equal(
+    run('open', ['building-angefolio']).navigate?.url,
+    '/notes/building-angefolio',
+  );
+  assert.equal(
+    run('open', ['cspams-github']).navigate?.url,
+    'https://github.com/angemarcos04/cspams',
+  );
+  for (const target of [
+    'javascript:alert(1)',
+    'data:text/html,unsafe',
+    'file:///etc/passwd',
+    'vbscript:msgbox(1)',
+    'https://example.com',
+  ]) {
+    assert.equal(run('open', [target]).ok, false);
+  }
   const unsafeData = {
     ...data,
     routes: {
@@ -241,8 +272,15 @@ test('git-inspired commands use supplied metadata without invented hashes', () =
     run('git', ['status']).lines![1].text,
     /Virtual portfolio state/,
   );
-  assert.match(run('git', ['log']).lines![0].text, /^content 2026-06-01/);
-  assert.match(run('git', ['log', '-1']).lines![0].text, /^content 2026-06-01/);
+  assert.equal(
+    run('git', ['log']).lines![0].text,
+    'commit metadata unavailable in this build',
+  );
+  assert.equal(
+    run('git', ['log', '-1']).lines![0].text,
+    'commit metadata unavailable in this build',
+  );
+  assert.match(run('git', ['log']).lines![1].text, /not commit history/);
   assert.equal(
     run('git', ['branch']).lines![0].text,
     'branch metadata unavailable in this build',

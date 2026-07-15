@@ -1,4 +1,4 @@
-export type PortfolioTheme = 'light' | 'dim' | 'dark';
+import type { Theme } from '../theme';
 
 export interface TerminalProject {
   slug: string;
@@ -78,7 +78,7 @@ export interface TerminalResult {
   cwd?: string;
   clear?: boolean;
   close?: boolean;
-  theme?: PortfolioTheme;
+  theme?: Theme;
   navigate?: TerminalLink;
   ok?: boolean;
 }

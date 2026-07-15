@@ -36,9 +36,9 @@ export function completeInput(
   ) {
     candidates = context.projectSlugs.filter((slug) => slug.startsWith(active));
   } else if (command === 'open') {
-    candidates = [...context.routeNames, ...context.projectSlugs].filter(
-      (name) => name.startsWith(active),
-    );
+    candidates = [
+      ...new Set([...context.routeNames, ...context.projectSlugs]),
+    ].filter((name) => name.startsWith(active));
   } else if (command === 'theme') {
     candidates = ['light', 'dim', 'dark'].filter((theme) =>
       theme.startsWith(active),

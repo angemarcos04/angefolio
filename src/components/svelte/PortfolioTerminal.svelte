@@ -1,6 +1,10 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { commandNames, executeCommand } from '../../lib/terminal/commands';
+  import {
+    commandNames,
+    executeCommand,
+    getKnownOpenTargets,
+  } from '../../lib/terminal/commands';
   import { completeInput } from '../../lib/terminal/completion';
   import { buildFilesystem, displayPath } from '../../lib/terminal/filesystem';
   import { appendHistory } from '../../lib/terminal/history';
@@ -62,10 +66,6 @@
     });
   }
 
-  function focusInput() {
-    void tick().then(() => inputElement?.focus());
-  }
-
   function lockBodyScroll() {
     if (bodyScrollLocked) return;
     previousBodyOverflow = document.body.style.overflow;
@@ -79,20 +79,24 @@
     bodyScrollLocked = false;
   }
 
-  function openTerminal() {
+  async function openTerminal(trigger?: HTMLElement) {
     if (open) return;
     returnFocus =
-      document.activeElement instanceof HTMLElement
+      trigger ??
+      (document.activeElement instanceof HTMLElement
         ? document.activeElement
-        : triggerElement;
+        : triggerElement);
     lockBodyScroll();
     open = true;
     liveMessage = 'Terminal opened';
-    focusInput();
-    scrollToNewest();
+    await tick();
+    inputElement?.focus();
+    const scroller =
+      dialogElement?.querySelector<HTMLElement>('.terminal-output');
+    if (scroller) scroller.scrollTop = scroller.scrollHeight;
   }
 
-  function closeTerminal() {
+  async function closeTerminal() {
     if (!open) {
       restoreBodyScroll();
       return;
@@ -100,7 +104,8 @@
     open = false;
     restoreBodyScroll();
     liveMessage = 'Terminal closed';
-    void tick().then(() => (returnFocus ?? triggerElement)?.focus());
+    await tick();
+    (returnFocus ?? triggerElement)?.focus();
   }
 
   function addBlock(lines: TerminalLine[], commandPrompt?: string) {
@@ -110,7 +115,7 @@
     if (newest) liveMessage = newest;
   }
 
-  function followNavigation(url: string, external = false) {
+  async function followNavigation(url: string, external = false) {
     const safeInternal = url.startsWith('/') && !url.startsWith('//');
     const safeExternal = /^https?:\/\//i.test(url);
     const safeEmail = /^mailto:/i.test(url);
@@ -119,6 +124,7 @@
       return;
     }
 
+    await closeTerminal();
     if (external) {
       window.open(url, '_blank', 'noopener,noreferrer');
     } else {
@@ -165,10 +171,10 @@
         liveMessage = `Theme changed to ${result.theme}`;
       }
       if (result.navigate) {
-        followNavigation(result.navigate.url, result.navigate.external);
+        void followNavigation(result.navigate.url, result.navigate.external);
       }
       if (result.close) {
-        closeTerminal();
+        void closeTerminal();
         break;
       }
       if (result.ok === false) break;
@@ -212,12 +218,7 @@
       cwd,
       filesystem,
       projectSlugs: data.projects.map((project) => project.slug),
-      routeNames: [
-        ...Object.keys(data.routes),
-        ...data.socials.map((social) => social.label.toLowerCase()),
-        'github',
-        'email',
-      ],
+      routeNames: [...getKnownOpenTargets(data).keys()],
     });
     input = completion.value;
     if (completion.candidates.length > 1) {
@@ -250,7 +251,7 @@
   }
 
   function handleDialogClick(event: MouseEvent) {
-    if (event.target === dialogElement) closeTerminal();
+    if (event.target === dialogElement) void closeTerminal();
   }
 
   function handleGlobalKeydown(event: KeyboardEvent) {
@@ -261,13 +262,13 @@
       event.code === 'Backquote'
     ) {
       event.preventDefault();
-      open ? closeTerminal() : openTerminal();
+      open ? void closeTerminal() : void openTerminal();
       return;
     }
     if (!open) return;
     if (event.key === 'Escape') {
       event.preventDefault();
-      closeTerminal();
+      void closeTerminal();
       return;
     }
     if (event.defaultPrevented) return;
@@ -306,7 +307,7 @@
   aria-haspopup="dialog"
   aria-expanded={open}
   aria-controls="portfolio-terminal-dialog"
-  onclick={openTerminal}
+  onclick={(event) => void openTerminal(event.currentTarget)}
   data-pagefind-ignore
 >
   <span class="terminal-bar" aria-hidden="true">
@@ -349,7 +350,7 @@
           type="button"
           class="close-button"
           aria-label="Close portfolio terminal"
-          onclick={closeTerminal}>×</button
+          onclick={() => void closeTerminal()}>×</button
         >
       </header>
 

@@ -1,24 +1,24 @@
-import type { PortfolioTheme } from './terminal/types';
+export type Theme = 'light' | 'dim' | 'dark';
 
-export const themes: PortfolioTheme[] = ['light', 'dim', 'dark'];
+export const themes: Theme[] = ['light', 'dim', 'dark'];
 export const themeChangeEvent = 'angefolio:theme-change';
 
 export const themeColors = {
   light: '#f7f3e3',
   dim: '#1b2430',
   dark: '#080b10',
-} satisfies Record<PortfolioTheme, string>;
+} satisfies Record<Theme, string>;
 
-export function isTheme(value: string | undefined): value is PortfolioTheme {
-  return themes.includes(value as PortfolioTheme);
+export function isTheme(value: unknown): value is Theme {
+  return typeof value === 'string' && themes.includes(value as Theme);
 }
 
-export function getCurrentTheme(): PortfolioTheme {
+export function getCurrentTheme(): Theme {
   const theme = document.documentElement.dataset.theme;
   return isTheme(theme) ? theme : 'dark';
 }
 
-export function applyTheme(theme: PortfolioTheme): void {
+export function applyTheme(theme: Theme): void {
   document.documentElement.dataset.theme = theme;
   document
     .querySelector('meta[name="theme-color"]')
@@ -31,6 +31,8 @@ export function applyTheme(theme: PortfolioTheme): void {
   }
 
   window.dispatchEvent(
-    new CustomEvent<PortfolioTheme>(themeChangeEvent, { detail: theme }),
+    new CustomEvent<{ theme: Theme }>(themeChangeEvent, {
+      detail: { theme },
+    }),
   );
 }

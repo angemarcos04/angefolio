@@ -6,8 +6,8 @@
     isTheme,
     themeChangeEvent,
     themes,
+    type Theme,
   } from '../../lib/theme';
-  import type { PortfolioTheme as Theme } from '../../lib/terminal/types';
 
   const labels: Record<Theme, string> = {
     light: 'Light',
@@ -39,7 +39,8 @@
     theme = getCurrentTheme();
 
     const syncTheme = (event: Event) => {
-      const nextTheme = (event as CustomEvent<string>).detail;
+      const nextTheme = (event as CustomEvent<{ theme?: unknown }>).detail
+        ?.theme;
       if (isTheme(nextTheme)) theme = nextTheme;
     };
 

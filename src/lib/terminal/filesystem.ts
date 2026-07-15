@@ -170,7 +170,10 @@ export function getPathCandidates(
   partial: string,
 ): string[] {
   const slashIndex = partial.lastIndexOf('/');
-  const parentInput = slashIndex >= 0 ? partial.slice(0, slashIndex) : '.';
+  const parentInput =
+    slashIndex >= 0
+      ? partial.slice(0, slashIndex) || (partial.startsWith('/') ? '/' : '.')
+      : '.';
   const prefix = slashIndex >= 0 ? partial.slice(0, slashIndex + 1) : '';
   const fragment = slashIndex >= 0 ? partial.slice(slashIndex + 1) : partial;
   const parentPath = resolvePath(cwd, parentInput);

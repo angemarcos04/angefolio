@@ -6,9 +6,9 @@ import {
   treeLines,
   type VirtualDirectory,
 } from './filesystem';
+import type { Theme } from '../theme';
 import type {
   PortfolioTerminalData,
-  PortfolioTheme,
   TerminalLink,
   TerminalLine,
   TerminalProject,
@@ -69,7 +69,7 @@ function projectLines(project: TerminalProject): TerminalLine[] {
   ];
 }
 
-function knownTargets(data: PortfolioTerminalData) {
+export function getKnownOpenTargets(data: PortfolioTerminalData) {
   const targets = new Map<string, TerminalLink>();
   const addTarget = (name: string, label: string, url: string) => {
     const link = safeLink(label, url);
@@ -81,7 +81,16 @@ function knownTargets(data: PortfolioTerminalData) {
   );
   data.projects.forEach((project) => {
     if (project.url) addTarget(project.slug, project.title, project.url);
+    if (project.github)
+      addTarget(
+        `${project.slug}-github`,
+        `${project.title} GitHub`,
+        project.github,
+      );
+    if (project.demo)
+      addTarget(`${project.slug}-demo`, `${project.title} demo`, project.demo);
   });
+  data.notes.forEach((note) => addTarget(note.slug, note.title, note.url));
   data.socials.forEach((social) =>
     addTarget(social.label, social.label, social.url),
   );
@@ -102,14 +111,12 @@ function gitLogLines(
         `${shortCommit} build${data.buildDate ? ` ${data.buildDate}` : ''} angefolio build commit`,
       ),
     );
-  } else if (data.latestUpdate) {
-    entries.push(
-      line(
-        `content${data.latestUpdate.date ? ` ${data.latestUpdate.date}` : ''} ${data.latestUpdate.label}`,
-      ),
-    );
   } else {
     entries.push(line('commit metadata unavailable in this build', 'muted'));
+  }
+
+  if (!latestOnly) {
+    entries.push(line('Recent public content (not commit history):', 'muted'));
   }
 
   if (!latestOnly) {
@@ -468,7 +475,9 @@ const commands: CommandDefinition[] = [
       'Open only a known portfolio route, project, or social destination.',
     execute: ([target], context) => {
       if (!target) return error('open: expected a known target');
-      const destination = knownTargets(context.data).get(target.toLowerCase());
+      const destination = getKnownOpenTargets(context.data).get(
+        target.toLowerCase(),
+      );
       return destination
         ? { navigate: destination }
         : error(`open: ${target}: target is not whitelisted`);
@@ -479,9 +488,9 @@ const commands: CommandDefinition[] = [
     usage: 'theme <light|dim|dark>',
     summary: 'Change the site’s existing theme.',
     execute: ([theme]) => {
-      const validThemes: PortfolioTheme[] = ['light', 'dim', 'dark'];
-      return validThemes.includes(theme as PortfolioTheme)
-        ? { theme: theme as PortfolioTheme, lines: [line(`theme: ${theme}`)] }
+      const validThemes: Theme[] = ['light', 'dim', 'dark'];
+      return validThemes.includes(theme as Theme)
+        ? { theme: theme as Theme, lines: [line(`theme: ${theme}`)] }
         : error('theme: expected light, dim, or dark');
     },
   },
