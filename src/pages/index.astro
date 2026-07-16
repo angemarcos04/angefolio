@@ -30,6 +30,7 @@ import type {
   TerminalNote,
   TerminalProject,
 } from '../lib/terminal/types';
+import { selectLatestPublicUpdate } from '../lib/terminal/updates';
 
 const databaseProjects = await getPublicProjectRecords();
 const collectionProjects = sortProjects(
@@ -115,24 +116,9 @@ const buildBranch =
   import.meta.env.CF_PAGES_BRANCH ??
   import.meta.env.GITHUB_REF_NAME;
 const buildDate = import.meta.env.BUILD_DATE;
-const latestUpdate = terminalNotes[0]
-  ? {
-      label: `note: ${terminalNotes[0].title}`,
-      date: (terminalNotes[0].updatedAt ?? terminalNotes[0].createdAt).slice(
-        0,
-        10,
-      ),
-      url: terminalNotes[0].url,
-    }
-  : terminalProjects[0]
-    ? {
-        label: `project: ${terminalProjects[0].title}`,
-        date: terminalProjects[0].updatedAt?.slice(0, 10),
-        url: terminalProjects[0].url,
-      }
-    : undefined;
+const latestUpdate = selectLatestPublicUpdate(terminalNotes, terminalProjects);
 const terminalData: PortfolioTerminalData = {
-  name: 'Angellie D. Marcos',
+  name: site.name,
   username: 'ange',
   hostname: 'angefolio',
   email: site.email,

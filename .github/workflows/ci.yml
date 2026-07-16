@@ -33,6 +33,9 @@ jobs:
       - name: Check types and Astro files
         run: pnpm check
 
+      - name: Test portfolio terminal
+        run: pnpm test:terminal
+
       - name: Check formatting
         run: pnpm format:check
 

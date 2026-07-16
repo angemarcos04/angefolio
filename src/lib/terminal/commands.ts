@@ -39,24 +39,33 @@ const error = (text: string): TerminalResult => ({
   ok: false,
 });
 
-function safeLink(
-  label: string,
-  url: string,
-  external = false,
-): TerminalLink | undefined {
+function safeLink(label: string, url: string): TerminalLink | undefined {
   const internal = url.startsWith('/') && !url.startsWith('//');
-  const http = /^https?:\/\//i.test(url);
-  const email = /^mailto:/i.test(url);
-  if (!internal && !http && !email) return undefined;
+  if (internal) return { label, url };
 
-  return { label, url, external: http ? true : external || undefined };
+  try {
+    const destination = new URL(url);
+    if (destination.protocol === 'mailto:' && destination.pathname) {
+      return { label, url };
+    }
+    if (
+      (destination.protocol === 'http:' || destination.protocol === 'https:') &&
+      destination.hostname
+    ) {
+      return { label, url, external: true };
+    }
+  } catch {
+    return undefined;
+  }
+
+  return undefined;
 }
 
 function projectLines(project: TerminalProject): TerminalLine[] {
   const links = [
     project.url ? safeLink('case study', project.url) : undefined,
-    project.github ? safeLink('github', project.github, true) : undefined,
-    project.demo ? safeLink('demo', project.demo, true) : undefined,
+    project.github ? safeLink('github', project.github) : undefined,
+    project.demo ? safeLink('demo', project.demo) : undefined,
   ].filter((link): link is TerminalLink => Boolean(link));
 
   return [
@@ -390,53 +399,58 @@ const commands: CommandDefinition[] = [
     usage: 'notes',
     summary: 'List published notes.',
     execute: (_args, context) => ({
-      lines: context.data.notes.map((note) => ({
-        text: `${note.createdAt.slice(0, 10)}  ${note.title}`,
-        links: [{ label: 'read', url: note.url }],
-      })),
+      lines: context.data.notes.map((note) => {
+        const destination = safeLink('read', note.url);
+        return {
+          text: `${note.createdAt.slice(0, 10)}  ${note.title}`,
+          links: destination ? [destination] : [],
+        };
+      }),
     }),
   },
   {
     name: 'lab',
     usage: 'lab',
     summary: 'Link to the public experiments area.',
-    execute: (_args, context) => ({
-      lines: [
-        {
-          text: 'Experiments, prototypes, and learning artifacts.',
-          links: [{ label: 'open /lab', url: context.data.routes.lab }],
-        },
-      ],
-    }),
+    execute: (_args, context) => {
+      const destination = safeLink('open /lab', context.data.routes.lab);
+      return {
+        lines: [
+          {
+            text: 'Experiments, prototypes, and learning artifacts.',
+            links: destination ? [destination] : [],
+          },
+        ],
+      };
+    },
   },
   {
     name: 'contact',
     usage: 'contact',
     summary: 'Show public contact details.',
-    execute: (_args, context) => ({
-      lines: [
-        {
-          text: context.data.email,
-          links: [{ label: 'email', url: `mailto:${context.data.email}` }],
-        },
-        {
-          text: context.data.github,
-          links: [
-            { label: 'github', url: context.data.github, external: true },
-          ],
-        },
-      ],
-    }),
+    execute: (_args, context) => {
+      const email = safeLink('email', `mailto:${context.data.email}`);
+      const github = safeLink('github', context.data.github);
+      return {
+        lines: [
+          { text: context.data.email, links: email ? [email] : [] },
+          { text: context.data.github, links: github ? [github] : [] },
+        ],
+      };
+    },
   },
   {
     name: 'socials',
     usage: 'socials',
     summary: 'List configured public social profiles.',
     execute: (_args, context) => ({
-      lines: context.data.socials.map((social) => ({
-        text: social.label,
-        links: [{ label: social.url, url: social.url, external: true }],
-      })),
+      lines: context.data.socials.map((social) => {
+        const destination = safeLink(social.url, social.url);
+        return {
+          text: social.label,
+          links: destination ? [destination] : [],
+        };
+      }),
     }),
   },
   {

@@ -14,6 +14,10 @@ import {
 import { parseCommandLine } from '../src/lib/terminal/parser';
 import { appendHistory } from '../src/lib/terminal/history';
 import type { PortfolioTerminalData } from '../src/lib/terminal/types';
+import {
+  getPreviewUpdate,
+  selectLatestPublicUpdate,
+} from '../src/lib/terminal/updates';
 
 const data: PortfolioTerminalData = {
   name: 'Angellie D. Marcos',
@@ -140,6 +144,11 @@ test('virtual filesystem stays inside its read-only root', () => {
   assert.equal(resolvePath('projects', '../../../../../'), '');
   assert.equal(getNode(filesystem, 'projects/cspams/README.md')?.type, 'file');
   assert.equal(getNode(filesystem, 'private'), undefined);
+  assert.deepEqual(getNode(filesystem, 'recent.log'), {
+    type: 'file',
+    content: ['2026-06-01 note: Building angefolio'],
+    url: '/notes/building-angefolio',
+  });
   assert.equal(run('cd', ['projects']).cwd, 'projects');
   assert.equal(run('cd', ['about.md']).ok, false);
   assert.match(
@@ -265,6 +274,79 @@ test('navigation and theme results remain explicitly allowlisted', () => {
     }).lines![0].text,
     /not published/,
   );
+});
+
+test('terminal output links all pass through the shared safety boundary', () => {
+  assert.equal(run('notes').lines![0].links![0].url, data.notes[0].url);
+  assert.equal(run('lab').lines![0].links![0].url, '/lab');
+  assert.equal(run('contact').lines![0].links![0].external, undefined);
+  assert.equal(run('contact').lines![1].links![0].external, true);
+  assert.equal(run('socials').lines![0].links![0].external, true);
+
+  const unsafeData: PortfolioTerminalData = {
+    ...data,
+    github: 'javascript:alert(1)',
+    notes: [{ ...data.notes[0], url: 'data:text/html,unsafe' }],
+    socials: [
+      { label: 'Unsafe', url: 'vbscript:msgbox(1)' },
+      { label: 'Email', url: 'mailto:ange@example.com' },
+    ],
+    routes: { ...data.routes, lab: 'file:///etc/passwd' },
+  };
+  const unsafeFilesystem = buildFilesystem(unsafeData);
+  const unsafeRun = (name: string) =>
+    executeCommand(name, [], {
+      data: unsafeData,
+      filesystem: unsafeFilesystem,
+      cwd: '',
+      history: [],
+    });
+
+  assert.deepEqual(unsafeRun('notes').lines![0].links, []);
+  assert.deepEqual(unsafeRun('lab').lines![0].links, []);
+  assert.deepEqual(unsafeRun('contact').lines![1].links, []);
+  assert.deepEqual(unsafeRun('socials').lines![0].links, []);
+  assert.equal(unsafeRun('socials').lines![1].links![0].external, undefined);
+});
+
+test('latest public update is selected by date across notes and projects', () => {
+  const notes = data.notes.map((note) => ({
+    ...note,
+    updatedAt: '2026-06-15T00:00:00.000Z',
+  }));
+  const projects = data.projects.map((project, index) => ({
+    ...project,
+    updatedAt: index === 1 ? '2026-07-10T00:00:00.000Z' : project.updatedAt,
+  }));
+  const notesSnapshot = structuredClone(notes);
+  const projectsSnapshot = structuredClone(projects);
+
+  assert.deepEqual(selectLatestPublicUpdate(notes, projects), {
+    label: 'project: Aulert',
+    date: '2026-07-10',
+    url: undefined,
+  });
+  assert.deepEqual(notes, notesSnapshot);
+  assert.deepEqual(projects, projectsSnapshot);
+  assert.equal(selectLatestPublicUpdate([], []), undefined);
+});
+
+test('preview labels content updates truthfully when build metadata is absent', () => {
+  assert.deepEqual(getPreviewUpdate(data), {
+    command: '$ cat recent.log',
+    text: '2026-06-01 note: Building angefolio',
+  });
+  assert.deepEqual(
+    getPreviewUpdate({ ...data, buildCommit: 'abcdef1234567890' }),
+    {
+      command: '$ git log -1 --oneline',
+      text: 'abcdef12 angefolio build commit',
+    },
+  );
+  assert.deepEqual(getPreviewUpdate({}), {
+    command: '$ cat recent.log',
+    text: 'No public updates available.',
+  });
 });
 
 test('git-inspired commands use supplied metadata without invented hashes', () => {

@@ -57,6 +57,12 @@ export function buildFilesystem(data: PortfolioTerminalData): VirtualDirectory {
   return directory({
     'about.md': file([`# ${data.name}`, data.about]),
     'now.txt': file(data.nowItems),
+    'recent.log': file(
+      data.latestUpdate
+        ? `${data.latestUpdate.date ?? 'undated'} ${data.latestUpdate.label}`
+        : 'No public updates available.',
+      data.latestUpdate?.url,
+    ),
     'contact.txt': file([data.email, data.github]),
     'resume.pdf': file(
       'Resume download is not published in this portfolio build. Try `contact`.',

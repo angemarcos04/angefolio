@@ -9,6 +9,7 @@
   import { buildFilesystem, displayPath } from '../../lib/terminal/filesystem';
   import { appendHistory } from '../../lib/terminal/history';
   import { parseCommandLine } from '../../lib/terminal/parser';
+  import { getPreviewUpdate } from '../../lib/terminal/updates';
   import type {
     PortfolioTerminalData,
     TerminalLine,
@@ -34,11 +35,7 @@
   const previewFocus = data.nowItems[0] ?? 'Building angefolio.';
   const previewQueue =
     data.nowItems.slice(1, 3).join(' · ') || 'No queued items.';
-  const previewLog = data.buildCommit
-    ? `${data.buildCommit.slice(0, 8)} angefolio build commit`
-    : data.latestUpdate
-      ? `${data.latestUpdate.date ?? 'content'} ${data.latestUpdate.label}`
-      : 'commit metadata unavailable in this build';
+  const previewUpdate = getPreviewUpdate(data);
 
   let open = false;
   let input = '';
@@ -79,17 +76,33 @@
     bodyScrollLocked = false;
   }
 
+  function getSafeReturnFocus(trigger?: HTMLElement): HTMLElement {
+    if (trigger) return trigger;
+
+    const active = document.activeElement;
+    if (
+      active instanceof HTMLElement &&
+      active !== document.body &&
+      active !== document.documentElement
+    ) {
+      return active;
+    }
+
+    return triggerElement;
+  }
+
   async function openTerminal(trigger?: HTMLElement) {
     if (open) return;
-    returnFocus =
-      trigger ??
-      (document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : triggerElement);
+    returnFocus = getSafeReturnFocus(trigger);
     lockBodyScroll();
     open = true;
     liveMessage = 'Terminal opened';
     await tick();
+
+    if (dialogElement && !dialogElement.open) {
+      dialogElement.showModal();
+    }
+
     inputElement?.focus();
     const scroller =
       dialogElement?.querySelector<HTMLElement>('.terminal-output');
@@ -101,11 +114,17 @@
       restoreBodyScroll();
       return;
     }
+
+    if (dialogElement?.open) {
+      dialogElement.close();
+    }
+
     open = false;
     restoreBodyScroll();
     liveMessage = 'Terminal closed';
     await tick();
-    (returnFocus ?? triggerElement)?.focus();
+    const focusTarget = returnFocus?.isConnected ? returnFocus : triggerElement;
+    focusTarget?.focus();
   }
 
   function addBlock(lines: TerminalLine[], commandPrompt?: string) {
@@ -132,7 +151,7 @@
     }
   }
 
-  function runInput() {
+  async function runInput() {
     const commandLine = input.trim();
     if (!commandLine) return;
 
@@ -171,10 +190,11 @@
         liveMessage = `Theme changed to ${result.theme}`;
       }
       if (result.navigate) {
-        void followNavigation(result.navigate.url, result.navigate.external);
+        await followNavigation(result.navigate.url, result.navigate.external);
+        break;
       }
       if (result.close) {
-        void closeTerminal();
+        await closeTerminal();
         break;
       }
       if (result.ok === false) break;
@@ -230,7 +250,7 @@
   function handleInputKeydown(event: KeyboardEvent) {
     if (event.key === 'Enter') {
       event.preventDefault();
-      runInput();
+      void runInput();
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
       navigateHistory(-1);
@@ -254,6 +274,11 @@
     if (event.target === dialogElement) void closeTerminal();
   }
 
+  function handleDialogCancel(event: Event) {
+    event.preventDefault();
+    void closeTerminal();
+  }
+
   function handleGlobalKeydown(event: KeyboardEvent) {
     if (
       event.ctrlKey &&
@@ -266,11 +291,6 @@
       return;
     }
     if (!open) return;
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      void closeTerminal();
-      return;
-    }
     if (event.defaultPrevented) return;
     if (event.key !== 'Tab') return;
 
@@ -319,8 +339,8 @@
     <span>focus: {previewFocus}</span>
     <span>queue: {previewQueue}</span>
     <span class="preview-spacer" aria-hidden="true"></span>
-    <span><b>$ git log -1 --oneline</b></span>
-    <span>{previewLog}</span>
+    <span><b>{previewUpdate.command}</b></span>
+    <span>{previewUpdate.text}</span>
     <span class="interaction-hint"
       >click to enter&nbsp;&nbsp; Ctrl+` to toggle</span
     >
@@ -331,10 +351,9 @@
   <dialog
     id="portfolio-terminal-dialog"
     bind:this={dialogElement}
-    open
     class="terminal-dialog"
-    aria-modal="true"
     aria-labelledby="portfolio-terminal-title"
+    oncancel={handleDialogCancel}
     onclick={handleDialogClick}
     data-pagefind-ignore
   >
@@ -516,6 +535,9 @@
     padding: clamp(0.75rem, 3vw, 2rem);
     place-items: center;
     border: 0;
+    background: transparent;
+  }
+  .terminal-dialog::backdrop {
     background: color-mix(in srgb, var(--background) 78%, transparent);
   }
   .terminal-window {

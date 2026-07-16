@@ -33,6 +33,12 @@ export interface TerminalStackGroup {
   items: string[];
 }
 
+export interface TerminalUpdate {
+  label: string;
+  date?: string;
+  url?: string;
+}
+
 export interface PortfolioTerminalData {
   name: string;
   username: string;
@@ -50,11 +56,7 @@ export interface PortfolioTerminalData {
   buildCommit?: string;
   buildBranch?: string;
   buildDate?: string;
-  latestUpdate?: {
-    label: string;
-    date?: string;
-    url?: string;
-  };
+  latestUpdate?: TerminalUpdate;
   portfolioSince: number;
 }
 
