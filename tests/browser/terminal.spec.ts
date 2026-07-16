@@ -45,7 +45,9 @@ test('homepage server-renders the terminal preview without runtime errors', asyn
   expect(response.status()).toBe(200);
   const html = await response.text();
   expect(html).toContain(triggerName);
-  expect(html).toContain('$ cat recent.log');
+  expect(html).toContain(
+    process.env.GITHUB_SHA ? '$ git log -1 --oneline' : '$ cat recent.log',
+  );
 
   await page.goto('/');
   await expect(page.getByRole('button', { name: triggerName })).toBeVisible();
