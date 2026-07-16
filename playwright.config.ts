@@ -17,6 +17,9 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm exec astro dev --force --host 127.0.0.1',
+    env: {
+      PLAYWRIGHT_TEST: 'true',
+    },
     url: 'http://127.0.0.1:4321/',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

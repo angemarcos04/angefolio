@@ -81,6 +81,26 @@ test('dialog is natively modal and restores focus and body scroll', async ({
   expect(await page.evaluate(() => document.body.style.overflow)).toBe('');
 });
 
+test('failed modal opening restores focus, scroll, and expanded state', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const trigger = page.getByRole('button', { name: triggerName });
+  await waitForTerminalHydration(page);
+  await page.evaluate(() => {
+    HTMLDialogElement.prototype.showModal = () => {
+      throw new DOMException('Forced modal failure for testing.');
+    };
+  });
+
+  await trigger.click();
+
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(trigger).toBeFocused();
+  expect(await page.evaluate(() => document.body.style.overflow)).toBe('');
+});
+
 test('preview keyboard activation, close controls, backdrop, and shortcut work', async ({
   page,
 }) => {

@@ -36,6 +36,12 @@ jobs:
       - name: Test portfolio terminal
         run: pnpm test:terminal
 
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Test browser interactions
+        run: pnpm test:browser
+
       - name: Check formatting
         run: pnpm format:check
 

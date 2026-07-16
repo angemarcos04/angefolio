@@ -99,8 +99,24 @@
     liveMessage = 'Terminal opened';
     await tick();
 
-    if (dialogElement && !dialogElement.open) {
-      dialogElement.showModal();
+    try {
+      if (!dialogElement) {
+        throw new Error('Terminal dialog was not mounted.');
+      }
+
+      if (!dialogElement.open) {
+        dialogElement.showModal();
+      }
+    } catch {
+      open = false;
+      restoreBodyScroll();
+      liveMessage = 'Terminal could not be opened';
+      await tick();
+      const focusTarget = returnFocus?.isConnected
+        ? returnFocus
+        : triggerElement;
+      focusTarget?.focus();
+      return;
     }
 
     inputElement?.focus();
@@ -536,6 +552,9 @@
     place-items: center;
     border: 0;
     background: transparent;
+  }
+  .terminal-dialog:not([open]) {
+    display: none;
   }
   .terminal-dialog::backdrop {
     background: color-mix(in srgb, var(--background) 78%, transparent);
