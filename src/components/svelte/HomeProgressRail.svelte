@@ -143,12 +143,14 @@
 
 <style>
   .home-progress {
+    --rail-gutter: 2.75rem;
+
     position: fixed;
     z-index: 20;
     top: 50%;
-    left: max(1rem, calc((100vw - 1180px) / 2 - 2.125rem));
+    left: max(1.25rem, calc((100vw - 1180px) / 2 - var(--rail-gutter)));
     display: none;
-    transform: translateY(-50%);
+    transform: translate(-50%, -50%);
     color: var(--foreground);
   }
 
