@@ -591,6 +591,34 @@ const progressSections = homeProgressSections.filter((section) => {
   .actions {
     margin-top: 1.2rem;
   }
+  @media (min-width: 1024px) {
+    .hero-intro {
+      grid-template-columns: minmax(0, 1fr) minmax(11.25rem, 13rem);
+      grid-template-areas: 'copy portrait';
+      align-items: start;
+      gap: clamp(1.25rem, 2vw, 1.5rem);
+    }
+    .hero-copy {
+      grid-area: copy;
+    }
+    .hero-portrait {
+      grid-area: portrait;
+      justify-self: end;
+    }
+    .hero-heading {
+      max-width: 13ch;
+      margin-bottom: 0.75rem;
+      font-size: clamp(2.75rem, 4vw, 3.25rem);
+      line-height: 1.12;
+    }
+    .actions {
+      gap: 0.625rem;
+      margin-top: 0;
+    }
+    .actions :global(.button) {
+      min-height: 2.65rem;
+    }
+  }
   :global(.bento-card.about > header) {
     margin-bottom: 1.375rem;
   }
