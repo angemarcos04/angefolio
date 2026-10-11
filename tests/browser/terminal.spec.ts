@@ -177,7 +177,7 @@ test('navigation closes the terminal and stops the remaining chain', async ({
   expect(await page.locator('html').getAttribute('data-theme')).toBe('light');
 });
 
-test('mobile navigation exposes routes, appearance, and keyboard dismissal', async ({
+test('mobile navigation exposes routes, theme control, and keyboard dismissal', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 375, height: 812 });
@@ -191,13 +191,18 @@ test('mobile navigation exposes routes, appearance, and keyboard dismissal', asy
   await summary.click();
   await expect(menu).toHaveAttribute('open', '');
   await expect(summary).toHaveAttribute('aria-expanded', 'true');
+  await expect(menu.getByText('Appearance')).toHaveCount(0);
+  const panel = menu.locator('.mobile-menu-panel');
+  await expect(panel).toBeVisible();
+  expect((await panel.boundingBox())?.width).toBeLessThanOrEqual(300);
+  await expect(menu.locator('.mobile-theme-row')).toBeVisible();
 
   for (const label of ['Home', 'Projects', 'Notes', 'Blog', 'Lab', 'Search']) {
-    await expect(
-      menu
-        .getByRole('navigation', { name: 'Mobile navigation' })
-        .getByRole('link', { name: label }),
-    ).toBeVisible();
+    const link = menu
+      .getByRole('navigation', { name: 'Mobile navigation' })
+      .getByRole('link', { name: label });
+    await expect(link).toBeVisible();
+    expect((await link.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   }
   await expect(
     menu

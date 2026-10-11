@@ -64,8 +64,7 @@ const publicSettings = await getPublicSiteSettings();
             ))
           }
         </nav>
-        <div class="mobile-appearance">
-          <span>Appearance</span>
+        <div class="mobile-theme-row">
           <ThemeToggle client:load />
         </div>
       </div>
@@ -164,8 +163,8 @@ const publicSettings = await getPublicSiteSettings();
     .mobile-search,
     .mobile-menu > summary {
       display: inline-flex;
-      min-width: 2.65rem;
-      min-height: 2.65rem;
+      min-width: 2.75rem;
+      min-height: 2.75rem;
       align-items: center;
       justify-content: center;
       gap: 0.45rem;
@@ -214,7 +213,10 @@ const publicSettings = await getPublicSiteSettings();
       top: calc(100% + 0.5rem);
       right: 0;
       width: min(18rem, calc(100vw - 1.5rem));
-      padding: 0.55rem;
+      max-height: calc(100dvh - 5rem);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 0.7rem;
       border: 1px solid var(--border-strong);
       border-radius: var(--radius-md);
       background: var(--card);
@@ -224,26 +226,25 @@ const publicSettings = await getPublicSiteSettings();
     .mobile-menu-panel nav {
       display: grid;
       gap: 0.15rem;
+      justify-content: stretch;
+      justify-items: stretch;
     }
     .mobile-menu-panel nav a {
-      min-height: 2.65rem;
+      min-height: 2.75rem;
       justify-content: flex-start;
-      padding-inline: 0.7rem;
+      padding-inline: 0.75rem;
       font-size: 0.84rem;
     }
-    .mobile-appearance {
+    .mobile-theme-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
+      justify-content: flex-end;
       margin-top: 0.35rem;
-      padding: 0.55rem 0.15rem 0.05rem 0.7rem;
+      padding: 0.55rem 0.15rem 0 0;
       border-top: 1px solid var(--border);
-      color: var(--muted-foreground);
-      font: 0.72rem var(--type-ui);
     }
-    .mobile-appearance :global(button) {
-      min-height: 2.4rem;
+    .mobile-theme-row :global(button) {
+      min-height: 2.75rem;
     }
   }
   @media (max-width: 760px) {
