@@ -1,5 +1,7 @@
 # Lab publishing (Phase 16)
 
+**Current status:** The original starter Lab entries were removed from source and the local database. The import and MDX rollback steps below apply only to future matching MDX content. Historical database backups remain available.
+
 The private Lab editor is at `/user/lab`. It manages each experiment's status, category, tags, visibility, featured marker, repository/demo/related project links, tools, lessons, risk, logged date, updated date, and Markdown body. Preview uses the authenticated sanitized renderer.
 
 ## Source selection

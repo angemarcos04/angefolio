@@ -14,12 +14,7 @@ export const aboutMetadata = [
   { label: 'focus', value: 'practical tools  privacy-first systems' },
 ];
 
-export const nowItems = [
-  'Building this portfolio in Astro + Svelte.',
-  'Working on CSPAMS and Aulert.',
-  'Learning cleaner UI architecture, backend systems, and AI-assisted workflows.',
-  'Daily driver: Gentoo Linux + Neovim.',
-];
+export const nowItems: string[] = [];
 
 export const stackGroups: StackGroup[] = [
   {

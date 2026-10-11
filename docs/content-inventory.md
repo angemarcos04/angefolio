@@ -1,16 +1,18 @@
-# Content baseline for the private editor
+# Historical content baseline for the private editor
 
-Captured for Phase 13 from the working tree at commit `8d6811d`. The working tree also contains uncommitted visual changes, including the homepage portrait at `public/91889584.jpeg`; keep those changes during later imports. This is a map of current sources, not a database import.
+**Current status:** The ten starter Project, Note, and Lab entries listed below were removed from the source collections and local SQLite records. This document records the earlier import phase; it is not an inventory of currently published content. Historical database backups were retained. New content is authored through `/user`, and the public homepage shows published entries marked Featured when their sections are enabled.
+
+Captured for Phase 13 from the working tree at commit `8d6811d`. This is an archival record of the original sources, not a live content inventory or an instruction to reimport them.
 
 ## Public content and routes
 
-| Area     | Current source               | Public route       | Current entries                                                                  |
+| Area     | Former source                | Public route       | Former entries                                                                   |
 | -------- | ---------------------------- | ------------------ | -------------------------------------------------------------------------------- |
 | Projects | `src/content/projects/*.mdx` | `/projects/[slug]` | `aulert`, `cspams`, `gamon-site`, `tokumako`                                     |
 | Notes    | `src/content/notes/*.mdx`    | `/notes/[slug]`    | `building-angefolio`, `cspams-system-design-lessons`, `gentoo-development-setup` |
 | Lab      | `src/content/lab/*.mdx`      | `/lab/[slug]`      | `ai-persona-concepts`, `svelte-ui-experiments`, `terminal-setups`                |
 
-All ten entries currently have their public flag enabled. Their exact frontmatter and bodies remain in the source files. The collection schemas in `src/content/config.ts` define the complete fields, including optional links, highlights, dates, categories, tools, lessons, and risk. The files are the baseline to compare against any future import.
+All ten entries had their public flag enabled at the time of this snapshot. Their source files and local database records have since been cleared. The collection schemas in `src/content/config.ts` still define the available fields.
 
 The homepage combines several sources. `src/lib/data/site.ts` holds identity, contact, social image, and SEO defaults. `src/lib/data/home.ts` holds the fallback Now list, stack groups, contact links, and LinkedIn link. `src/lib/data/homeProgress.ts` holds section labels. `src/pages/index.astro` contains the portrait path, introduction copy, layout, and terminal data. Published `now_status`, homepage settings, visible projects, and published notes can override parts of that page at request time. GitHub activity loads from the configured public profile and is cached server-side. Project and Note MDX remain rollback copies; Lab has its own public catalog.
 

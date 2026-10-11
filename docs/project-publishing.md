@@ -1,10 +1,12 @@
 # Project publishing (Phase 14)
 
+**Current status:** The original starter projects were removed from source and the local database. The import and MDX rollback steps below describe the historical workflow and apply only when matching MDX content exists. Historical database backups remain available.
+
 The owner workspace is `/user`. It is absent from public navigation, marked `noindex`, omitted from Pagefind and the sitemap, and protected by server sessions. The write endpoints remain under `/api/console/*`; their path names do not grant access.
 
 ## Sources and cutover
 
-The four original case studies remain in `src/content/projects/*.mdx` as rollback copies. A project record can hold the same slug, complete metadata, and a Markdown body. The `replaces_mdx` switch chooses that record as the public source for the slug. Until the switch is on, matching MDX supplies the card and detail page. Database-only records can appear when visible. Hiding or archiving an adopted record suppresses the matching MDX page as well.
+Future case studies can be stored in `src/content/projects/*.mdx` as rollback copies. A project record can hold the same slug, complete metadata, and a Markdown body. The `replaces_mdx` switch chooses that record as the public source for the slug. Until the switch is on, matching MDX supplies the card and detail page. Database-only records can appear when visible. Hiding or archiving an adopted record suppresses the matching MDX page as well.
 
 Run the committed migrations and inspect the import before writing:
 

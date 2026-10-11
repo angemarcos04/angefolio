@@ -14,7 +14,7 @@ Implemented now:
 - One-time, single-owner command-line bootstrap
 - Server-guarded `/user` overview and Now editor
 - Origin-checked, authenticated Now Status mutation
-- Database-backed homepage status with a static fallback
+- Database-backed homepage status; the source fallback list is currently empty
 - Protected project list, create, edit, visibility/featured toggles, and archive
 - Per-slug public source selection between MDX and database projects
 - Dynamic project details, sanitized Markdown, private preview, live search, and sitemap
@@ -74,7 +74,7 @@ Phase 11 selected an integrated standalone Astro Node service:
 4. The homepage, workspace pages, and server endpoints render per request.
 5. Docker runs Node and persists `/app/data` for Now and project records.
 
-Project and Note cutovers are reversible per slug because MDX files remain on disk. Lab is still file-backed.
+Project, Note, and Lab source selection supports per-slug MDX/database cutover when matching MDX files exist. The original starter MDX files have been removed.
 
 ## Security rules
 

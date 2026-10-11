@@ -7,6 +7,8 @@ export const homepageCardKeys = [
   'stack',
   'activity',
   'notes',
+  'blog',
+  'lab',
   'contact',
 ] as const;
 
@@ -27,6 +29,8 @@ export interface HomepageConfig {
   aboutMetadata: Array<{ label: string; value: string }>;
   projectLimit: number;
   noteLimit: number;
+  blogLimit: number;
+  labLimit: number;
   activityStatus: string;
   stackGroups: Array<{ title: string; items: string[] }>;
   cards: Record<HomepageCardKey, HomepageCardConfig>;
@@ -51,6 +55,8 @@ export const defaultHomepageConfig: HomepageConfig = {
   ],
   projectLimit: 4,
   noteLimit: 3,
+  blogLimit: 3,
+  labLimit: 3,
   activityStatus: 'active learner / project builder',
   stackGroups,
   cards: {
@@ -64,8 +70,7 @@ export const defaultHomepageConfig: HomepageConfig = {
       visible: true,
       eyebrow: 'Featured Projects',
       title: 'Systems and ideas I am taking seriously.',
-      description:
-        'A mix of active school systems, prototypes, and planned personal tools.',
+      description: '',
     },
     now: {
       visible: true,
@@ -87,8 +92,20 @@ export const defaultHomepageConfig: HomepageConfig = {
     },
     notes: {
       visible: true,
-      eyebrow: 'Latest Notes',
+      eyebrow: 'Featured Notes',
       title: 'Things I am learning out loud',
+      description: '',
+    },
+    blog: {
+      visible: true,
+      eyebrow: 'Featured Blog',
+      title: 'Longer thoughts and technical writing',
+      description: '',
+    },
+    lab: {
+      visible: true,
+      eyebrow: 'Featured Lab',
+      title: 'Experiments worth sharing',
       description: '',
     },
     contact: {

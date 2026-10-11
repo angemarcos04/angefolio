@@ -129,6 +129,7 @@ test('blog drafts remain private and publishing updates the public indexes', asy
       await (await fetch(`${origin}/blog`)).text(),
       /A First Article/,
     );
+    assert.doesNotMatch(await (await fetch(origin)).text(), /A First Article/);
     assert.deepEqual(
       await (await fetch(`${origin}/api/search/blog?q=Private`)).json(),
       [],
@@ -141,6 +142,7 @@ test('blog drafts remain private and publishing updates the public indexes', asy
         ...fields,
         id: postId,
         published: 'on',
+        featured: 'on',
         body: '# Published\n\n**Public text.** <script>alert(1)</script>',
       },
       cookie,
@@ -158,6 +160,7 @@ test('blog drafts remain private and publishing updates the public indexes', asy
       await (await fetch(`${origin}/blog`)).text(),
       /A First Article/,
     );
+    assert.match(await (await fetch(origin)).text(), /A First Article/);
     const search = await (
       await fetch(`${origin}/api/search/blog?q=Public`)
     ).json();
@@ -182,6 +185,7 @@ test('blog drafts remain private and publishing updates the public indexes', asy
         ...fields,
         id: postId,
         published: 'on',
+        featured: 'on',
         archived: 'on',
       },
       cookie,
@@ -191,6 +195,7 @@ test('blog drafts remain private and publishing updates the public indexes', asy
       `/user/blog/${postId}?notice=saved`,
     );
     assert.equal((await fetch(`${origin}/blog/a-first-article`)).status, 404);
+    assert.doesNotMatch(await (await fetch(origin)).text(), /A First Article/);
     assert.deepEqual(
       await (await fetch(`${origin}/api/search/blog?q=Public`)).json(),
       [],

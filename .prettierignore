@@ -2,3 +2,4 @@ dist/
 node_modules/
 public/pagefind/
 pnpm-lock.yaml
+drizzle/meta/

@@ -22,7 +22,15 @@ export const homeProgressSections: ProgressSection[] = [
   },
   {
     id: 'latest-notes',
-    label: 'Latest notes',
+    label: 'Featured notes',
+  },
+  {
+    id: 'featured-blog',
+    label: 'Featured blog',
+  },
+  {
+    id: 'featured-lab',
+    label: 'Featured Lab',
   },
   {
     id: 'contact',

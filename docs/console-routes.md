@@ -6,7 +6,7 @@ The private workspace uses `/user`. Routes marked prerendered are emitted into `
 
 | Route                   | Rendering            | Access                                                             |
 | ----------------------- | -------------------- | ------------------------------------------------------------------ |
-| `/`                     | Server               | Public; published database Now row or static fallback              |
+| `/`                     | Server               | Public; published database Now row when available                  |
 | `/projects`             | Server               | Public DB records or visible MDX fallback                          |
 | `/projects/[slug]`      | Server               | Adopted database Markdown, visible MDX, or HTTP 308 slug redirect  |
 | `/notes`                | Server               | Published MDX and selected database notes                          |

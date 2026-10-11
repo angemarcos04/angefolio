@@ -30,7 +30,9 @@ const cardLabels: Record<HomepageCardKey, string> = {
   now: 'Current focus',
   stack: 'Stack',
   activity: 'GitHub activity',
-  notes: 'Latest notes',
+  notes: 'Featured notes',
+  blog: 'Featured blog',
+  lab: 'Featured Lab',
   contact: 'Contact',
 };
 const description = 'Edit homepage copy, sections, portrait, and stack groups.';
@@ -160,7 +162,10 @@ const groupLines = config.stackGroups
       <fieldset>
         <legend>Homepage sections</legend>
         <p class="help">
-          Hide sections you do not want shown. Their content remains saved.
+          Publish entries and mark them Featured in the Projects, Notes, Blog,
+          or Lab editors to show them on the homepage. Empty sections stay
+          hidden. Section visibility and preview counts are controlled here. Set
+          a count to 0 to show every featured entry in that section.
         </p>
         {
           homepageCardKeys.map((key) => {
@@ -215,20 +220,42 @@ const groupLines = config.stackGroups
             <input
               type="number"
               name="projectLimit"
-              min="1"
+              min="0"
               max="8"
               value={config.projectLimit}
               required
             />
           </label>
           <label>
-            <span>Latest note count</span>
+            <span>Featured note count</span>
             <input
               type="number"
               name="noteLimit"
-              min="1"
+              min="0"
               max="6"
               value={config.noteLimit}
+              required
+            />
+          </label>
+          <label>
+            <span>Featured blog count</span>
+            <input
+              type="number"
+              name="blogLimit"
+              min="0"
+              max="6"
+              value={config.blogLimit}
+              required
+            />
+          </label>
+          <label>
+            <span>Featured Lab count</span>
+            <input
+              type="number"
+              name="labLimit"
+              min="0"
+              max="6"
+              value={config.labLimit}
               required
             />
           </label>

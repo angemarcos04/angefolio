@@ -54,9 +54,7 @@ export async function getVisibleProjects(): Promise<
   return sortProjects(projects);
 }
 
-export async function getAllProjects(): Promise<
-  CollectionEntry<'projects'>[]
-> {
+export async function getAllProjects(): Promise<CollectionEntry<'projects'>[]> {
   return sortProjects(await getCollection('projects'));
 }
 

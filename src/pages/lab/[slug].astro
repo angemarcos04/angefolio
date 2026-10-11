@@ -14,7 +14,9 @@ import { getPublicLabCatalog } from '../../lib/server/lab';
 import { getContentRedirectTarget } from '../../lib/server/redirects';
 
 export const prerender = false;
-const redirectTarget = await getContentRedirectTarget(`/lab/${Astro.params.slug}`);
+const redirectTarget = await getContentRedirectTarget(
+  `/lab/${Astro.params.slug}`,
+);
 if (redirectTarget) {
   return new Response(null, {
     status: 308,

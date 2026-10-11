@@ -136,7 +136,7 @@
         name="q"
         type="search"
         bind:value={query}
-        placeholder="Try Astro, Linux, CSPAMS…"
+        placeholder="Search projects, notes, blog, and Lab…"
         autocomplete="off"
       />
       <button type="submit" disabled={loading}>

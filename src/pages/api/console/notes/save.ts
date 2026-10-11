@@ -56,7 +56,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       existing.slug !== result.data.slug &&
       mdxCollision &&
       !result.data.replacesMdx
-    ) return invalid('slug');
+    )
+      return invalid('slug');
     const currentPublic = existing
       ? (await getPublicNoteCatalog()).some(
           (note) => note.slug === existing.slug && note.source === 'database',

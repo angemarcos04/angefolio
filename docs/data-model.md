@@ -33,7 +33,7 @@ Do not hand-edit auth data. Use Better Auth APIs and versioned migrations so has
 | `published`     | boolean          | Public-query gate; defaults false.                  |
 | `updated_at`    | UTC timestamp    | Set on every successful update.                     |
 
-Phase 11 deliberately uses one stable row rather than inventing status history. Each JSON list is normalized to non-empty lines, limited to 12 items, and limited to 160 characters per item before persistence. The homepage returns the original static `nowItems` when this row is missing, unpublished, or unavailable.
+Phase 11 deliberately uses one stable row rather than inventing status history. Each JSON list is normalized to non-empty lines, limited to 12 items, and limited to 160 characters per item before persistence. The static `nowItems` list is now empty; when the row is missing, unpublished, or unavailable, the homepage hides Now.
 
 ## `project_records` (implemented)
 
@@ -142,7 +142,7 @@ All current Lab fields are modeled. The public catalog reads visible entries onl
 | `settings_json` | JSON text        | Validated homepage settings and bounded content. |
 | `updated_at`    | UTC timestamp    | Last successful edit.                            |
 
-The JSON contains the hero and portrait, About copy and labels, existing section copy and visibility flags, project/note preview counts, stack groups, and a legacy activity caption retained for compatibility. GitHub activity itself is loaded from the public profile URL in site settings. The bento layout remains fixed. Saves write audit and revision records atomically; missing or unavailable settings use source defaults.
+The JSON contains the hero and portrait, About copy and labels, section copy and visibility flags, Project/Note/Blog/Lab featured preview counts, stack groups, and a legacy activity caption retained for compatibility. A preview count of 0 shows all featured entries. GitHub activity itself is loaded from the public profile URL in site settings. The bento layout remains fixed. Saves write audit and revision records atomically; missing or unavailable settings use source defaults.
 
 ### Stack groups (nested in `homepage_settings`)
 

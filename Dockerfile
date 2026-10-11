@@ -37,7 +37,7 @@ COPY --chown=node:node --from=build /app/drizzle ./drizzle
 COPY --chown=node:node package.json pnpm-lock.yaml drizzle.config.ts ./
 COPY --chown=node:node scripts ./scripts
 COPY --chown=node:node --from=build /app/src/lib/server ./src/lib/server
-COPY --chown=node:node --from=build /app/src/content/projects ./src/content/projects
+COPY --chown=node:node --from=build /app/src/content ./src/content
 
 RUN mkdir -p /app/data && chown node:node /app/data
 

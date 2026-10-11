@@ -5,6 +5,7 @@ import Button from '../components/astro/Button.astro';
 import CollectionHeader from '../components/astro/CollectionHeader.astro';
 import IconLink from '../components/astro/IconLink.astro';
 import Layout from '../components/astro/Layout.astro';
+import LabCard from '../components/astro/LabCard.astro';
 import NoteCard from '../components/astro/NoteCard.astro';
 import ProjectCard from '../components/astro/ProjectCard.astro';
 import StackGroup from '../components/astro/StackGroup.astro';
@@ -15,6 +16,8 @@ import { getHomepageConfig } from '../lib/server/homepage';
 import { getPublicSiteSettings } from '../lib/server/siteSettings';
 import { homeProgressSections } from '../lib/data/homeProgress';
 import { getPublicNoteCatalog } from '../lib/server/notes';
+import { getPublicBlogCatalog } from '../lib/server/blog';
+import { getPublicLabCatalog } from '../lib/server/lab';
 import { getPublicNowStatus } from '../lib/server/now';
 import { getGitHubContributions } from '../lib/server/githubContributions';
 import {
@@ -42,13 +45,21 @@ const liveContactLinks = contactLinks.map((link) => ({
         : link.href,
 }));
 const cards = homepage.cards;
-const [projectCatalog, publishedNotes, publicNowStatus, githubContributions] =
-  await Promise.all([
-    getPublicProjectCatalog(),
-    getPublicNoteCatalog(),
-    getPublicNowStatus(),
-    getGitHubContributions(publicSettings.github),
-  ]);
+const [
+  projectCatalog,
+  publishedNotes,
+  publishedBlog,
+  visibleLab,
+  publicNowStatus,
+  githubContributions,
+] = await Promise.all([
+  getPublicProjectCatalog(),
+  getPublicNoteCatalog(),
+  getPublicBlogCatalog(),
+  getPublicLabCatalog(),
+  getPublicNowStatus(),
+  getGitHubContributions(publicSettings.github),
+]);
 const allProjects = projectCatalog.map((project) => {
   const detailUrl = publicProjectUrl(project);
   return {
@@ -69,8 +80,24 @@ const allProjects = projectCatalog.map((project) => {
     updatedAt: project.updatedAt.toISOString(),
   };
 });
-const projects = allProjects.slice(0, homepage.projectLimit);
-const notes = publishedNotes.slice(0, homepage.noteLimit);
+const preview = <T,>(entries: T[], limit: number): T[] =>
+  limit === 0 ? entries : entries.slice(0, limit);
+const featuredProjects = preview(
+  allProjects.filter((project) => project.featured),
+  homepage.projectLimit,
+);
+const featuredNotes = preview(
+  publishedNotes.filter((note) => note.featured),
+  homepage.noteLimit,
+);
+const featuredBlog = preview(
+  publishedBlog.filter((post) => post.featured),
+  homepage.blogLimit,
+);
+const featuredLab = preview(
+  visibleLab.filter((entry) => entry.featured),
+  homepage.labLimit,
+);
 const renderedNowItems = publicNowStatus?.items ?? nowItems;
 const nowMetadata = publicNowStatus
   ? (publicNowStatus.statusNote ??
@@ -131,18 +158,25 @@ const terminalData: PortfolioTerminalData = {
 };
 const progressSections = homeProgressSections.filter((section) => {
   if (section.id === 'introduction') return true;
-  if (section.id === 'featured-projects') return cards.projects.visible;
+  if (section.id === 'featured-projects')
+    return cards.projects.visible && featuredProjects.length > 0;
   if (section.id === 'current-focus')
-    return cards.now.visible || cards.stack.visible;
+    return (
+      (cards.now.visible && renderedNowItems.length > 0) || cards.stack.visible
+    );
   if (section.id === 'github-activity') return cards.activity.visible;
-  if (section.id === 'latest-notes') return cards.notes.visible;
+  if (section.id === 'latest-notes')
+    return cards.notes.visible && featuredNotes.length > 0;
+  if (section.id === 'featured-blog')
+    return cards.blog.visible && featuredBlog.length > 0;
+  if (section.id === 'featured-lab')
+    return cards.lab.visible && featuredLab.length > 0;
   if (section.id === 'contact') return cards.contact.visible;
   return false;
 });
 ---
 
 <Layout
-  title={`${homepage.heroName} — angefolio`}
   title={`${publicSettings.name} — ${publicSettings.siteName}`}
   description={publicSettings.seoDescription}
 >
@@ -230,7 +264,7 @@ const progressSections = homeProgressSections.filter((section) => {
       )
     }
     {
-      cards.projects.visible && (
+      cards.projects.visible && featuredProjects.length > 0 && (
         <BentoCard
           id="featured-projects"
           class="projects home-anchor md:col-span-2 lg:col-span-12"
@@ -240,7 +274,7 @@ const progressSections = homeProgressSections.filter((section) => {
           description={cards.projects.description}
         >
           <div class="project-grid">
-            {projects.map((project) => (
+            {featuredProjects.map((project) => (
               <ProjectCard
                 href={project.href}
                 title={project.title}
@@ -263,7 +297,7 @@ const progressSections = homeProgressSections.filter((section) => {
       )
     }
     {
-      cards.now.visible && (
+      cards.now.visible && renderedNowItems.length > 0 && (
         <BentoCard
           id="current-focus"
           class="now home-anchor md:col-span-1 lg:col-span-3"
@@ -285,7 +319,11 @@ const progressSections = homeProgressSections.filter((section) => {
     {
       cards.stack.visible && (
         <BentoCard
-          id={!cards.now.visible ? 'current-focus' : undefined}
+          id={
+            !cards.now.visible || renderedNowItems.length === 0
+              ? 'current-focus'
+              : undefined
+          }
           class="stack md:col-span-1 lg:col-span-5"
           accent="soft"
           eyebrow={cards.stack.eyebrow}
@@ -345,7 +383,7 @@ const progressSections = homeProgressSections.filter((section) => {
       )
     }
     {
-      cards.notes.visible && (
+      cards.notes.visible && featuredNotes.length > 0 && (
         <BentoCard
           id="latest-notes"
           class="notes home-anchor md:col-span-2 lg:col-span-8"
@@ -355,7 +393,7 @@ const progressSections = homeProgressSections.filter((section) => {
           description={cards.notes.description || undefined}
         >
           <div class="note-grid">
-            {notes.map((note) => (
+            {featuredNotes.map((note) => (
               <NoteCard
                 href={`/notes/${note.slug}`}
                 title={note.title}
@@ -370,6 +408,67 @@ const progressSections = homeProgressSections.filter((section) => {
           </div>
           <div class="card-footer">
             <IconLink href="/notes" label="Read notes" />
+          </div>
+        </BentoCard>
+      )
+    }
+    {
+      cards.blog.visible && featuredBlog.length > 0 && (
+        <BentoCard
+          id="featured-blog"
+          class="blog home-anchor md:col-span-1 lg:col-span-6"
+          accent="soft"
+          eyebrow={cards.blog.eyebrow}
+          title={cards.blog.title}
+          description={cards.blog.description || undefined}
+        >
+          <div class="feature-grid">
+            {featuredBlog.map((post) => (
+              <NoteCard
+                href={`/blog/${post.slug}`}
+                title={post.title}
+                description={post.summary ?? post.description}
+                category={post.category}
+                tags={post.tags}
+                createdAt={post.createdAt}
+                updatedAt={post.updatedAt}
+                featured={post.featured}
+              />
+            ))}
+          </div>
+          <div class="card-footer">
+            <IconLink href="/blog" label="Read blog" />
+          </div>
+        </BentoCard>
+      )
+    }
+    {
+      cards.lab.visible && featuredLab.length > 0 && (
+        <BentoCard
+          id="featured-lab"
+          class="lab home-anchor md:col-span-1 lg:col-span-6"
+          accent="soft"
+          eyebrow={cards.lab.eyebrow}
+          title={cards.lab.title}
+          description={cards.lab.description || undefined}
+        >
+          <div class="feature-grid">
+            {featuredLab.map((entry) => (
+              <LabCard
+                href={`/lab/${entry.slug}`}
+                title={entry.title}
+                description={entry.description}
+                status={entry.status}
+                category={entry.category ?? undefined}
+                tags={entry.tags}
+                tools={entry.tools}
+                date={entry.date}
+                featured={entry.featured}
+              />
+            ))}
+          </div>
+          <div class="card-footer">
+            <IconLink href="/lab" label="Explore Lab" />
           </div>
         </BentoCard>
       )
@@ -564,7 +663,8 @@ const progressSections = homeProgressSections.filter((section) => {
     gap: 0.8rem;
   }
   :global(.project-grid .content-card),
-  :global(.note-grid .content-card) {
+  :global(.note-grid .content-card),
+  :global(.feature-grid .content-card) {
     border-radius: var(--radius-md);
     box-shadow: none;
   }
@@ -657,6 +757,11 @@ const progressSections = homeProgressSections.filter((section) => {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.8rem;
   }
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+  }
   .contact-links {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -713,7 +818,8 @@ const progressSections = homeProgressSections.filter((section) => {
       justify-self: start;
     }
     .project-grid,
-    .note-grid {
+    .note-grid,
+    .feature-grid {
       grid-template-columns: 1fr;
     }
   }

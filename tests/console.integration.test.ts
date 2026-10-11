@@ -8,6 +8,10 @@ import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import test from 'node:test';
 import { createClient } from '@libsql/client';
+import {
+  defaultHomepageConfig,
+  homepageCardKeys,
+} from '../src/lib/data/homepage';
 
 const execFileAsync = promisify(execFile);
 const cwd = resolve(import.meta.dirname, '..');
@@ -60,7 +64,6 @@ test('private edits, audit history, recovery, and database backup', async () => 
   const databaseFile = join(directory, 'portfolio.sqlite');
   const backupFile = join(directory, 'backup.sqlite');
   const restoredFile = join(directory, 'restored.sqlite');
-  const importBackupFile = join(directory, 'before-import.sqlite');
   const port = await freePort();
   const origin = `http://127.0.0.1:${port}`;
   const email = 'owner@angefolio.test';
@@ -135,7 +138,10 @@ test('private edits, audit history, recovery, and database backup', async () => 
       ).status,
       401,
     );
-    assert.match(await (await fetch(`${origin}/projects`)).text(), /CSPAMS/);
+    assert.doesNotMatch(
+      await (await fetch(`${origin}/projects`)).text(),
+      /CSPAMS/,
+    );
     assert.doesNotMatch(
       await (await fetch(origin)).text(),
       /href="\/user(?:\/|\")/,
@@ -314,7 +320,10 @@ test('private edits, audit history, recovery, and database backup', async () => 
     });
     const id = String(project.rows[0].id);
     assert.equal(project.rows[0].visible, 0);
-    assert.match(await (await fetch(`${origin}/projects`)).text(), /CSPAMS/);
+    assert.doesNotMatch(
+      await (await fetch(`${origin}/projects`)).text(),
+      /Phase 13 Test/,
+    );
 
     const updated = await formRequest(
       origin,
@@ -351,7 +360,8 @@ test('private edits, audit history, recovery, and database backup', async () => 
     assert.match(shown.headers.get('location') ?? '', /notice=visibility/);
     const publicProjects = await (await fetch(`${origin}/projects`)).text();
     assert.match(publicProjects, /Phase 13 Test/);
-    assert.match(publicProjects, /CSPAMS/);
+    assert.doesNotMatch(publicProjects, /CSPAMS/);
+    assert.match(await (await fetch(origin)).text(), /Phase 13 Test/);
     const newDetail = await fetch(`${origin}/projects/phase-13-test`);
     assert.equal(newDetail.status, 200);
     assert.match(await newDetail.text(), /A private draft body/);
@@ -363,7 +373,11 @@ test('private edits, audit history, recovery, and database backup', async () => 
       cookie,
     );
     assert.match(archived.headers.get('location') ?? '', /notice=archived/);
-    assert.match(await (await fetch(`${origin}/projects`)).text(), /CSPAMS/);
+    assert.doesNotMatch(
+      await (await fetch(`${origin}/projects`)).text(),
+      /Phase 13 Test/,
+    );
+    assert.doesNotMatch(await (await fetch(origin)).text(), /Phase 13 Test/);
     assert.equal((await fetch(`${origin}/projects/phase-13-test`)).status, 404);
     assert.match(
       await (
@@ -435,94 +449,121 @@ test('private edits, audit history, recovery, and database backup', async () => 
       ['scripts/import-projects.ts'],
       { cwd, env },
     );
-    assert.match(dryRun.stdout, /4 source projects, 0 existing slug conflicts/);
-    await execFileAsync(
-      './node_modules/.bin/tsx',
-      ['scripts/import-projects.ts', '--apply', '--backup', importBackupFile],
-      { cwd, env },
-    );
-    const imported = await database.execute({
-      sql: 'SELECT id FROM project_records WHERE slug = ?',
-      args: ['cspams'],
-    });
-    assert.equal(imported.rows.length, 1);
-    const cspamsId = String(imported.rows[0].id);
-    const changedCspams = await formRequest(
+    assert.match(dryRun.stdout, /0 source projects, 0 existing slug conflicts/);
+    const changedCaseStudy = await formRequest(
       origin,
-      `/api/console/projects/${cspamsId}/update`,
+      `/api/console/projects/${id}/update`,
       {
-        slug: 'cspams',
-        title: 'CSPAMS',
+        slug: 'phase-13-test',
+        title: 'Phase 13 Test',
         description: 'Edited from the private workspace.',
         status: 'In Progress',
         stack: 'Laravel\nPostgreSQL',
         caseStudyBody: '# Edited case study\n\n<script>alert(1)</script>',
         projectDate: '2026-06-12',
         visible: 'on',
-        replacesMdx: 'on',
       },
       cookie,
     );
     assert.equal(
-      changedCspams.headers.get('location'),
+      changedCaseStudy.headers.get('location'),
       '/user/projects?notice=updated',
     );
-    const cspamsDetail = await (
-      await fetch(`${origin}/projects/cspams`)
+    const caseStudyDetail = await (
+      await fetch(`${origin}/projects/phase-13-test`)
     ).text();
-    assert.match(cspamsDetail, /Edited case study/);
-    assert.match(cspamsDetail, /id="edited-case-study"/);
-    assert.match(cspamsDetail, /href="#edited-case-study"/);
-    assert.doesNotMatch(cspamsDetail, /<script>alert\(1\)<\/script>/);
-    const movedCspams = await formRequest(
+    assert.match(caseStudyDetail, /Edited case study/);
+    assert.match(caseStudyDetail, /id="edited-case-study"/);
+    assert.match(caseStudyDetail, /href="#edited-case-study"/);
+    assert.doesNotMatch(caseStudyDetail, /<script>alert\(1\)<\/script>/);
+    const movedCaseStudy = await formRequest(
       origin,
-      `/api/console/projects/${cspamsId}/update`,
+      `/api/console/projects/${id}/update`,
       {
-        slug: 'cspams-moved',
-        title: 'CSPAMS',
+        slug: 'phase-13-moved',
+        title: 'Phase 13 Test',
         description: 'Edited from the private workspace.',
         status: 'In Progress',
         caseStudyBody: '# Edited case study',
         visible: 'on',
-        replacesMdx: 'on',
       },
       cookie,
     );
     assert.equal(
-      movedCspams.headers.get('location'),
+      movedCaseStudy.headers.get('location'),
       '/user/projects?notice=updated',
     );
-    const oldCspamsUrl = await fetch(`${origin}/projects/cspams`, {
+    const oldCaseStudyUrl = await fetch(`${origin}/projects/phase-13-test`, {
       redirect: 'manual',
     });
-    assert.equal(oldCspamsUrl.status, 308);
+    assert.equal(oldCaseStudyUrl.status, 308);
     assert.equal(
-      oldCspamsUrl.headers.get('location'),
-      '/projects/cspams-moved',
+      oldCaseStudyUrl.headers.get('location'),
+      '/projects/phase-13-moved',
     );
     const search = await (
       await fetch(`${origin}/api/search/projects?q=Edited`)
     ).json();
     assert(
       search.some(
-        (result: { url: string }) => result.url === '/projects/cspams-moved',
+        (result: { url: string }) => result.url === '/projects/phase-13-moved',
       ),
     );
     assert.match(
       await (await fetch(`${origin}/sitemap-projects.xml`)).text(),
-      /\/projects\/cspams-moved/,
+      /\/projects\/phase-13-moved/,
     );
-    const archivedCspams = await formRequest(
+    const archivedCaseStudy = await formRequest(
       origin,
-      `/api/console/projects/${cspamsId}/archive`,
+      `/api/console/projects/${id}/archive`,
       { intent: 'archive' },
       cookie,
     );
     assert.match(
-      archivedCspams.headers.get('location') ?? '',
+      archivedCaseStudy.headers.get('location') ?? '',
       /notice=archived/,
     );
-    assert.equal((await fetch(`${origin}/projects/cspams-moved`)).status, 404);
+    assert.equal(
+      (await fetch(`${origin}/projects/phase-13-moved`)).status,
+      404,
+    );
+
+    const homepageFields: Record<string, string> = {
+      heroName: 'Test Owner',
+      heroRoles: 'Developer',
+      portrait: '/91889584.jpeg',
+      aboutParagraphs: 'Testing the homepage settings.',
+      aboutMetadata: 'focus | Testing',
+      projectLimit: '0',
+      noteLimit: '0',
+      blogLimit: '0',
+      labLimit: '0',
+      stackGroups: 'Frontend | Astro',
+      activityStatus: defaultHomepageConfig.activityStatus,
+    };
+    for (const key of homepageCardKeys) {
+      const card = defaultHomepageConfig.cards[key];
+      homepageFields[`card_visible_${key}`] = 'on';
+      homepageFields[`card_eyebrow_${key}`] = card.eyebrow;
+      homepageFields[`card_title_${key}`] = card.title;
+      homepageFields[`card_description_${key}`] = card.description;
+    }
+    const savedHomepage = await formRequest(
+      origin,
+      '/api/console/homepage',
+      homepageFields,
+      cookie,
+    );
+    assert.equal(
+      savedHomepage.headers.get('location'),
+      '/user/homepage?saved=1',
+    );
+    const homepageEditor = await (
+      await fetch(`${origin}/user/homepage`, { headers: { cookie } })
+    ).text();
+    assert.match(homepageEditor, /name="blogLimit"/);
+    assert.match(homepageEditor, /name="labLimit"/);
+    assert.match(homepageEditor, /value="0"/);
 
     const logout = await formRequest(origin, '/user/logout', {}, cookie);
     assert.equal(logout.status, 303);

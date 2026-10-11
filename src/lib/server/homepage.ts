@@ -14,7 +14,12 @@ export async function getHomepageConfig(): Promise<HomepageConfig> {
       where: eq(homepageSettings.id, primaryHomepageSettingsId),
     });
     if (!record) return defaultHomepageConfig;
-    return record.settings as unknown as HomepageConfig;
+    const saved = record.settings as Partial<HomepageConfig>;
+    return {
+      ...defaultHomepageConfig,
+      ...saved,
+      cards: { ...defaultHomepageConfig.cards, ...saved.cards },
+    };
   } catch {
     return defaultHomepageConfig;
   }

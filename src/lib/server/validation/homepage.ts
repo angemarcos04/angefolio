@@ -120,11 +120,39 @@ export function validateHomepageForm(
 
   const projectLimit = Number(text(form, 'projectLimit'));
   const noteLimit = Number(text(form, 'noteLimit'));
-  if (!Number.isInteger(projectLimit) || projectLimit < 1 || projectLimit > 8) {
-    errors.push('Project preview count must be between 1 and 8.');
+  const blogLimit = Number(text(form, 'blogLimit'));
+  const labLimit = Number(text(form, 'labLimit'));
+  if (
+    text(form, 'projectLimit') === '' ||
+    !Number.isInteger(projectLimit) ||
+    projectLimit < 0 ||
+    projectLimit > 8
+  ) {
+    errors.push('Project preview count must be 0 (all) or between 1 and 8.');
   }
-  if (!Number.isInteger(noteLimit) || noteLimit < 1 || noteLimit > 6) {
-    errors.push('Note preview count must be between 1 and 6.');
+  if (
+    text(form, 'noteLimit') === '' ||
+    !Number.isInteger(noteLimit) ||
+    noteLimit < 0 ||
+    noteLimit > 6
+  ) {
+    errors.push('Note preview count must be 0 (all) or between 1 and 6.');
+  }
+  if (
+    text(form, 'blogLimit') === '' ||
+    !Number.isInteger(blogLimit) ||
+    blogLimit < 0 ||
+    blogLimit > 6
+  ) {
+    errors.push('Blog preview count must be 0 (all) or between 1 and 6.');
+  }
+  if (
+    text(form, 'labLimit') === '' ||
+    !Number.isInteger(labLimit) ||
+    labLimit < 0 ||
+    labLimit > 6
+  ) {
+    errors.push('Lab preview count must be 0 (all) or between 1 and 6.');
   }
 
   const stackGroups: HomepageConfig['stackGroups'] = [];
@@ -174,6 +202,8 @@ export function validateHomepageForm(
       aboutMetadata,
       projectLimit,
       noteLimit,
+      blogLimit,
+      labLimit,
       activityStatus,
       stackGroups,
       cards: cards as Record<HomepageCardKey, (typeof cards)[HomepageCardKey]>,

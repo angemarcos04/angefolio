@@ -1,5 +1,7 @@
 # Note publishing (Phase 15)
 
+**Current status:** The original starter Notes were removed from source and the local database. The import and MDX rollback steps below apply only to future matching MDX content. Historical database backups remain available.
+
 The private Notes editor is at `/user/notes`. It stores Markdown, metadata, tags, publication state, and featured state in SQLite. Preview uses the same authenticated sanitized renderer as project writing.
 
 ## Source selection

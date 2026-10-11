@@ -38,7 +38,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         ? '/user/homepage'
         : type === 'site_settings'
           ? '/user/settings'
-        : `/user/${type === 'project' ? 'projects' : type === 'note' ? 'notes' : type === 'blog' ? 'blog' : 'lab'}/${encodeURIComponent(entityId)}`;
+          : `/user/${type === 'project' ? 'projects' : type === 'note' ? 'notes' : type === 'blog' ? 'blog' : 'lab'}/${encodeURIComponent(entityId)}`;
   try {
     const restored = await restoreContentRevision(
       locals.user.id,

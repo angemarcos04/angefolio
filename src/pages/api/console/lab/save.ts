@@ -56,10 +56,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       existing.slug !== validated.data.slug &&
       mdxCollision &&
       !validated.data.replacesMdx
-    ) return failure('slug');
+    )
+      return failure('slug');
     const currentPublic = existing
       ? (await getPublicLabCatalog()).some(
-          (entry) => entry.slug === existing.slug && entry.source === 'database',
+          (entry) =>
+            entry.slug === existing.slug && entry.source === 'database',
         )
       : false;
     const record = await saveLabRecord(

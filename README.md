@@ -2,7 +2,9 @@
 
 The personal developer portfolio of **Angellie Marcos**, an Information Technology student building practical web systems with a Linux-minded, creative edge.
 
-This repository is currently in **Phase 24: automated off-host backups**. The authenticated workspace lives at `/user`, absent from public navigation. Better Auth and SQLite protect the Now, Projects, Notes, and Lab editors, with transactional audit records and restorable snapshots. The four original projects, three notes, and three Lab entries have been imported into the local database with MDX copies retained for rollback.
+The authenticated workspace lives at `/user`, absent from public navigation. Better Auth and SQLite protect the Now, Projects, Notes, Blog, and Lab editors, with audit records and restorable snapshots. The starter Project, Note, and Lab entries have been cleared from source and the local database. The owner can write and publish new entries in `/user`; historical database backups remain available.
+
+Published entries marked **Featured** can appear on the homepage. `/user/homepage` controls section visibility and how many featured entries to show for Projects, Notes, Blog, and Lab; a count of 0 shows all. Sections with no qualifying entries are hidden.
 
 ## Tech stack
 
@@ -180,18 +182,18 @@ Bento children may use Tailwind responsive spans such as `md:col-span-2`, `lg:co
 
 ## Phase 3 homepage
 
-The homepage is a desktop-first 12-column bento dashboard with a natural mobile stack. It contains exactly eight main cells, each with one job:
+The homepage is a desktop-first 12-column bento dashboard with a natural mobile stack. Its sections appear when enabled and, for content sections, when qualifying entries exist:
 
 1. **Hero** - identity, focus, and primary paths
 2. **About** - developer perspective and interests
-3. **Featured Projects** - four visible collection-backed projects
+3. **Featured Projects** - published projects selected in the owner workspace
 4. **Now** - current work, learning, and daily environment
 5. **Stack** - compact frontend, backend, systems, and exploring groups
 6. **GitHub Activity** - contribution calendar read from the public GitHub profile
-7. **Latest Notes** - up to three published collection-backed notes
-8. **Contact** - email, GitHub, resume, and LinkedIn links
+7. **Featured Notes, Blog, and Lab** - published entries selected in their editors
+8. **Contact** - email, GitHub, and LinkedIn links
 
-Source defaults remain in `src/lib/data/site.ts`; `/user/settings` can override the public site name, author, SEO description, GitHub profile, and email. Homepage-only lists, stack groups, and LinkedIn live in `src/lib/data/home.ts`. The contribution calendar loads server-side from the configured GitHub profile and is cached for an hour. Featured projects and latest notes use their public catalogs at request time. Their MDX files remain rollback sources for records that have switched to the database.
+Source defaults remain in `src/lib/data/site.ts`; `/user/settings` can override the public site name, author, SEO description, GitHub profile, and email. Homepage stack groups and LinkedIn live in `src/lib/data/home.ts`; Now has no static fallback content. The contribution calendar loads server-side from the configured GitHub profile and is cached for an hour. Featured Projects, Notes, Blog, and Lab use their public catalogs at request time.
 
 ## Phase 4 content pages
 
@@ -334,7 +336,7 @@ Published note entries now generate a static technical writing archive:
 
 - `/notes` lists published notes newest first and links every title to its local detail page.
 - `/notes/[slug]` renders the MDX body with category, tags, dates, reading time, an optional summary, and older/newer navigation.
-- The content filename becomes the route slug, so `src/content/notes/building-angefolio.mdx` builds as `/notes/building-angefolio`.
+- The content filename becomes the route slug, so `src/content/notes/example-note.mdx` builds as `/notes/example-note`.
 - Project case studies and notes share the global `.prose-shell` styles for headings, paragraphs, lists, links, code, blockquotes, images, and overflow-safe tables.
 
 Use `/user/notes` for routine writing and publishing. The MDX source remains in the repository as a rollback copy; when a database record is selected as the public source, edits to that MDX file no longer change the public note.
@@ -401,7 +403,7 @@ Visible experiment entries now generate a structured static workshop:
 
 - `/lab` groups visible entries by `Prototype`, `Testing`, `Idea`, `Paused`, and `Archived`, while preserving newest-first order inside each group.
 - `/lab/[slug]` renders the MDX experiment body with status, category, tags, dates, optional tools, risk, lessons, links, and older/newer navigation.
-- The content filename becomes the route slug, so `src/content/lab/svelte-ui-experiments.mdx` builds as `/lab/svelte-ui-experiments`.
+- The content filename becomes the route slug, so `src/content/lab/example-experiment.mdx` builds as `/lab/example-experiment`.
 - Project, note, and Lab detail pages reuse the shared `.prose-shell` article styles.
 
 Use `/user/lab` for routine experiment writing and publishing. Existing MDX stays available as a rollback copy; imported entries remain on that source until you select the database version. Source-controlled entries can be imported with a dry run followed by a verified backup:
@@ -449,7 +451,7 @@ Phase 10 created the planning boundary that Phase 11 now implements as a narrow 
 - `src/lib/console/types.ts` provides future-facing TypeScript contracts only; it contains no database or auth access.
 - The original `/console` holding route has been replaced by the protected Phase 11 overview.
 
-The longer-term console is intended to manage Now/status content, featured projects, note drafts, Lab entries, stack groups, homepage card visibility, and supported site settings. Phase 11 implements only Now Status.
+The original console plan covered Now status, featured projects, note drafts, Lab entries, stack groups, homepage card visibility, and site settings. Those owner editors now live under `/user`.
 
 The planning documents remain the source for future boundaries and have been updated with what Phase 11 actually shipped.
 
@@ -462,7 +464,7 @@ Phase 11 adds one secure end-to-end publishing path:
 - Drizzle and local libSQL/SQLite persist Better Auth's core tables plus one `now_status` row. Migrations are committed under `drizzle/`.
 - `src/middleware.ts` guards `/console/*` except login and every `/api/console/*` mutation route. Endpoints also check authentication, request origin, size, and field limits.
 - `/console`, `/console/now`, and `POST /console/logout` are private. `/console/login` is the only public console page.
-- The homepage reads a published database status on the server and falls back to the existing static `nowItems` when the row is unpublished, missing, or unavailable.
+- The homepage reads a published database status on the server. The static fallback list is now empty, so Now stays hidden until published.
 - The private pages stay `noindex`, out of Pagefind, absent from public navigation, and excluded from the sitemap.
 
 At the completion of Phase 11, projects, notes, Lab entries, stack groups, homepage layout, and settings had no database editor. There is no registration UI, OAuth, password reset email, multi-user management, media upload, or audit log.
@@ -490,7 +492,7 @@ Run `pnpm db:migrate` to apply content tables. Imported content remains source-c
 
 ## Phase 14 project publishing
 
-`/user/projects` edits full case studies. The Markdown toolbar supports bold, italic, headings, lists, links, and private preview. Existing MDX projects can be imported with a dry run and verified backup; each adopted record takes over its existing URL. The local database has received all four original project entries. See [Project publishing](docs/project-publishing.md) for the cutover and rollback steps.
+`/user/projects` edits full case studies. The Markdown toolbar supports bold, italic, headings, lists, links, and private preview. Future MDX projects can be imported with a dry run and verified backup; each adopted record takes over its existing URL. The four starter records and source files have been cleared. See [Project publishing](docs/project-publishing.md) for the cutover and rollback steps.
 
 ## Folder structure
 
@@ -509,12 +511,12 @@ src/
 ├── components/
 │   ├── astro/       # Layout, content cards, and presentation primitives
 │   └── svelte/      # Small interactive islands and future-facing stubs
-├── content/         # Typed starter projects, notes, and lab entries
+├── content/         # Typed Project, Note, and Lab collections (currently empty)
 ├── lib/             # Shared content utilities and server-only modules
 │   ├── console/     # Future-facing type contracts
 │   └── server/      # Auth, database, validation, Now, and project queries
 ├── pages/
-│   ├── index.astro  # Eight-cell bento-dashboard homepage
+│   ├── index.astro  # Bento-dashboard homepage with conditional sections
 │   ├── projects/    # Runtime index and adopted Markdown/MDX detail routes
 │   ├── notes/       # Public note index and static detail routes
 │   ├── lab/         # Public Lab archive and detail routes
@@ -529,9 +531,9 @@ src/
 
 ## Current limitations
 
-- Lab MDX files remain rollback copies for entries selected from the database. There is no discussion system or separate status/tag route yet.
+- Future Lab MDX files can be imported and used as rollback copies. There is no discussion system or separate status/tag route yet.
 - Lab entries are grouped by status; there are no interactive filters yet.
-- Note MDX files remain rollback copies for entries selected from the database. There is no comments system or category/tag route yet.
+- Future Note MDX files can be imported and used as rollback copies. There is no comments system or category/tag route yet.
 - Pagefind needs a production build for static pages; live project search is available in development.
 - The canonical production domain is still a documented placeholder and must be replaced before deployment.
 - Container TLS, DNS, secret injection, and hosting-provider configuration remain external deployment concerns; the Node image serves HTTP on port `4321` behind the chosen platform or reverse proxy.
