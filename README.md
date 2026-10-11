@@ -2,7 +2,7 @@
 
 The personal developer portfolio of **Angellie Marcos**, an Information Technology student building practical web systems with a Linux-minded, creative edge.
 
-This repository is currently in **Phase 12: private `/console` Projects Manager MVP**. Astro runs through the standalone Node adapter so console sessions and writes stay server-side. Better Auth, Drizzle, and a local SQLite/libSQL database power one protected owner account, the Now Status editor, and protected project records. Notes and Lab content remain source-controlled MDX; project MDX remains an explicit public fallback.
+This repository is currently in **Phase 24: automated off-host backups**. The authenticated workspace lives at `/user`, absent from public navigation. Better Auth and SQLite protect the Now, Projects, Notes, and Lab editors, with transactional audit records and restorable snapshots. The four original projects, three notes, and three Lab entries have been imported into the local database with MDX copies retained for rollback.
 
 ## Tech stack
 
@@ -34,7 +34,7 @@ pnpm db:migrate
 pnpm dev
 ```
 
-Open `http://localhost:4321`.
+Open `http://localhost:4321`. The private workspace is at `/user`.
 
 Create the one allowed administrator once, after filling `AUTH_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` in the local environment:
 
@@ -58,6 +58,7 @@ Optional checks:
 ```bash
 pnpm check
 pnpm format:check
+pnpm test:console # after pnpm build
 ```
 
 ## Docker
@@ -79,7 +80,7 @@ Or build and run the `portfolio` Compose service:
 docker compose up --build
 ```
 
-Open `http://localhost:4321`. Stop it with `docker compose down`.
+Open `http://localhost:4321`. The private workspace is at `/user`. Stop it with `docker compose down`.
 
 The container is named `angefolio`, maps `4321:4321`, and uses `unless-stopped`. Compose preserves the read-only root filesystem and `no-new-privileges`, adds a writable `/tmp`, and mounts `portfolio_data` only at `/app/data`. Set a real `AUTH_SECRET` and deployment origins in an uncommitted `.env` before `docker compose up --build`.
 
@@ -106,7 +107,7 @@ The last command applies while the Compose service is running.
 
 ## Production build
 
-The deployable artifact is the standalone Node server plus `dist/client`, committed migrations, and runtime dependencies. A static-only host is no longer sufficient for `/console`, live Now Status, or database project records. Build with:
+The deployable artifact is the standalone Node server plus `dist/client`, committed migrations, and runtime dependencies. A static-only host is no longer sufficient for `/user`, live Now content, or database projects. Build with:
 
 ```bash
 corepack enable
@@ -115,9 +116,9 @@ pnpm check
 pnpm build
 ```
 
-The Docker build uses `pnpm build:search` so Pagefind output is always present. Project details, Notes, Lab, RSS, robots, search, and the 404 page remain prerendered. `/`, `/projects`, `/console/*`, and console/auth endpoints run on demand because public project records can change without a rebuild. `astro preview` remains an inspection tool, while production uses the Node adapter entry point.
+The Docker build uses `pnpm build:search` so Pagefind output is present for static content. Robots and 404 remain prerendered. `/`, Projects, Notes, Lab, Search, RSS, `/health/ready`, `/user/*`, and content search/sitemap endpoints run on demand. `astro preview` remains an inspection tool; production uses the Node adapter entry point.
 
-Expected public output includes project, note, and Lab indexes/details; `/search`; `/rss.xml`; `/robots.txt`; `/sitemap-index.xml`; and `/404.html`. Pagefind indexes the prerendered public HTML in `dist/client`. The homepage remains server-rendered so a published database status appears without a rebuild.
+Expected public output includes project, note, and Lab indexes/details; `/search`; `/rss.xml`; `/robots.txt`; content sitemaps; and `/404.html`. Pagefind indexes prerendered HTML in `dist/client`; live content search comes from the project, note, and Lab search endpoints. The homepage remains server-rendered.
 
 ## Environment
 
@@ -129,15 +130,15 @@ Before a real deployment, replace `https://angellie-marcos.dev` in both `astro.c
 
 ## CI
 
-`.github/workflows/ci.yml` validates pushes and pull requests targeting `main` on Node.js 22. It installs the frozen lockfile, runs Astro checks, verifies formatting, builds the SSR server and Pagefind client index, and builds the production image. Auth is lazy at runtime, so CI needs no real secret and performs no deployment.
+`.github/workflows/ci.yml` validates pushes and pull requests targeting `main` on Node.js 22. It installs the frozen lockfile, runs Astro checks, verifies formatting, builds the SSR server and Pagefind client index, runs the isolated console test, and builds the production image. The test creates its own owner and temporary database; CI needs no deployed secret.
 
 ## Deployment notes
 
 - Deploy the Node image to a host that supports a long-running process, container port `4321`, persistent volumes, runtime secrets, and health checks.
 - Terminate HTTPS at the hosting platform or reverse proxy. Secure cookies are enabled automatically when `NODE_ENV=production`.
-- Back up `/app/data/angefolio.db` before console editing is treated as operationally important; backup automation and restore testing remain future operational work.
+- Back up the SQLite volume with `node scripts/db-maintenance.mjs backup <new-file>`. Verify and rehearse restore using [operations.md](docs/operations.md). Configure the encrypted off-host job and daily systemd timer before depending on live edits.
 - Run migrations before the new server receives traffic. The Docker command does this automatically.
-- Rebuild for MDX changes so public collection pages, RSS, sitemap, and Pagefind stay synchronized. Now Status and database project updates do not require a rebuild, but Pagefind does not re-index those request-time changes until the next build.
+- Notes and Lab publish through `/user`; archives, articles, search, and sitemaps update on request. RSS includes Notes only. Direct source MDX changes still need a rebuild.
 
 ## Production URL placeholder
 
@@ -186,27 +187,27 @@ The homepage is a desktop-first 12-column bento dashboard with a natural mobile 
 3. **Featured Projects** - four visible collection-backed projects
 4. **Now** - current work, learning, and daily environment
 5. **Stack** - compact frontend, backend, systems, and exploring groups
-6. **GitHub Activity** - static public-work indicator and profile link
+6. **GitHub Activity** - contribution calendar read from the public GitHub profile
 7. **Latest Notes** - up to three published collection-backed notes
 8. **Contact** - email, GitHub, resume, and LinkedIn links
 
-Profile identity remains in `src/lib/data/site.ts`. Homepage-only lists, stack groups, contact links, and the static contribution pattern live in `src/lib/data/home.ts`. Featured projects and latest notes are loaded from Astro Content Collections in `src/content/` during the static build.
+Source defaults remain in `src/lib/data/site.ts`; `/user/settings` can override the public site name, author, SEO description, GitHub profile, and email. Homepage-only lists, stack groups, and LinkedIn live in `src/lib/data/home.ts`. The contribution calendar loads server-side from the configured GitHub profile and is cached for an hour. Featured projects and latest notes use their public catalogs at request time. Their MDX files remain rollback sources for records that have switched to the database.
 
 ## Phase 4 content pages
 
-The public collection indexes are generated statically from Astro Content Collections:
+The initial public indexes used Astro Content Collections:
 
 - `/projects` lists visible projects, with featured work first and newest entries first within each group.
 - `/notes` lists published notes from newest to oldest.
 - `/lab` lists visible experiments from newest to oldest.
 
-All three routes share the existing layout, terminal-style navigation, responsive card grid, content cards, status pills, and tags. Their core filtering and date sorting live in `src/lib/content.ts`. Hidden or unpublished entries remain available to the source repository but are excluded from public listing pages during the build.
+The routes share the layout, navigation, cards, status pills, and tags. Projects, Notes, and Lab run on demand and can show selected database records. Hidden or unpublished MDX entries are excluded from public pages.
 
 ## Phase 5 project case studies
 
-Visible project entries render detail pages at `/projects/[slug]`. The filename remains the MDX route slug, so `src/content/projects/example-project.mdx` is served as `/projects/example-project`. Phase 12 moved the route to request-time rendering so DB-only projects can coexist while preserving this MDX body behavior.
+Visible MDX project entries render prerendered detail pages at `/projects/[slug]`. The filename remains the route slug, so `src/content/projects/example-project.mdx` is served as `/projects/example-project`. Phase 12 moved only the `/projects` index to request-time rendering; database-only records appear as cards without a detail link.
 
-The `/projects` index and homepage project cards link to these local pages. Detail pages render the MDX body inside a consistent case-study shell with project status, category, date, role, stack, optional links, summary fields, and previous/next navigation.
+MDX cards on `/projects` and the homepage link to these pages. A database card links only when it shares a slug with a visible MDX entry. Detail pages render the MDX body with project status, category, date, role, stack, optional links, summary fields, and previous/next navigation.
 
 ### Add a project
 
@@ -274,7 +275,12 @@ Keep project claims honest: do not invent usage metrics, clients, production sta
 
 ### Add a note
 
-Create an `.md` or `.mdx` file in `src/content/notes/`:
+Use `/user/notes` to create and edit a note. For source-controlled writing, create an `.md` or `.mdx` file in `src/content/notes/` and import it with the reviewed backup workflow:
+
+```sh
+pnpm notes:import # dry run
+pnpm notes:import --apply --backup data/backups/pre-notes-import.sqlite
+```
 
 ```yaml
 ---
@@ -292,7 +298,7 @@ summary: A shorter archive or callout summary. # optional
 
 Required note fields are `title`, `description`, `category`, `tags`, `published`, `featured`, and `createdAt`. `updatedAt` and `summary` are optional.
 
-Only entries with `published: true` appear on `/notes` or generate a public detail page. `featured` adds a visual marker and lets the homepage communicate important writing; it does not publish an entry by itself. Categories provide broad archive groupings, while tags describe the specific technologies or ideas in a note. The index currently summarizes both as static metadata rather than client-side filters.
+Only published entries selected by the public source catalog appear on `/notes`, the homepage, search, RSS, or the note sitemap. `featured` adds a visual marker; it does not publish an entry by itself. Categories provide broad archive groupings, while tags describe the specific technologies or ideas in a note.
 
 ### Recommended note body
 
@@ -331,7 +337,7 @@ Published note entries now generate a static technical writing archive:
 - The content filename becomes the route slug, so `src/content/notes/building-angefolio.mdx` builds as `/notes/building-angefolio`.
 - Project case studies and notes share the global `.prose-shell` styles for headings, paragraphs, lists, links, code, blockquotes, images, and overflow-safe tables.
 
-To add writing, create an `.md` or `.mdx` file in `src/content/notes/`, fill in the required frontmatter, write the body, and run the normal checks. No database, CMS, or browser-based editor is involved; these are static MDX-backed routes. A future private `/console` may manage note content, but it is intentionally outside this phase.
+Use `/user/notes` for routine writing and publishing. The MDX source remains in the repository as a rollback copy; when a database record is selected as the public source, edits to that MDX file no longer change the public note.
 
 ### Add a lab entry
 
@@ -398,7 +404,12 @@ Visible experiment entries now generate a structured static workshop:
 - The content filename becomes the route slug, so `src/content/lab/svelte-ui-experiments.mdx` builds as `/lab/svelte-ui-experiments`.
 - Project, note, and Lab detail pages reuse the shared `.prose-shell` article styles.
 
-To add an experiment, create an `.md` or `.mdx` file in `src/content/lab/`, complete the required frontmatter, document what was actually tried, and run the normal checks. Lab entries remain source-controlled static content. A future private `/console` may manage them, but there is no browser editor, database, authentication, or admin workflow yet.
+Use `/user/lab` for routine experiment writing and publishing. Existing MDX stays available as a rollback copy; imported entries remain on that source until you select the database version. Source-controlled entries can be imported with a dry run followed by a verified backup:
+
+```sh
+pnpm lab:import # dry run
+pnpm lab:import --apply --backup data/backups/pre-lab-import.sqlite
+```
 
 ## Phase 8 production polish
 
@@ -467,15 +478,30 @@ Phase 12 adds the second narrow console module without turning angefolio into a 
 - The homepage and `/projects` use visible, non-archived database records when at least one exists. If the database is unavailable or contains no public records, both surfaces use the existing visible MDX collection.
 - `/projects/[slug]` remains a prerendered MDX route so project case studies stay in Pagefind. A database card links locally only when a visible MDX entry has the same slug; DB-only records never emit a broken detail link, and stored bodies are not executed.
 
-Run `pnpm db:migrate` to apply `project_records`. There is intentionally no automatic seed: create records through the protected manager, and keep the MDX collection as the fallback until a deliberate content cutover. Notes, Lab, stack, homepage cards, settings, uploads, rich text, audit logging, and backups are not implemented here.
+Run `pnpm db:migrate` to apply content tables. Imported content remains source-controlled for rollback while each record follows its explicit source setting. Homepage settings use a validated database row and source defaults.
+
+## Phase 13 publishing groundwork
+
+- Now and project writes record compact audit events in the same SQLite transaction.
+- Archived projects retain their former status and can be restored as hidden, unfeatured drafts; there is still no hard delete.
+- `node scripts/db-maintenance.mjs backup <new-file>`, `verify <file>`, and `restore <backup> <new-file>` provide verified copy operations. Restore never overwrites a live database.
+- `pnpm test:console` exercises private routes and a backup/restore cycle against a temporary server and database.
+- [Content inventory](docs/content-inventory.md) captures current sources and migration rules. [Operations](docs/operations.md) covers the chosen single-server persistent volume.
+
+## Phase 14 project publishing
+
+`/user/projects` edits full case studies. The Markdown toolbar supports bold, italic, headings, lists, links, and private preview. Existing MDX projects can be imported with a dry run and verified backup; each adopted record takes over its existing URL. The local database has received all four original project entries. See [Project publishing](docs/project-publishing.md) for the cutover and rollback steps.
 
 ## Folder structure
 
 ```text
 docs/
-├── console-plan.md    # Console architecture and security plan
-├── console-routes.md  # Current and future route boundaries
-└── data-model.md      # Implemented and future persistence models
+├── console-plan.md     # Console architecture and security plan
+├── console-routes.md   # Current and future route boundaries
+├── project-publishing.md # Project import and cutover
+├── content-inventory.md # Existing content and import contract
+├── data-model.md       # Implemented and future persistence models
+└── operations.md       # SQLite backup and recovery
 
 drizzle/               # Versioned SQLite migrations
 scripts/               # Start validation and one-time owner bootstrap
@@ -489,12 +515,12 @@ src/
 │   └── server/      # Auth, database, validation, Now, and project queries
 ├── pages/
 │   ├── index.astro  # Eight-cell bento-dashboard homepage
-│   ├── projects/    # DB-first index and prerendered MDX detail routes
+│   ├── projects/    # Runtime index and adopted Markdown/MDX detail routes
 │   ├── notes/       # Public note index and static detail routes
-│   ├── lab/         # Public Lab index and static detail routes
+│   ├── lab/         # Public Lab archive and detail routes
 │   ├── api/         # Better Auth and guarded console endpoints
-│   ├── console/     # Protected overview, Now editor, and Projects Manager
-│   ├── search.astro # Static Pagefind search shell
+│   ├── user/        # Protected overview and content editors
+│   ├── search.astro # Server-rendered Pagefind search shell
 │   ├── rss.xml.ts   # Published-note RSS feed
 │   └── 404.astro    # Static not-found page
 └── styles/
@@ -503,20 +529,19 @@ src/
 
 ## Current limitations
 
-- Lab entries are source-controlled MDX files. There is no browser editor, discussion system, or separate status/tag route yet.
-- Lab status grouping and archive metadata remain static rather than interactive filters.
-- Notes are source-controlled MDX files. There is no browser editor, comments system, or category/tag route yet.
-- Pagefind search is available only after a production build; the development server intentionally shows a fallback message when the index is absent.
+- Lab MDX files remain rollback copies for entries selected from the database. There is no discussion system or separate status/tag route yet.
+- Lab entries are grouped by status; there are no interactive filters yet.
+- Note MDX files remain rollback copies for entries selected from the database. There is no comments system or category/tag route yet.
+- Pagefind needs a production build for static pages; live project search is available in development.
 - The canonical production domain is still a documented placeholder and must be replaced before deployment.
-- Container TLS, DNS, secret injection, backups, and hosting-provider configuration remain external deployment concerns; the Node image serves HTTP on port `4321` behind the chosen platform or reverse proxy.
-- Now Status and project records are database-backed. A single bootstrap account is supported; password recovery, passkeys/2FA, audit logging, and backup automation are not implemented yet.
-- Database projects are metadata and stored plain text only. DB-only records have no detail page in Phase 12. There is no rich-text/MDX execution, media upload, hard delete, restore/unarchive workflow, bulk import, or automatic GitHub synchronization.
-- Request-time database cards are not added to Pagefind until a later indexing strategy is implemented; prerendered MDX detail pages remain part of the build-time index.
-- The optional project `cover` field is reserved for later visual treatment and is not rendered yet.
-- GitHub activity is a static visual placeholder and does not call the GitHub API.
+- Container TLS, DNS, secret injection, and hosting-provider configuration remain external deployment concerns; the Node image serves HTTP on port `4321` behind the chosen platform or reverse proxy.
+- Now Status, project, note, Lab, and homepage records are database-backed. A single bootstrap account is supported; passkeys/2FA are not implemented.
+- Projects use sanitized Markdown with a formatting toolbar and preview. Project cover uploads are converted to WebP and stored in SQLite; hard delete and automatic GitHub synchronization are not implemented.
+- Runtime project pages use live search rather than Pagefind. If SQLite is unavailable, project queries fail closed so hidden adopted content cannot reappear from old MDX.
+- GitHub activity uses the public profile contribution calendar, cached on the server for an hour.
 - Project filtering is a UI demonstration only.
-- The command menu and card visibility controls are non-production stubs.
-- Notes and Lab entries remain MDX-backed; project MDX remains the public fallback, and the private console is not a general CMS.
+- The command menu and unrelated card visibility controls are non-production stubs.
+- Lab and Note MDX remain rollback copies for entries using database content.
 
 ## Roadmap
 
@@ -532,6 +557,21 @@ src/
 - **Phase 10:** Private `/console` planning and safe architecture scaffold (complete)
 - **Phase 11:** Authenticated console foundation and Now Status editor (complete)
 - **Phase 12:** Protected Projects Manager with DB-first public fallback (complete)
-- **Phase 13+:** Project operations hardening, auditing/backups, and the next deliberate content slice
+- **Phase 13:** Content baseline, audit trail, archive restore, and tested database recovery (complete)
+- **Phase 14:** `/user` workspace and full project publishing with controlled MDX import (complete)
+- **Phase 15:** Notes authoring, Markdown preview, and source selection (complete)
+- **Phase 16:** Lab authoring, Markdown preview, and source selection (complete)
+- **Phase 17:** Revision history and restore across all editors (complete)
+- **Phase 18:** Project media upload and cover rendering (complete)
+- **Phase 19:** Homepage settings and stack groups (complete)
+- **Phase 20:** Slug redirect management (complete)
+- **Phase 21:** Allow-listed public site settings (complete)
+- **Phase 22:** Database-aware readiness probe (complete)
+- **Phase 23:** One-owner password recovery command (complete)
+- **Phase 24:** Encrypted off-host backup job and daily systemd timer (complete; configure host remote and secrets)
+- **Phase 25:** Database-backed Blog publishing, public archive, search, RSS, and sitemap (complete)
 
-Next: **Phase 13 should harden project operations before adding another editor.** Add route/session integration tests, append-only audit events for Now and project mutations, tested SQLite backup/restore, an explicit archive recovery policy, and a Turso/libSQL deployment decision. Keep Notes, Lab, stack, homepage cards, and settings file-backed until those controls are proven.
+Run `node --test tests/offsite-backup.test.mjs` to exercise the off-host backup job with local stand-ins.
+
+See [console-plan.md](docs/console-plan.md) and [operations.md](docs/operations.md) for host configuration and restore steps.
+See [blog-publishing.md](docs/blog-publishing.md) for the Blog editor and publishing behavior.

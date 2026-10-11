@@ -1,0 +1,22 @@
+---
+import ConsoleShell from '../../../components/astro/ConsoleShell.astro';
+import NoteForm from '../../../components/astro/NoteForm.astro';
+import SectionHeader from '../../../components/astro/SectionHeader.astro';
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/user/login');
+---
+
+<ConsoleShell
+  title="New note — Angellie Marcos"
+  description="Write a portfolio note."
+  active="notes"
+  {user}
+>
+  <SectionHeader
+    eyebrow="Private / Notes"
+    title="New note"
+    description="Write in Markdown and preview before you publish."
+    headingLevel={1}
+  />
+  <NoteForm action="/api/console/notes/save" submitLabel="Save note" />
+</ConsoleShell>

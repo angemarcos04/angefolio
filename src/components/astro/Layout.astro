@@ -1,6 +1,7 @@
 ---
 import '../../styles/global.css';
 import { site } from '../../lib/data/site';
+import { getPublicSiteSettings } from '../../lib/server/siteSettings';
 import Footer from './Footer.astro';
 import SEO from './SEO.astro';
 
@@ -15,9 +16,10 @@ interface Props {
   class?: string;
 }
 
+const publicSettings = await getPublicSiteSettings();
 const {
-  title = site.defaultTitle,
-  description = site.seoDescription,
+  title = `${publicSettings.name} — ${publicSettings.siteName}`,
+  description = publicSettings.seoDescription,
   image,
   type = 'website',
   canonical,
@@ -31,7 +33,16 @@ const {
 <html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <SEO {title} {description} {image} {type} {canonical} {noindex} />
+    <SEO
+      {title}
+      {description}
+      {image}
+      {type}
+      {canonical}
+      {noindex}
+      author={publicSettings.name}
+      siteName={publicSettings.siteName}
+    />
     <script is:inline>
       (() => {
         const validThemes = ['light', 'dim', 'dark'];
@@ -64,7 +75,11 @@ const {
     >
       <slot />
     </main>
-    <Footer />
+    <Footer
+      name={publicSettings.name}
+      github={publicSettings.github}
+      rss={site.rss}
+    />
   </body>
 </html>
 

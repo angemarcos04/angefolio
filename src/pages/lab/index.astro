@@ -1,65 +1,68 @@
 ---
+import ArchiveIntro from '../../components/astro/ArchiveIntro.astro';
 import CardGrid from '../../components/astro/CardGrid.astro';
 import CollectionHeader from '../../components/astro/CollectionHeader.astro';
 import LabCard from '../../components/astro/LabCard.astro';
 import Layout from '../../components/astro/Layout.astro';
-import SectionHeader from '../../components/astro/SectionHeader.astro';
 import Tag from '../../components/astro/Tag.astro';
-import { getVisibleLabEntries } from '../../lib/content';
+import { getPublicLabCatalog } from '../../lib/server/lab';
+import { LAB_STATUS_ORDER } from '../../lib/lab';
 
-export const prerender = true;
-import {
-  getAllLabCategories,
-  getAllLabTags,
-  getLabUrl,
-  groupLabByStatus,
-} from '../../lib/lab';
+export const prerender = false;
 
 const description =
   'Small prototypes, UI experiments, terminal setups, AI persona concepts, and unfinished ideas that might become real projects.';
-const entries = await getVisibleLabEntries();
-const groups = groupLabByStatus(entries);
-const categories = getAllLabCategories(entries);
-const tags = getAllLabTags(entries);
+const entries = await getPublicLabCatalog();
+const groups = LAB_STATUS_ORDER.map((status) => ({
+  status,
+  entries: entries.filter((entry) => entry.status === status),
+})).filter((group) => group.entries.length > 0);
+const categories = [
+  ...new Set(
+    entries.flatMap((entry) => (entry.category ? [entry.category.trim()] : [])),
+  ),
+].sort();
+const tags = [
+  ...new Set(entries.flatMap((entry) => entry.tags.map((tag) => tag.trim()))),
+].sort();
 ---
 
 <Layout title="Lab — Angellie Marcos" {description}>
   <CollectionHeader active="lab" />
-  <section aria-labelledby="lab-title">
-    <SectionHeader
-      id="lab-title"
-      eyebrow="/lab"
-      title="Lab"
-      {description}
-      headingLevel={1}
-      class="page-heading"
-    />
-    <div class="collection-summary">
-      <p>
-        This area is intentionally experimental. Entries can be incomplete,
-        paused, or weird, but they should still document what was tried and what
-        was learned.
-      </p>
-      <span>{entries.length} visible</span>
-    </div>
+  <ArchiveIntro
+    id="lab-title"
+    path="/lab"
+    title="Lab"
+    {description}
+    count={`${entries.length} visible`}
+    asideTitle="The workshop"
+  >
+    <p class="archive-note">
+      Ideas can be incomplete, paused, or weird. Each entry documents what I
+      tried and learned.
+    </p>
     {
       entries.length > 0 && (
-        <aside class="workshop-map bento-surface" aria-label="Lab archive map">
-          <div>
-            <strong>Workshop areas</strong>
-            <p>{categories.join(', ')}</p>
-          </div>
-          <div>
-            <strong>Current materials</strong>
-            <div class="archive-tags">
-              {tags.map((tag) => (
-                <Tag>{tag}</Tag>
-              ))}
-            </div>
-          </div>
-        </aside>
+        <div class="archive-topic">
+          <strong>Workshop areas</strong>
+          <p>{categories.join(', ')}</p>
+        </div>
       )
     }
+    {
+      entries.length > 0 && (
+        <div class="archive-topic">
+          <strong>Current materials</strong>
+          <div class="archive-tags">
+            {tags.map((tag) => (
+              <Tag>{tag}</Tag>
+            ))}
+          </div>
+        </div>
+      )
+    }
+  </ArchiveIntro>
+  <section aria-label="Lab archive">
     {
       entries.length > 0 ? (
         <div class="status-groups">
@@ -78,15 +81,15 @@ const tags = getAllLabTags(entries);
               <CardGrid class="collection-grid">
                 {group.entries.map((entry) => (
                   <LabCard
-                    href={getLabUrl(entry)}
-                    title={entry.data.title}
-                    description={entry.data.description}
-                    status={entry.data.status}
-                    tags={entry.data.tags}
-                    date={entry.data.date}
-                    category={entry.data.category}
-                    tools={entry.data.tools}
-                    featured={entry.data.featured}
+                    href={`/lab/${entry.slug}`}
+                    title={entry.title}
+                    description={entry.description}
+                    status={entry.status}
+                    tags={entry.tags}
+                    date={entry.date}
+                    category={entry.category ?? undefined}
+                    tools={entry.tools}
+                    featured={entry.featured}
                   />
                 ))}
               </CardGrid>
@@ -101,61 +104,10 @@ const tags = getAllLabTags(entries);
 </Layout>
 
 <style>
-  :global(.page-heading) {
-    margin-bottom: 1rem;
-  }
-  .collection-summary {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding-block: 0.75rem;
-    border-block: 1px solid var(--border);
-  }
-  .collection-summary p {
-    margin: 0;
-    color: var(--muted-foreground);
-    font: 1rem/1.65 var(--type-body);
-  }
-  .collection-summary p {
-    max-width: 64ch;
-  }
-  .collection-summary span {
-    flex: none;
-    color: var(--accent-text);
-    font: 500 0.72rem/1.5 var(--type-ui);
-  }
   :global(.collection-grid .content-card) {
     height: 100%;
     border-radius: var(--radius-md);
     box-shadow: none;
-  }
-  .workshop-map {
-    display: grid;
-    grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
-    gap: 1rem;
-    margin-bottom: 1.75rem;
-    padding: 1rem;
-    box-shadow: none;
-  }
-  .workshop-map strong {
-    display: block;
-    margin-bottom: 0.45rem;
-    color: var(--accent-text);
-    font: 0.65rem var(--font-mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .workshop-map p {
-    margin: 0;
-    color: var(--muted-foreground);
-    font-size: 0.82rem;
-  }
-  .archive-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
   }
   .status-groups {
     display: grid;
@@ -195,12 +147,5 @@ const tags = getAllLabTags(entries);
     background: var(--card);
     color: var(--muted-foreground);
     font: 1rem/1.65 var(--type-body);
-  }
-  @media (max-width: 560px) {
-    .collection-summary,
-    .workshop-map {
-      grid-template-columns: 1fr;
-      flex-direction: column;
-    }
   }
 </style>

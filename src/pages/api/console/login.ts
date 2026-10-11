@@ -9,7 +9,7 @@ import {
 function loginRedirect(code: string): Response {
   return new Response(null, {
     status: 303,
-    headers: { location: `/console/login?error=${code}` },
+    headers: { location: `/user/login?error=${code}` },
   });
 }
 
@@ -50,7 +50,7 @@ export const POST: APIRoute = async ({ request }) => {
   const responseHeaders = new Headers(authResponse.headers);
   responseHeaders.delete('content-length');
   responseHeaders.delete('content-type');
-  responseHeaders.set('location', '/console');
+  responseHeaders.set('location', '/user');
 
   return new Response(null, { status: 303, headers: responseHeaders });
 };

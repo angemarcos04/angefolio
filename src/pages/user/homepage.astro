@@ -1,0 +1,389 @@
+---
+import BentoCard from '../../components/astro/BentoCard.astro';
+import ConsoleShell from '../../components/astro/ConsoleShell.astro';
+import MediaUpload from '../../components/svelte/MediaUpload.svelte';
+import RevisionHistory from '../../components/astro/RevisionHistory.astro';
+import SectionHeader from '../../components/astro/SectionHeader.astro';
+import {
+  homepageCardKeys,
+  type HomepageCardKey,
+} from '../../lib/data/homepage';
+import {
+  getHomepageConfig,
+  primaryHomepageSettingsId,
+} from '../../lib/server/homepage';
+import { getEntityRevisions } from '../../lib/server/revisions';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/user/login');
+
+const [config, revisions] = await Promise.all([
+  getHomepageConfig(),
+  getEntityRevisions('homepage_settings', primaryHomepageSettingsId),
+]);
+const saved = Astro.url.searchParams.get('saved') === '1';
+const notice = Astro.url.searchParams.get('notice');
+const error = Astro.url.searchParams.get('error');
+const cardLabels: Record<HomepageCardKey, string> = {
+  about: 'About',
+  projects: 'Featured projects',
+  now: 'Current focus',
+  stack: 'Stack',
+  activity: 'GitHub activity',
+  notes: 'Latest notes',
+  contact: 'Contact',
+};
+const description = 'Edit homepage copy, sections, portrait, and stack groups.';
+const pairLines = config.aboutMetadata
+  .map((item) => `${item.label} | ${item.value}`)
+  .join('\n');
+const groupLines = config.stackGroups
+  .map((group) => `${group.title} | ${group.items.join(', ')}`)
+  .join('\n');
+---
+
+<ConsoleShell
+  title="Homepage — Angellie Marcos"
+  {description}
+  active="homepage"
+  {user}
+>
+  <SectionHeader
+    eyebrow="Private / Homepage"
+    title="Homepage settings"
+    description="Update the existing sections and their copy. The bento layout stays fixed so the page keeps its shape."
+    headingLevel={1}
+  />
+
+  {
+    saved && (
+      <p class="feedback success" role="status">
+        Homepage settings saved.
+      </p>
+    )
+  }
+  {
+    notice === 'restored' && (
+      <p class="feedback success" role="status">
+        Saved version restored.
+      </p>
+    )
+  }
+  {
+    notice === 'restore-failed' && (
+      <p class="feedback" role="alert">
+        That version could not be restored.
+      </p>
+    )
+  }
+  {
+    error === 'validation' && (
+      <p class="feedback" role="alert">
+        Some fields need attention. Keep within the limits shown and save again.
+      </p>
+    )
+  }
+  {
+    error === 'invalid' && (
+      <p class="feedback" role="alert">
+        The request was invalid or did not come from the trusted site origin.
+      </p>
+    )
+  }
+  {
+    error === 'unavailable' && (
+      <p class="feedback" role="alert">
+        Settings could not be saved. Try again.
+      </p>
+    )
+  }
+
+  <BentoCard accent="medium" class="settings-card">
+    <form action="/api/console/homepage" method="post">
+      <fieldset>
+        <legend>Introduction</legend>
+        <label>
+          <span>Name</span>
+          <input
+            name="heroName"
+            maxlength="100"
+            required
+            value={config.heroName}
+          />
+        </label>
+        <label>
+          <span>Rotating role lines</span>
+          <textarea name="heroRoles" rows="4" required
+            >{config.heroRoles.join('\n')}</textarea
+          >
+          <small>One line each; 1–6 lines, up to 80 characters each.</small>
+        </label>
+        <label>
+          <span>Portrait path</span>
+          <input
+            id="homepage-portrait"
+            name="portrait"
+            maxlength="2048"
+            required
+            value={config.portrait}
+          />
+          <small
+            >Use an existing site path, an uploaded image, or an HTTPS image
+            URL.</small
+          >
+          <MediaUpload
+            client:load
+            targetId="homepage-portrait"
+            label="Upload a portrait"
+          />
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>About</legend>
+        <label>
+          <span>Paragraphs</span>
+          <textarea name="aboutParagraphs" rows="5" required
+            >{config.aboutParagraphs.join('\n')}</textarea
+          >
+          <small
+            >One paragraph per line; 1–4 paragraphs, up to 500 characters each.</small
+          >
+        </label>
+        <label>
+          <span>Focus details</span>
+          <textarea name="aboutMetadata" rows="4">{pairLines}</textarea>
+          <small>One per line: label | value. Up to 6 details.</small>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Homepage sections</legend>
+        <p class="help">
+          Hide sections you do not want shown. Their content remains saved.
+        </p>
+        {
+          homepageCardKeys.map((key) => {
+            const card = config.cards[key];
+            return (
+              <section class="card-settings">
+                <label class="visibility">
+                  <input
+                    type="checkbox"
+                    name={`card_visible_${key}`}
+                    checked={card.visible}
+                  />
+                  <span>Show {cardLabels[key]}</span>
+                </label>
+                <div class="field-grid">
+                  <label>
+                    <span>{cardLabels[key]} label</span>
+                    <input
+                      name={`card_eyebrow_${key}`}
+                      maxlength="60"
+                      required
+                      value={card.eyebrow}
+                    />
+                  </label>
+                  <label>
+                    <span>{cardLabels[key]} heading</span>
+                    <input
+                      name={`card_title_${key}`}
+                      maxlength="160"
+                      required
+                      value={card.title}
+                    />
+                  </label>
+                  <label class="full">
+                    <span>{cardLabels[key]} description</span>
+                    <textarea
+                      name={`card_description_${key}`}
+                      maxlength="300"
+                      rows="2"
+                    >
+                      {card.description}
+                    </textarea>
+                  </label>
+                </div>
+              </section>
+            );
+          })
+        }
+        <div class="field-grid limits">
+          <label>
+            <span>Featured project count</span>
+            <input
+              type="number"
+              name="projectLimit"
+              min="1"
+              max="8"
+              value={config.projectLimit}
+              required
+            />
+          </label>
+          <label>
+            <span>Latest note count</span>
+            <input
+              type="number"
+              name="noteLimit"
+              min="1"
+              max="6"
+              value={config.noteLimit}
+              required
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Stack groups</legend>
+        <label>
+          <span>Groups and tools</span>
+          <textarea name="stackGroups" rows="8" required>{groupLines}</textarea>
+          <small
+            >One per line: Group | item, item. Up to 8 groups and 20 items per
+            group.</small
+          >
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>GitHub activity</legend>
+        <p>
+          Contribution activity is loaded from the public GitHub profile in Site
+          Settings.
+        </p>
+        <input
+          type="hidden"
+          name="activityStatus"
+          value={config.activityStatus}
+        />
+      </fieldset>
+
+      <div class="form-footer">
+        <p>Changes appear on the homepage as soon as they are saved.</p>
+        <button type="submit">Save homepage</button>
+      </div>
+    </form>
+  </BentoCard>
+
+  <RevisionHistory
+    entityType="homepage_settings"
+    entityId={primaryHomepageSettingsId}
+    {revisions}
+  />
+</ConsoleShell>
+
+<style>
+  .feedback {
+    margin: 0 0 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--danger);
+    background: var(--danger);
+    color: var(--danger-foreground);
+    font: 0.7rem var(--font-mono);
+  }
+  .feedback.success {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-text);
+  }
+  :global(.settings-card) {
+    overflow: visible;
+  }
+  form,
+  fieldset,
+  label {
+    display: grid;
+  }
+  form {
+    gap: 1rem;
+  }
+  fieldset {
+    gap: 0.85rem;
+    margin: 0;
+    padding: 1rem;
+    border: 1px solid var(--border);
+  }
+  legend {
+    padding: 0 0.4rem;
+    color: var(--accent-text);
+    font: 0.7rem var(--font-mono);
+  }
+  label {
+    min-width: 0;
+    gap: 0.35rem;
+  }
+  label > span {
+    font: 600 0.75rem var(--font-mono);
+  }
+  input:not([type='checkbox']),
+  textarea {
+    width: 100%;
+    padding: 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--background);
+    color: var(--foreground);
+    font: 0.8rem/1.5 var(--type-body);
+  }
+  textarea {
+    resize: vertical;
+  }
+  small,
+  .help,
+  .form-footer p {
+    margin: 0;
+    color: var(--muted-foreground);
+    font: 0.68rem/1.5 var(--type-body);
+  }
+  .card-settings {
+    display: grid;
+    gap: 0.75rem;
+    padding-block: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+  .visibility {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+  .full {
+    grid-column: 1 / -1;
+  }
+  .limits {
+    max-width: 36rem;
+  }
+  .form-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+  .form-footer button {
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    font: 0.7rem var(--font-mono);
+    cursor: pointer;
+  }
+  @media (max-width: 680px) {
+    .field-grid {
+      grid-template-columns: 1fr;
+    }
+    .full {
+      grid-column: auto;
+    }
+    .form-footer {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>

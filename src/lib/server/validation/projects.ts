@@ -28,6 +28,10 @@ export interface ProjectRecordInput {
   github: string | null;
   demo: string | null;
   caseStudyBody: string | null;
+  projectDate: Date | null;
+  highlights: string[];
+  cover: string | null;
+  replacesMdx: boolean;
   featured: boolean;
   visible: boolean;
   orderIndex: number | null;
@@ -47,6 +51,10 @@ export interface ProjectFormValues {
   github: string;
   demo: string;
   caseStudyBody: string;
+  projectDate: string;
+  highlights: string;
+  cover: string;
+  replacesMdx: boolean;
   featured: boolean;
   visible: boolean;
   orderIndex: string;
@@ -92,6 +100,10 @@ function readValues(form: URLSearchParams): ProjectFormValues {
     github: get('github'),
     demo: get('demo'),
     caseStudyBody: get('caseStudyBody'),
+    projectDate: get('projectDate'),
+    highlights: get('highlights'),
+    cover: get('cover'),
+    replacesMdx: form.get('replacesMdx') === 'on',
     featured: form.get('featured') === 'on',
     visible: form.get('visible') === 'on',
     orderIndex: get('orderIndex'),
@@ -210,6 +222,40 @@ export function validateProjectForm(
 
   const stack = parseStack(values.stack, errors);
   const links = parseLinks(values.links, errors);
+  const highlights = values.highlights
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  if (highlights.length > 12 || highlights.some((item) => item.length > 160)) {
+    errors.highlights = 'Use up to 12 highlights of 160 characters each.';
+  }
+
+  let projectDate: Date | null = null;
+  if (values.projectDate) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(values.projectDate)) {
+      errors.projectDate = 'Use a valid date.';
+    } else {
+      projectDate = new Date(`${values.projectDate}T00:00:00.000Z`);
+      if (
+        Number.isNaN(projectDate.getTime()) ||
+        projectDate.toISOString().slice(0, 10) !== values.projectDate
+      ) {
+        errors.projectDate = 'Use a valid date.';
+      }
+    }
+  }
+
+  if (
+    values.cover &&
+    !(values.cover.startsWith('/') && !values.cover.startsWith('//')) &&
+    !isHttpUrl(values.cover)
+  ) {
+    errors.cover = 'Use a site path or HTTP(S) URL.';
+  }
+  if (values.cover.length > 2048) errors.cover = 'Cover path is too long.';
+  if (values.replacesMdx && values.visible && !values.caseStudyBody) {
+    errors.caseStudyBody = 'A public replacement needs a case study.';
+  }
 
   let orderIndex: number | null = null;
   if (values.orderIndex) {
@@ -243,6 +289,10 @@ export function validateProjectForm(
       github: optionalValue(values.github),
       demo: optionalValue(values.demo),
       caseStudyBody: optionalValue(values.caseStudyBody),
+      projectDate,
+      highlights,
+      cover: optionalValue(values.cover),
+      replacesMdx: values.replacesMdx,
       featured: values.featured,
       visible: values.visible,
       orderIndex,

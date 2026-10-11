@@ -1,117 +1,101 @@
 ---
-import { render, type CollectionEntry } from 'astro:content';
+import { render } from 'astro:content';
 import BentoCard from '../../components/astro/BentoCard.astro';
 import CollectionHeader from '../../components/astro/CollectionHeader.astro';
 import IconLink from '../../components/astro/IconLink.astro';
 import Layout from '../../components/astro/Layout.astro';
 import Tag from '../../components/astro/Tag.astro';
-import { getPublishedNotes } from '../../lib/content';
+import { formatDate, getNoteReadingTime } from '../../lib/notes';
+import { renderProjectMarkdown } from '../../lib/server/markdown';
+import { getPublicNoteCatalog } from '../../lib/server/notes';
+import { getContentRedirectTarget } from '../../lib/server/redirects';
 
-export const prerender = true;
-import {
-  formatDate,
-  getNoteReadingTime,
-  getNoteSlug,
-  getNoteUrl,
-} from '../../lib/notes';
-
-export async function getStaticPaths() {
-  const notes = await getPublishedNotes();
-
-  return notes.map((note, index) => ({
-    params: { slug: getNoteSlug(note) },
-    props: {
-      note,
-      newerNote: notes[index - 1],
-      olderNote: notes[index + 1],
+export const prerender = false;
+const redirectTarget = await getContentRedirectTarget(
+  `/notes/${Astro.params.slug}`,
+);
+if (redirectTarget) {
+  return new Response(null, {
+    status: 308,
+    headers: {
+      location: redirectTarget,
+      'cache-control': 'public, max-age=3600',
     },
-  }));
+  });
 }
-
-interface Props {
-  note: CollectionEntry<'notes'>;
-  newerNote?: CollectionEntry<'notes'>;
-  olderNote?: CollectionEntry<'notes'>;
-}
-
-const { note, newerNote, olderNote } = Astro.props;
-const { data } = note;
-const { Content } = await render(note);
-const noteBody =
-  'body' in note && typeof note.body === 'string' ? note.body : '';
-const readingTime = getNoteReadingTime(noteBody);
+const notes = await getPublicNoteCatalog();
+const index = notes.findIndex((note) => note.slug === Astro.params.slug);
+const note = notes[index];
+if (!note) return new Response('Note not found.', { status: 404 });
+const Content = note.entry ? (await render(note.entry)).Content : null;
+const html = note.source === 'database' ? renderProjectMarkdown(note.body) : '';
+const readingTime = getNoteReadingTime(note.body);
+const newer = notes[index - 1];
+const older = notes[index + 1];
 ---
 
 <Layout
-  title={`${data.title} — Angellie Marcos`}
-  description={data.description}
+  title={`${note.title} — Angellie Marcos`}
+  description={note.description}
   type="article"
 >
   <CollectionHeader active="notes" />
-
-  <div class="back-link">
-    <IconLink href="/notes" label="Back to notes" />
-  </div>
-
+  <div class="back-link"><IconLink href="/notes" label="Back to notes" /></div>
   <BentoCard class="note-hero subtle-grid" accent="medium">
     <div class="hero-meta">
-      <Tag tone="accent">{data.category}</Tag>
-      {data.featured && <Tag tone="strong">Featured</Tag>}
+      <Tag tone="accent">{note.category}</Tag>{
+        note.featured && <Tag tone="strong">Featured</Tag>
+      }
     </div>
-    <h1 class="text-balance">{data.title}</h1>
-    <p class="description">{data.description}</p>
-    <div class="note-meta" aria-label="Note metadata">
-      <span>
-        Published <time datetime={data.createdAt.toISOString()}>
-          {formatDate(data.createdAt)}
-        </time>
-      </span>
-      {
-        data.updatedAt && (
+    <h1 class="text-balance">{note.title}</h1>
+    <p class="description">{note.description}</p>
+    <div class="meta">
+      <span
+        >Published <time datetime={note.createdAt.toISOString()}
+          >{formatDate(note.createdAt)}</time
+        ></span
+      >{
+        note.updatedAt && (
           <span>
             Updated{' '}
-            <time datetime={data.updatedAt.toISOString()}>
-              {formatDate(data.updatedAt)}
+            <time datetime={note.updatedAt.toISOString()}>
+              {formatDate(note.updatedAt)}
             </time>
           </span>
         )
-      }
-      <span>{readingTime}</span>
+      }<span>{readingTime}</span>
     </div>
     <div class="tags" aria-label="Note tags">
-      {data.tags.map((tag) => <Tag>{tag}</Tag>)}
+      {note.tags.map((tag) => <Tag>{tag}</Tag>)}
     </div>
   </BentoCard>
-
   {
-    data.summary && (
-      <aside class="note-summary bento-surface" aria-label="Note summary">
-        <strong>In short</strong>
-        <p>{data.summary}</p>
+    note.summary && (
+      <aside class="summary bento-surface">
+        <>
+          <strong>In short</strong>
+          <p>{note.summary}</p>
+        </>
       </aside>
     )
   }
-
   <article class="prose-shell bento-surface">
-    <Content />
+    {Content ? <Content /> : <div set:html={html} />}
   </article>
-
   <nav class="note-navigation" aria-label="Note navigation">
     <div>
-      <span>Older note</span>
-      {
-        olderNote ? (
-          <a href={getNoteUrl(olderNote)}>← {olderNote.data.title}</a>
+      <span>Older note</span>{
+        older ? (
+          <a href={`/notes/${older.slug}`}>← {older.title}</a>
         ) : (
           <span>End of archive</span>
         )
       }
     </div>
-    <div class="newer-note">
-      <span>Newer note</span>
-      {
-        newerNote ? (
-          <a href={getNoteUrl(newerNote)}>{newerNote.data.title} →</a>
+    <div class="newer">
+      <span>Newer note</span>{
+        newer ? (
+          <a href={`/notes/${newer.slug}`}>{newer.title} →</a>
         ) : (
           <a href="/notes">All notes →</a>
         )
@@ -119,7 +103,6 @@ const readingTime = getNoteReadingTime(noteBody);
     </div>
   </nav>
 </Layout>
-
 <style>
   .back-link {
     margin-bottom: 1rem;
@@ -128,7 +111,7 @@ const readingTime = getNoteReadingTime(noteBody);
     padding: clamp(1.5rem, 5vw, 3rem);
   }
   .hero-meta,
-  .note-meta,
+  .meta,
   .tags {
     display: flex;
     flex-wrap: wrap;
@@ -147,12 +130,12 @@ const readingTime = getNoteReadingTime(noteBody);
     color: var(--muted-foreground);
     font-size: clamp(1rem, 2vw, 1.15rem);
   }
-  .note-meta {
+  .meta {
     margin-top: 1.25rem;
     color: var(--muted-foreground);
     font: 0.68rem/1.5 var(--font-mono);
   }
-  .note-meta span + span::before {
+  .meta span + span:before {
     margin-right: 0.45rem;
     color: var(--border);
     content: '/';
@@ -160,7 +143,7 @@ const readingTime = getNoteReadingTime(noteBody);
   .tags {
     margin-top: 0.8rem;
   }
-  .note-summary {
+  .summary {
     display: grid;
     grid-template-columns: 7rem minmax(0, 1fr);
     gap: 1rem;
@@ -168,13 +151,13 @@ const readingTime = getNoteReadingTime(noteBody);
     padding: 1rem 1.25rem;
     box-shadow: none;
   }
-  .note-summary strong {
+  .summary strong {
     color: var(--accent-text);
     font: 0.68rem var(--font-mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-  .note-summary p {
+  .summary p {
     margin: 0;
     color: var(--muted-foreground);
   }
@@ -197,28 +180,13 @@ const readingTime = getNoteReadingTime(noteBody);
     color: var(--muted-foreground);
     font: 0.65rem var(--font-mono);
   }
-  .note-navigation a {
-    font-weight: 650;
-  }
-  .note-navigation a:hover {
-    color: var(--accent-text);
-  }
-  .newer-note {
+  .newer {
     text-align: right;
   }
   @media (max-width: 560px) {
-    .note-meta {
-      display: grid;
-    }
-    .note-meta span + span::before {
-      content: none;
-    }
-    .note-summary,
-    .note-navigation {
+    .summary {
       grid-template-columns: 1fr;
-    }
-    .newer-note {
-      text-align: left;
+      gap: 0.4rem;
     }
   }
 </style>

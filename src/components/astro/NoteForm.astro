@@ -1,0 +1,174 @@
+---
+import MarkdownEditor from '../svelte/MarkdownEditor.svelte';
+import type { NoteRecord } from '../../lib/server/notes';
+
+interface Props {
+  action: string;
+  submitLabel: string;
+  note?: NoteRecord;
+}
+const { action, submitLabel, note } = Astro.props;
+const tags = Array.isArray(note?.tags) ? note.tags.join('\n') : '';
+const date = (note?.createdAt ?? new Date()).toISOString().slice(0, 10);
+---
+
+<form class="note-form" method="post" action={action}>
+  {note && <input type="hidden" name="id" value={note.id} />}
+  <div class="fields">
+    <label
+      >Title<input
+        name="title"
+        required
+        maxlength="120"
+        value={note?.title ?? ''}
+      /></label
+    >
+    <label
+      >URL slug<input
+        name="slug"
+        required
+        maxlength="80"
+        pattern="[a-z0-9]+(-[a-z0-9]+)*"
+        value={note?.slug ?? ''}
+      />
+      <small
+        >Changing a published slug keeps the old URL working through a permanent
+        redirect.</small
+      ></label
+    >
+    <label class="wide"
+      >Description<textarea name="description" required maxlength="300" rows="2"
+        >{note?.description ?? ''}</textarea
+      ></label
+    >
+    <label
+      >Category<input
+        name="category"
+        required
+        maxlength="80"
+        value={note?.category ?? ''}
+      /></label
+    >
+    <label
+      >Published date<input
+        name="createdAt"
+        type="date"
+        required
+        value={date}
+      /></label
+    >
+    <label class="wide"
+      >Short summary<textarea name="summary" maxlength="500" rows="2"
+        >{note?.summary ?? ''}</textarea
+      ></label
+    >
+    <label class="wide"
+      >Tags <small>One per line</small><textarea name="tags" rows="3"
+        >{tags}</textarea
+      ></label
+    >
+  </div>
+  <label class="body-label">Note body</label>
+  <MarkdownEditor
+    client:load
+    value={note?.body ?? ''}
+    fieldName="body"
+    ariaLabel="Note body in Markdown"
+    maxLength={200000}
+  />
+  <div class="options">
+    <label
+      ><input
+        type="checkbox"
+        name="published"
+        checked={note?.published ?? false}
+      /> Published</label
+    >
+    <label
+      ><input
+        type="checkbox"
+        name="featured"
+        checked={note?.featured ?? false}
+      /> Featured</label
+    >
+    <label
+      ><input
+        type="checkbox"
+        name="replacesMdx"
+        checked={note?.replacesMdx ?? false}
+      /> Use this record for the public page</label
+    >
+  </div>
+  <p class="help">
+    Existing MDX notes remain public until you switch the source. Drafts and
+    unpublished records stay private.
+  </p>
+  <button type="submit">{submitLabel}</button>
+</form>
+
+<style>
+  .note-form {
+    display: grid;
+    gap: 1rem;
+  }
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+  }
+  label {
+    display: grid;
+    gap: 0.35rem;
+    color: var(--muted-foreground);
+    font: 0.68rem var(--font-mono);
+  }
+  label small,
+  .help {
+    color: var(--muted-foreground);
+    font-size: 0.72rem;
+  }
+  input:not([type='checkbox']),
+  textarea {
+    width: 100%;
+    padding: 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    color: var(--foreground);
+    font: 0.85rem/1.5 var(--type-body);
+  }
+  .wide {
+    grid-column: 1 / -1;
+  }
+  .body-label {
+    margin-bottom: -0.7rem;
+  }
+  .options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .options label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .help {
+    margin: -0.6rem 0 0;
+  }
+  button {
+    justify-self: start;
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    font: 0.72rem var(--font-mono);
+    cursor: pointer;
+  }
+  @media (max-width: 640px) {
+    .fields {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

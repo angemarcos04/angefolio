@@ -1,0 +1,196 @@
+---
+import BentoCard from '../../components/astro/BentoCard.astro';
+import CollectionHeader from '../../components/astro/CollectionHeader.astro';
+import IconLink from '../../components/astro/IconLink.astro';
+import Layout from '../../components/astro/Layout.astro';
+import Tag from '../../components/astro/Tag.astro';
+import { formatDate, getNoteReadingTime } from '../../lib/notes';
+import { renderProjectMarkdown } from '../../lib/server/markdown';
+import { getPublicBlogCatalog } from '../../lib/server/blog';
+import { getContentRedirectTarget } from '../../lib/server/redirects';
+import { getPublicSiteSettings } from '../../lib/server/siteSettings';
+
+export const prerender = false;
+const redirectTarget = await getContentRedirectTarget(
+  `/blog/${Astro.params.slug}`,
+);
+if (redirectTarget) {
+  return new Response(null, {
+    status: 308,
+    headers: {
+      location: redirectTarget,
+      'cache-control': 'public, max-age=3600',
+    },
+  });
+}
+const [posts, settings] = await Promise.all([
+  getPublicBlogCatalog(),
+  getPublicSiteSettings(),
+]);
+const index = posts.findIndex((post) => post.slug === Astro.params.slug);
+const post = posts[index];
+if (!post) return new Response('Post not found.', { status: 404 });
+const html = renderProjectMarkdown(post.body);
+const readingTime = getNoteReadingTime(post.body);
+const newer = posts[index - 1];
+const older = posts[index + 1];
+---
+
+<Layout
+  title={`${post.title} — ${settings.name}`}
+  description={post.description}
+  type="article"
+>
+  <CollectionHeader active="blog" />
+  <div class="back-link"><IconLink href="/blog" label="Back to Blog" /></div>
+  <BentoCard class="post-hero subtle-grid" accent="medium">
+    <div class="hero-meta">
+      <Tag tone="accent">{post.category}</Tag>
+      {post.featured && <Tag tone="strong">Featured</Tag>}
+    </div>
+    <h1 class="text-balance">{post.title}</h1>
+    <p class="description">{post.description}</p>
+    <div class="meta">
+      <span>
+        Published <time datetime={post.createdAt.toISOString()}>
+          {formatDate(post.createdAt)}
+        </time>
+      </span>
+      {
+        post.updatedAt && (
+          <span>
+            Updated{' '}
+            <time datetime={post.updatedAt.toISOString()}>
+              {formatDate(post.updatedAt)}
+            </time>
+          </span>
+        )
+      }
+      <span>{readingTime}</span>
+    </div>
+    <div class="tags" aria-label="Post tags">
+      {post.tags.map((tag) => <Tag>{tag}</Tag>)}
+    </div>
+  </BentoCard>
+  {
+    post.summary && (
+      <aside class="summary bento-surface">
+        <strong>In short</strong>
+        <p>{post.summary}</p>
+      </aside>
+    )
+  }
+  <article class="prose-shell bento-surface">
+    <div set:html={html} />
+  </article>
+  <nav class="post-navigation" aria-label="Blog post navigation">
+    <div>
+      <span>Older post</span>
+      {
+        older ? (
+          <a href={`/blog/${older.slug}`}>← {older.title}</a>
+        ) : (
+          <span>End of archive</span>
+        )
+      }
+    </div>
+    <div class="newer">
+      <span>Newer post</span>
+      {
+        newer ? (
+          <a href={`/blog/${newer.slug}`}>{newer.title} →</a>
+        ) : (
+          <a href="/blog">All posts →</a>
+        )
+      }
+    </div>
+  </nav>
+</Layout>
+
+<style>
+  .back-link {
+    margin-bottom: 1rem;
+  }
+  :global(.post-hero) {
+    padding: clamp(1.5rem, 5vw, 3rem);
+  }
+  .hero-meta,
+  .meta,
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+  h1 {
+    max-width: 20ch;
+    margin: 1rem 0 0;
+    font-size: clamp(2.3rem, 8vw, 4.75rem);
+    line-height: 0.98;
+    letter-spacing: 0.02em;
+  }
+  .description {
+    max-width: 66ch;
+    margin: 1rem 0 0;
+    color: var(--muted-foreground);
+    font-size: clamp(1rem, 2vw, 1.15rem);
+  }
+  .meta {
+    margin-top: 1.25rem;
+    color: var(--muted-foreground);
+    font: 0.68rem/1.5 var(--font-mono);
+  }
+  .meta span + span:before {
+    margin-right: 0.45rem;
+    color: var(--border);
+    content: '/';
+  }
+  .tags {
+    margin-top: 0.8rem;
+  }
+  .summary,
+  .prose-shell {
+    margin-top: 0.75rem;
+  }
+  .summary {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    box-shadow: none;
+  }
+  .summary strong {
+    color: var(--accent-text);
+    font: 0.68rem var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .summary p {
+    margin: 0;
+    color: var(--muted-foreground);
+  }
+  .post-navigation {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+  .post-navigation div {
+    display: grid;
+    gap: 0.25rem;
+  }
+  .post-navigation span {
+    color: var(--muted-foreground);
+    font: 0.65rem var(--font-mono);
+  }
+  .newer {
+    text-align: right;
+  }
+  @media (max-width: 560px) {
+    .summary {
+      grid-template-columns: 1fr;
+      gap: 0.4rem;
+    }
+  }
+</style>

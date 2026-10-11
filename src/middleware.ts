@@ -2,11 +2,11 @@ import { defineMiddleware } from 'astro:middleware';
 import { getAuth } from './lib/server/auth';
 import { migrateDatabase } from './lib/server/db/client';
 
-const publicConsolePaths = new Set(['/console/login', '/api/console/login']);
+const publicConsolePaths = new Set(['/user/login', '/api/console/login']);
 
 function isProtectedConsolePath(pathname: string): boolean {
   return (
-    (pathname === '/console' || pathname.startsWith('/console/')) &&
+    (pathname === '/user' || pathname.startsWith('/user/')) &&
     !publicConsolePaths.has(pathname)
   );
 }
@@ -15,7 +15,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;
   const isConsoleApi = pathname.startsWith('/api/console/');
   const shouldResolveSession =
-    pathname === '/console/login' ||
+    pathname === '/user/login' ||
     isProtectedConsolePath(pathname) ||
     isConsoleApi;
 
@@ -51,12 +51,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
 
     if (isProtectedConsolePath(pathname)) {
-      return context.redirect('/console/login?error=unavailable', 303);
+      return context.redirect('/user/login?error=unavailable', 303);
     }
   }
 
-  if (pathname === '/console/login' && context.locals.user) {
-    return context.redirect('/console', 303);
+  if (pathname === '/user/login' && context.locals.user) {
+    return context.redirect('/user', 303);
   }
 
   if (
@@ -74,7 +74,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
       );
     }
 
-    return context.redirect('/console/login', 303);
+    return context.redirect('/user/login', 303);
   }
 
   return next();

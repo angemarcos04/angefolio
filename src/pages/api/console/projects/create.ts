@@ -9,12 +9,12 @@ import {
 } from '../../../../lib/server/security';
 import { validateProjectForm } from '../../../../lib/server/validation/projects';
 
-const maximumProjectFormBytes = 64 * 1024;
+const maximumProjectFormBytes = 512 * 1024;
 
 function redirect(code: string): Response {
   return new Response(null, {
     status: 303,
-    headers: { location: `/console/projects/new?error=${code}` },
+    headers: { location: `/user/projects/new?error=${code}` },
   });
 }
 
@@ -23,7 +23,7 @@ function validationRedirect(errors: Record<string, string>): Response {
   return new Response(null, {
     status: 303,
     headers: {
-      location: `/console/projects/new?error=validation&field=${encodeURIComponent(field)}`,
+      location: `/user/projects/new?error=validation&field=${encodeURIComponent(field)}`,
     },
   });
 }
@@ -46,10 +46,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     if (await getConsoleProjectBySlug(result.data.slug))
       return redirect('slug');
-    await createProjectRecord(result.data);
+    await createProjectRecord(result.data, locals.user.id);
     return new Response(null, {
       status: 303,
-      headers: { location: '/console/projects?notice=created' },
+      headers: { location: '/user/projects?notice=created' },
     });
   } catch {
     return redirect('unavailable');

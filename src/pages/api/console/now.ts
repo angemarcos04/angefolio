@@ -1,7 +1,17 @@
 import type { APIRoute } from 'astro';
+import { eq } from 'drizzle-orm';
+import { auditEvent } from '../../../lib/server/audit';
 import { getDatabase } from '../../../lib/server/db/client';
-import { nowStatus } from '../../../lib/server/db/schema';
+import {
+  auditLog,
+  contentRevisions,
+  nowStatus,
+} from '../../../lib/server/db/schema';
 import { primaryNowStatusId } from '../../../lib/server/now';
+import {
+  pruneContentRevisions,
+  revisionValues,
+} from '../../../lib/server/revisions';
 import {
   hasTrustedOrigin,
   readUrlEncodedForm,
@@ -29,7 +39,7 @@ function parseList(value: string | null): string[] | null {
 function redirectWith(code: string): Response {
   return new Response(null, {
     status: 303,
-    headers: { location: `/console/now?${code}` },
+    headers: { location: `/user/now?${code}` },
   });
 }
 
@@ -65,30 +75,56 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return redirectWith('error=validation');
   }
 
-  await getDatabase()
-    .insert(nowStatus)
-    .values({
-      id: primaryNowStatusId,
-      currentFocus,
-      workingOn,
-      learning,
-      using,
-      statusNote: statusNote || null,
-      published: form.get('published') === 'on',
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: nowStatus.id,
-      set: {
+  const published = form.get('published') === 'on';
+  const updatedAt = new Date();
+  const actorUserId = locals.user.id;
+  await getDatabase().transaction(async (transaction) => {
+    const [previous] = await transaction
+      .select({ published: nowStatus.published })
+      .from(nowStatus)
+      .where(eq(nowStatus.id, primaryNowStatusId));
+    await transaction
+      .insert(nowStatus)
+      .values({
+        id: primaryNowStatusId,
         currentFocus,
         workingOn,
         learning,
         using,
         statusNote: statusNote || null,
-        published: form.get('published') === 'on',
-        updatedAt: new Date(),
-      },
-    });
+        published,
+        updatedAt,
+      })
+      .onConflictDoUpdate({
+        target: nowStatus.id,
+        set: {
+          currentFocus,
+          workingOn,
+          learning,
+          using,
+          statusNote: statusNote || null,
+          published,
+          updatedAt,
+        },
+      });
+    await transaction.insert(auditLog).values(
+      auditEvent(actorUserId, 'now.update', 'now_status', primaryNowStatusId, {
+        fromPublished: previous?.published ?? false,
+        toPublished: published,
+        itemCount: 1 + workingOn.length + learning.length + using.length,
+      }),
+    );
+    const [saved] = await transaction
+      .select()
+      .from(nowStatus)
+      .where(eq(nowStatus.id, primaryNowStatusId));
+    await transaction
+      .insert(contentRevisions)
+      .values(
+        revisionValues(actorUserId, 'now_status', primaryNowStatusId, saved),
+      );
+    await pruneContentRevisions(transaction, 'now_status', primaryNowStatusId);
+  });
 
   return redirectWith('saved=1');
 };

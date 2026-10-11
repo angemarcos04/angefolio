@@ -1,0 +1,68 @@
+---
+import ConsoleShell from '../../../components/astro/ConsoleShell.astro';
+import LabForm from '../../../components/astro/LabForm.astro';
+import SectionHeader from '../../../components/astro/SectionHeader.astro';
+import { getLabRecord } from '../../../lib/server/lab';
+import RevisionHistory from '../../../components/astro/RevisionHistory.astro';
+import { getEntityRevisions } from '../../../lib/server/revisions';
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/user/login');
+const entry = await getLabRecord(Astro.params.id ?? '');
+if (!entry) return Astro.redirect('/user/lab?error=missing');
+const revisions = await getEntityRevisions('lab', entry.id);
+const notice = Astro.url.searchParams.get('notice');
+const error = Astro.url.searchParams.get('error');
+---
+
+<ConsoleShell
+  title={`${entry.title} — Angellie Marcos`}
+  description="Edit a Lab entry."
+  active="lab"
+  {user}
+>
+  <SectionHeader
+    eyebrow="Private / Lab"
+    title="Edit experiment"
+    description={`/${entry.slug} · ${entry.status}`}
+    headingLevel={1}
+  />
+  {notice === 'saved' && <p class="feedback">Saved.</p>}
+  {
+    notice === 'restored' && (
+      <p class="feedback">Version restored. It is now the current version.</p>
+    )
+  }
+  {
+    notice === 'restore-failed' && (
+      <p class="feedback error">That version could not be restored.</p>
+    )
+  }
+  {
+    error && (
+      <p class="feedback error">
+        {error === 'slug'
+          ? 'That slug is already in use or reserved for another route.'
+          : error === 'route'
+            ? 'That route cannot be changed safely.'
+            : 'The request could not be completed. Review the fields and try again.'}
+      </p>
+    )
+  }
+  <LabForm
+    action="/api/console/lab/save"
+    submitLabel="Save changes"
+    entry={entry}
+  />
+  <RevisionHistory entityType="lab" entityId={entry.id} {revisions} />
+</ConsoleShell>
+<style>
+  .feedback {
+    padding: 0.7rem;
+    border: 1px solid var(--accent);
+    background: var(--accent-soft);
+  }
+  .error {
+    border-color: var(--danger);
+    background: var(--danger);
+  }
+</style>

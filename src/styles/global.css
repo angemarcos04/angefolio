@@ -1,5 +1,33 @@
 @import 'tailwindcss';
 
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition {
+  background: var(--background);
+}
+
+::view-transition-old(root) {
+  animation: 100ms ease-in both page-leave;
+}
+
+::view-transition-new(root) {
+  animation: 160ms ease-out 100ms both page-enter;
+}
+
+@keyframes page-leave {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+  }
+}
+
 @font-face {
   font-family: 'Fira Code';
   src: url('@fontsource-variable/fira-code/files/fira-code-latin-wght-normal.woff2')
@@ -396,6 +424,13 @@ pre code,
   margin-bottom: 0;
 }
 
+.prose-shell h1 {
+  margin: 0 0 1rem;
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  line-height: 1.15;
+  scroll-margin-top: 1rem;
+}
+
 .prose-shell h2 {
   margin: 2.4rem 0 0.8rem;
   padding-bottom: 0.5rem;
@@ -513,6 +548,10 @@ pre code,
 }
 
 @media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
   html {
     scroll-behavior: auto;
   }

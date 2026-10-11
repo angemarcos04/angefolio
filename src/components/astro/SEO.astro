@@ -8,6 +8,8 @@ interface Props {
   type?: 'website' | 'article';
   canonical?: string | URL;
   noindex?: boolean;
+  author?: string;
+  siteName?: string;
 }
 const {
   title,
@@ -16,6 +18,8 @@ const {
   type = 'website',
   canonical,
   noindex = false,
+  author = site.name,
+  siteName = site.siteName,
 } = Astro.props;
 const baseUrl = Astro.site ?? new URL(Astro.url.origin);
 const canonicalUrl = canonical
@@ -29,7 +33,7 @@ const socialImage = image ? new URL(image, baseUrl) : undefined;
 <title>{title}</title>
 <meta name="description" content={description} />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="author" content={site.name} />
+<meta name="author" content={author} />
 <meta name="theme-color" content="#080b10" />
 {noindex ? <meta name="robots" content="noindex, nofollow" /> : null}
 {canonicalUrl ? <link rel="canonical" href={canonicalUrl} /> : null}
@@ -39,8 +43,14 @@ const socialImage = image ? new URL(image, baseUrl) : undefined;
   title="angefolio notes"
   href={new URL(site.rss, baseUrl)}
 />
+<link
+  rel="alternate"
+  type="application/rss+xml"
+  title="angefolio blog"
+  href={new URL('/blog/rss.xml', baseUrl)}
+/>
 <meta property="og:type" content={type} />
-<meta property="og:site_name" content={site.siteName} />
+<meta property="og:site_name" content={siteName} />
 <meta property="og:locale" content="en_US" />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />

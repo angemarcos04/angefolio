@@ -1,74 +1,72 @@
 ---
+import ArchiveIntro from '../../components/astro/ArchiveIntro.astro';
 import CardGrid from '../../components/astro/CardGrid.astro';
 import CollectionHeader from '../../components/astro/CollectionHeader.astro';
 import Layout from '../../components/astro/Layout.astro';
 import NoteCard from '../../components/astro/NoteCard.astro';
-import SectionHeader from '../../components/astro/SectionHeader.astro';
 import Tag from '../../components/astro/Tag.astro';
-import { getPublishedNotes } from '../../lib/content';
-import { getAllCategories, getAllTags, getNoteUrl } from '../../lib/notes';
+import { getPublicNoteCatalog } from '../../lib/server/notes';
 
-export const prerender = true;
-
+export const prerender = false;
 const description =
   'Project logs, Linux fixes, web development notes, and thoughts from building things.';
-const notes = await getPublishedNotes();
-const categories = getAllCategories(notes);
-const tags = getAllTags(notes);
+const notes = await getPublicNoteCatalog();
+const categories = [...new Set(notes.map((note) => note.category))].sort();
+const tags = [...new Set(notes.flatMap((note) => note.tags))].sort();
 ---
 
 <Layout title="Notes — Angellie Marcos" {description}>
   <CollectionHeader active="notes" />
-  <section aria-labelledby="notes-title">
-    <SectionHeader
-      id="notes-title"
-      eyebrow="/notes"
-      title="Notes"
-      {description}
-      headingLevel={1}
-      class="page-heading"
-    />
-    <div class="collection-summary">
-      <p>
-        This is where I document what I am learning, breaking, fixing, and
-        slowly understanding.
-      </p>
-      <span>{notes.length} published</span>
-    </div>
+  <ArchiveIntro
+    id="notes-title"
+    path="/notes"
+    title="Notes"
+    {description}
+    count={`${notes.length} published`}
+    asideTitle="Learning out loud"
+  >
+    <p class="archive-note">
+      What I am learning, breaking, fixing, and slowly understanding.
+    </p>
     {
       notes.length > 0 && (
-        <aside
-          class="archive-map bento-surface"
-          aria-label="Notes archive topics"
-        >
-          <div>
+        <div class="archive-topic">
+          <>
             <strong>Categories</strong>
             <p>{categories.join(', ')}</p>
-          </div>
-          <div>
+          </>
+        </div>
+      )
+    }
+    {
+      notes.length > 0 && (
+        <div class="archive-topic">
+          <>
             <strong>Tags</strong>
             <div class="archive-tags">
               {tags.map((tag) => (
                 <Tag>{tag}</Tag>
               ))}
             </div>
-          </div>
-        </aside>
+          </>
+        </div>
       )
     }
+  </ArchiveIntro>
+  <section aria-label="Notes archive">
     {
-      notes.length > 0 ? (
+      notes.length ? (
         <CardGrid class="collection-grid">
           {notes.map((note) => (
             <NoteCard
-              href={getNoteUrl(note)}
-              title={note.data.title}
-              description={note.data.summary ?? note.data.description}
-              category={note.data.category}
-              tags={note.data.tags}
-              createdAt={note.data.createdAt}
-              updatedAt={note.data.updatedAt}
-              featured={note.data.featured}
+              href={`/notes/${note.slug}`}
+              title={note.title}
+              description={note.summary ?? note.description}
+              category={note.category}
+              tags={note.tags}
+              createdAt={note.createdAt}
+              updatedAt={note.updatedAt ?? undefined}
+              featured={note.featured}
             />
           ))}
         </CardGrid>
@@ -78,63 +76,11 @@ const tags = getAllTags(notes);
     }
   </section>
 </Layout>
-
 <style>
-  :global(.page-heading) {
-    margin-bottom: 1rem;
-  }
-  .collection-summary {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding-block: 0.75rem;
-    border-block: 1px solid var(--border);
-  }
-  .collection-summary p {
-    margin: 0;
-    color: var(--muted-foreground);
-    font: 1rem/1.65 var(--type-body);
-  }
-  .collection-summary p {
-    max-width: 64ch;
-  }
-  .collection-summary span {
-    flex: none;
-    color: var(--accent-text);
-    font: 500 0.72rem/1.5 var(--type-ui);
-  }
   :global(.collection-grid .content-card) {
     height: 100%;
     border-radius: var(--radius-md);
     box-shadow: none;
-  }
-  .archive-map {
-    display: grid;
-    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
-    gap: 1rem;
-    margin-bottom: 1rem;
-    padding: 1rem;
-    box-shadow: none;
-  }
-  .archive-map strong {
-    display: block;
-    margin-bottom: 0.45rem;
-    color: var(--accent-text);
-    font: 0.65rem var(--font-mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .archive-map p {
-    margin: 0;
-    color: var(--muted-foreground);
-    font-size: 0.82rem;
-  }
-  .archive-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
   }
   .empty-state {
     margin: 0;
@@ -143,12 +89,5 @@ const tags = getAllTags(notes);
     background: var(--card);
     color: var(--muted-foreground);
     font: 1rem/1.65 var(--type-body);
-  }
-  @media (max-width: 560px) {
-    .collection-summary,
-    .archive-map {
-      grid-template-columns: 1fr;
-      flex-direction: column;
-    }
   }
 </style>

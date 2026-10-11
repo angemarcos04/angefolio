@@ -1,0 +1,175 @@
+---
+import MarkdownEditor from '../svelte/MarkdownEditor.svelte';
+import type { BlogRecord } from '../../lib/server/blog';
+
+interface Props {
+  action: string;
+  submitLabel: string;
+  post?: BlogRecord;
+}
+const { action, submitLabel, post } = Astro.props;
+const tags = Array.isArray(post?.tags) ? post.tags.join('\n') : '';
+const date = (post?.createdAt ?? new Date()).toISOString().slice(0, 10);
+---
+
+<form class="blog-form" method="post" action={action}>
+  {post && <input type="hidden" name="id" value={post.id} />}
+  <div class="fields">
+    <label
+      >Title<input
+        name="title"
+        required
+        maxlength="120"
+        value={post?.title ?? ''}
+      /></label
+    >
+    <label
+      >URL slug<input
+        name="slug"
+        required
+        maxlength="80"
+        pattern="[a-z0-9]+(-[a-z0-9]+)*"
+        value={post?.slug ?? ''}
+      />
+      <small
+        >Changing a published slug keeps the old URL working through a permanent
+        redirect.</small
+      ></label
+    >
+    <label class="wide"
+      >Description<textarea name="description" required maxlength="300" rows="2"
+        >{post?.description ?? ''}</textarea
+      ></label
+    >
+    <label
+      >Category<input
+        name="category"
+        required
+        maxlength="80"
+        value={post?.category ?? ''}
+      /></label
+    >
+    <label
+      >Publication date<input
+        name="createdAt"
+        type="date"
+        required
+        value={date}
+      /></label
+    >
+    <label class="wide"
+      >Short summary<textarea name="summary" maxlength="500" rows="2"
+        >{post?.summary ?? ''}</textarea
+      ><small>Optional short opening for previews and the article page.</small
+      ></label
+    >
+    <label class="wide"
+      >Tags <small>One per line</small><textarea name="tags" rows="3"
+        >{tags}</textarea
+      ></label
+    >
+  </div>
+  <label class="body-label">Article</label>
+  <MarkdownEditor
+    client:load
+    value={post?.body ?? ''}
+    fieldName="body"
+    ariaLabel="Blog post in Markdown"
+    maxLength={200000}
+  />
+  <div class="options">
+    <label
+      ><input
+        type="checkbox"
+        name="published"
+        checked={post?.published ?? false}
+      /> Published</label
+    >
+    <label
+      ><input
+        type="checkbox"
+        name="featured"
+        checked={post?.featured ?? false}
+      /> Featured</label
+    >
+    <label
+      ><input
+        type="checkbox"
+        name="archived"
+        checked={post?.archived ?? false}
+      /> Archived</label
+    >
+  </div>
+  <p class="help">
+    Drafts are private. Archived posts stay in your editor but disappear from
+    the public archive, search, feed, and sitemap.
+  </p>
+  <button type="submit">{submitLabel}</button>
+</form>
+
+<style>
+  .blog-form {
+    display: grid;
+    gap: 1rem;
+  }
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+  }
+  label {
+    display: grid;
+    gap: 0.35rem;
+    color: var(--muted-foreground);
+    font: 0.68rem var(--font-mono);
+  }
+  label small,
+  .help {
+    color: var(--muted-foreground);
+    font-size: 0.72rem;
+  }
+  input:not([type='checkbox']),
+  textarea {
+    width: 100%;
+    padding: 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    color: var(--foreground);
+    font: 0.85rem/1.5 var(--type-body);
+  }
+  .wide {
+    grid-column: 1 / -1;
+  }
+  .body-label {
+    margin-bottom: -0.7rem;
+  }
+  .options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .options label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .help {
+    margin: -0.6rem 0 0;
+  }
+  button {
+    justify-self: start;
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    font: 0.72rem var(--font-mono);
+    cursor: pointer;
+  }
+  @media (max-width: 640px) {
+    .fields {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,7 +1,13 @@
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
+import { auditEvent } from './audit';
 import { getDatabase, migrateDatabase } from './db/client';
-import { projectRecords } from './db/schema';
-import type { ProjectRecordInput } from './validation/projects';
+import { auditLog, contentRevisions, projectRecords } from './db/schema';
+import { pruneContentRevisions, revisionValues } from './revisions';
+import { recordSlugRedirect } from './redirects';
+import {
+  projectStatuses,
+  type ProjectRecordInput,
+} from './validation/projects';
 
 export type ProjectRecord = typeof projectRecords.$inferSelect;
 
@@ -44,24 +50,6 @@ export async function getConsoleProjects(): Promise<ProjectRecord[]> {
   return sortProjectRecords(await getDatabase().select().from(projectRecords));
 }
 
-export async function getPublicProjectRecords(): Promise<ProjectRecord[]> {
-  try {
-    await migrateDatabase();
-    const records = await getDatabase()
-      .select()
-      .from(projectRecords)
-      .where(
-        and(
-          eq(projectRecords.visible, true),
-          eq(projectRecords.archived, false),
-        ),
-      );
-    return sortProjectRecords(records);
-  } catch {
-    return [];
-  }
-}
-
 export async function getProjectRecordById(
   id: string,
 ): Promise<ProjectRecord | undefined> {
@@ -70,24 +58,6 @@ export async function getProjectRecordById(
     where: eq(projectRecords.id, id),
   });
   return record ? normalizeProjectRecord(record) : undefined;
-}
-
-export async function getProjectRecordBySlug(
-  slug: string,
-): Promise<ProjectRecord | undefined> {
-  try {
-    await migrateDatabase();
-    const record = await getDatabase().query.projectRecords.findFirst({
-      where: and(
-        eq(projectRecords.slug, slug),
-        eq(projectRecords.visible, true),
-        eq(projectRecords.archived, false),
-      ),
-    });
-    return record ? normalizeProjectRecord(record) : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 export async function getConsoleProjectBySlug(
@@ -102,76 +72,241 @@ export async function getConsoleProjectBySlug(
 
 export async function createProjectRecord(
   input: ProjectRecordInput,
+  actorUserId: string,
 ): Promise<ProjectRecord> {
   await migrateDatabase();
   const now = new Date();
-  const [record] = await getDatabase()
-    .insert(projectRecords)
-    .values({
-      id: crypto.randomUUID(),
-      ...input,
-      archived: false,
-      createdAt: now,
-      updatedAt: now,
-    })
-    .returning();
-  return record;
+  return getDatabase().transaction(async (transaction) => {
+    const [record] = await transaction
+      .insert(projectRecords)
+      .values({
+        id: crypto.randomUUID(),
+        ...input,
+        archived: false,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    await transaction.insert(auditLog).values(
+      auditEvent(actorUserId, 'project.create', 'project', record.id, {
+        slug: record.slug,
+        visible: record.visible,
+      }),
+    );
+    await transaction
+      .insert(contentRevisions)
+      .values(revisionValues(actorUserId, 'project', record.id, record));
+    await pruneContentRevisions(transaction, 'project', record.id);
+    return record;
+  });
 }
 
 export async function updateProjectRecord(
   id: string,
   input: ProjectRecordInput,
+  actorUserId: string,
+  redirectSlugChange = false,
 ): Promise<ProjectRecord | undefined> {
   await migrateDatabase();
-  const existing = await getProjectRecordById(id);
-  if (!existing) return undefined;
+  return getDatabase().transaction(async (transaction) => {
+    const [existing] = await transaction
+      .select()
+      .from(projectRecords)
+      .where(eq(projectRecords.id, id));
+    if (!existing) return undefined;
+    if (redirectSlugChange && existing.slug !== input.slug) {
+      await recordSlugRedirect(
+        transaction,
+        actorUserId,
+        'project',
+        id,
+        existing.slug,
+        input.slug,
+      );
+    }
 
-  const [record] = await getDatabase()
-    .update(projectRecords)
-    .set({
-      ...input,
-      status: existing.archived ? 'Archived' : input.status,
-      featured: existing.archived ? false : input.featured,
-      visible: existing.archived ? false : input.visible,
-      updatedAt: new Date(),
-    })
-    .where(eq(projectRecords.id, id))
-    .returning();
-  return record;
+    const [record] = await transaction
+      .update(projectRecords)
+      .set({
+        ...input,
+        status: existing.archived ? 'Archived' : input.status,
+        featured: existing.archived ? false : input.featured,
+        visible: existing.archived ? false : input.visible,
+        replacesMdx: existing.archived
+          ? existing.replacesMdx
+          : input.replacesMdx,
+        updatedAt: new Date(),
+      })
+      .where(eq(projectRecords.id, id))
+      .returning();
+    await transaction.insert(auditLog).values(
+      auditEvent(actorUserId, 'project.update', 'project', id, {
+        fromSlug: existing.slug,
+        toSlug: record.slug,
+        visible: record.visible,
+        featured: record.featured,
+        replacesMdx: record.replacesMdx,
+      }),
+    );
+    await transaction
+      .insert(contentRevisions)
+      .values(revisionValues(actorUserId, 'project', record.id, record));
+    await pruneContentRevisions(transaction, 'project', record.id);
+    return normalizeProjectRecord(record);
+  });
 }
 
-export async function archiveProjectRecord(id: string): Promise<boolean> {
+export async function archiveProjectRecord(
+  id: string,
+  actorUserId: string,
+): Promise<boolean> {
   await migrateDatabase();
-  const rows = await getDatabase()
-    .update(projectRecords)
-    .set({
-      status: 'Archived',
-      archived: true,
-      visible: false,
-      featured: false,
-      updatedAt: new Date(),
-    })
-    .where(eq(projectRecords.id, id))
-    .returning({ id: projectRecords.id });
-  return rows.length > 0;
+  return getDatabase().transaction(async (transaction) => {
+    const [existing] = await transaction
+      .select()
+      .from(projectRecords)
+      .where(eq(projectRecords.id, id));
+    if (!existing || existing.archived) return false;
+
+    const [updated] = await transaction
+      .update(projectRecords)
+      .set({
+        statusBeforeArchive: existing.status,
+        status: 'Archived',
+        archived: true,
+        visible: false,
+        featured: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(projectRecords.id, id))
+      .returning();
+    await transaction.insert(auditLog).values(
+      auditEvent(actorUserId, 'project.archive', 'project', id, {
+        slug: existing.slug,
+        previousStatus: existing.status,
+        replacesMdx: existing.replacesMdx,
+      }),
+    );
+    await transaction
+      .insert(contentRevisions)
+      .values(revisionValues(actorUserId, 'project', id, updated));
+    await pruneContentRevisions(transaction, 'project', id);
+    return true;
+  });
 }
 
-export async function toggleProjectVisible(id: string): Promise<boolean> {
-  const existing = await getProjectRecordById(id);
-  if (!existing || existing.archived) return false;
-  await getDatabase()
-    .update(projectRecords)
-    .set({ visible: !existing.visible, updatedAt: new Date() })
-    .where(eq(projectRecords.id, id));
-  return true;
+export async function restoreProjectRecord(
+  id: string,
+  actorUserId: string,
+): Promise<boolean> {
+  await migrateDatabase();
+  return getDatabase().transaction(async (transaction) => {
+    const [existing] = await transaction
+      .select()
+      .from(projectRecords)
+      .where(eq(projectRecords.id, id));
+    if (!existing?.archived) return false;
+
+    const status =
+      existing.statusBeforeArchive &&
+      existing.statusBeforeArchive !== 'Archived' &&
+      projectStatuses.includes(
+        existing.statusBeforeArchive as (typeof projectStatuses)[number],
+      )
+        ? existing.statusBeforeArchive
+        : 'Planning';
+    const [updated] = await transaction
+      .update(projectRecords)
+      .set({
+        status,
+        statusBeforeArchive: null,
+        archived: false,
+        visible: false,
+        featured: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(projectRecords.id, id))
+      .returning();
+    await transaction.insert(auditLog).values(
+      auditEvent(actorUserId, 'project.restore', 'project', id, {
+        slug: existing.slug,
+        status,
+      }),
+    );
+    await transaction
+      .insert(contentRevisions)
+      .values(revisionValues(actorUserId, 'project', id, updated));
+    await pruneContentRevisions(transaction, 'project', id);
+    return true;
+  });
 }
 
-export async function toggleProjectFeatured(id: string): Promise<boolean> {
-  const existing = await getProjectRecordById(id);
-  if (!existing || existing.archived) return false;
-  await getDatabase()
-    .update(projectRecords)
-    .set({ featured: !existing.featured, updatedAt: new Date() })
-    .where(eq(projectRecords.id, id));
-  return true;
+export async function toggleProjectVisible(
+  id: string,
+  actorUserId: string,
+): Promise<boolean> {
+  await migrateDatabase();
+  return getDatabase().transaction(async (transaction) => {
+    const [existing] = await transaction
+      .select()
+      .from(projectRecords)
+      .where(eq(projectRecords.id, id));
+    if (
+      !existing ||
+      existing.archived ||
+      (!existing.visible &&
+        existing.replacesMdx &&
+        !existing.caseStudyBody?.trim())
+    ) {
+      return false;
+    }
+    const visible = !existing.visible;
+    const [updated] = await transaction
+      .update(projectRecords)
+      .set({ visible, updatedAt: new Date() })
+      .where(eq(projectRecords.id, id))
+      .returning();
+    await transaction.insert(auditLog).values(
+      auditEvent(actorUserId, 'project.visibility', 'project', id, {
+        slug: existing.slug,
+        visible,
+      }),
+    );
+    await transaction
+      .insert(contentRevisions)
+      .values(revisionValues(actorUserId, 'project', id, updated));
+    await pruneContentRevisions(transaction, 'project', id);
+    return true;
+  });
+}
+
+export async function toggleProjectFeatured(
+  id: string,
+  actorUserId: string,
+): Promise<boolean> {
+  await migrateDatabase();
+  return getDatabase().transaction(async (transaction) => {
+    const [existing] = await transaction
+      .select()
+      .from(projectRecords)
+      .where(eq(projectRecords.id, id));
+    if (!existing || existing.archived) return false;
+    const featured = !existing.featured;
+    const [updated] = await transaction
+      .update(projectRecords)
+      .set({ featured, updatedAt: new Date() })
+      .where(eq(projectRecords.id, id))
+      .returning();
+    await transaction.insert(auditLog).values(
+      auditEvent(actorUserId, 'project.featured', 'project', id, {
+        slug: existing.slug,
+        featured,
+      }),
+    );
+    await transaction
+      .insert(contentRevisions)
+      .values(revisionValues(actorUserId, 'project', id, updated));
+    await pruneContentRevisions(transaction, 'project', id);
+    return true;
+  });
 }

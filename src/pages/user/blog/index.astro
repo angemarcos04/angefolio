@@ -1,0 +1,156 @@
+---
+import ConsoleShell from '../../../components/astro/ConsoleShell.astro';
+import SectionHeader from '../../../components/astro/SectionHeader.astro';
+import { getConsoleBlogPosts } from '../../../lib/server/blog';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/user/login');
+const posts = await getConsoleBlogPosts();
+const error = Astro.url.searchParams.get('error');
+---
+
+<ConsoleShell
+  title="Blog — Angellie Marcos"
+  description="Manage blog posts."
+  active="blog"
+  {user}
+>
+  <SectionHeader
+    eyebrow="Private / Blog"
+    title="Blog posts"
+    description="Write longer-form articles, keep drafts private, and publish when they are ready."
+    headingLevel={1}
+  />
+  {
+    error && (
+      <p class="feedback" role="alert">
+        {error === 'slug'
+          ? 'That slug is already in use or reserved by a redirect.'
+          : 'The request could not be completed. Review the fields and try again.'}
+      </p>
+    )
+  }
+  <div class="toolbar">
+    <p>{posts.length} post{posts.length === 1 ? '' : 's'}</p>
+    <a href="/user/blog/new">New post</a>
+  </div>
+  {
+    posts.length ? (
+      <div class="list">
+        {posts.map((post) => (
+          <article>
+            <div>
+              <div class="badges">
+                <span>
+                  {post.archived
+                    ? 'Archived'
+                    : post.published
+                      ? 'Published'
+                      : 'Draft'}
+                </span>
+                {post.featured && <span>Featured</span>}
+              </div>
+              <h2>
+                <a href={`/user/blog/${post.id}`}>{post.title}</a>
+              </h2>
+              <p>{post.description}</p>
+              <small>
+                /{post.slug} · Updated{' '}
+                {post.updatedAt.toLocaleDateString('en', {
+                  dateStyle: 'medium',
+                })}
+              </small>
+            </div>
+            <a href={`/user/blog/${post.id}`}>Edit →</a>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <div class="empty">
+        <h2>No blog posts yet.</h2>
+        <p>
+          Start with a draft. Only published, unarchived posts appear publicly.
+        </p>
+        <a href="/user/blog/new">Write your first post →</a>
+      </div>
+    )
+  }
+</ConsoleShell>
+
+<style>
+  .toolbar,
+  article,
+  .empty {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+  }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.7rem;
+    font: 0.7rem var(--font-mono);
+  }
+  .toolbar p,
+  article p,
+  .empty p {
+    margin: 0;
+    color: var(--muted-foreground);
+  }
+  .list {
+    display: grid;
+    gap: 0.55rem;
+  }
+  article {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  article h2 {
+    margin: 0.5rem 0;
+    font-size: 1rem;
+  }
+  article small {
+    color: var(--muted-foreground);
+    font: 0.65rem var(--font-mono);
+  }
+  article > a,
+  .toolbar a,
+  .empty a {
+    color: var(--accent-text);
+    font: 0.7rem var(--font-mono);
+  }
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .badges span {
+    color: var(--accent-text);
+    font: 0.6rem var(--font-mono);
+  }
+  .empty {
+    padding: 1.3rem;
+  }
+  .empty h2 {
+    margin: 0 0 0.5rem;
+  }
+  .empty a {
+    display: inline-block;
+    margin-top: 1rem;
+  }
+  .feedback {
+    padding: 0.7rem;
+    border: 1px solid var(--danger);
+    color: var(--danger-foreground);
+  }
+  @media (max-width: 600px) {
+    article {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>

@@ -1,9 +1,8 @@
 ---
-import { getCollection } from 'astro:content';
 import BentoCard from '../components/astro/BentoCard.astro';
 import BentoGrid from '../components/astro/BentoGrid.astro';
-import BrandLogo from '../components/astro/BrandLogo.astro';
 import Button from '../components/astro/Button.astro';
+import CollectionHeader from '../components/astro/CollectionHeader.astro';
 import IconLink from '../components/astro/IconLink.astro';
 import Layout from '../components/astro/Layout.astro';
 import NoteCard from '../components/astro/NoteCard.astro';
@@ -11,20 +10,17 @@ import ProjectCard from '../components/astro/ProjectCard.astro';
 import StackGroup from '../components/astro/StackGroup.astro';
 import HomeProgressRail from '../components/svelte/HomeProgressRail.svelte';
 import PortfolioTerminal from '../components/svelte/PortfolioTerminal.svelte';
-import ThemeToggle from '../components/svelte/ThemeToggle.svelte';
-import {
-  aboutMetadata,
-  activityLevels,
-  contactLinks,
-  nowItems,
-  stackGroups,
-} from '../lib/data/home';
-import { site } from '../lib/data/site';
+import { contactLinks, nowItems } from '../lib/data/home';
+import { getHomepageConfig } from '../lib/server/homepage';
+import { getPublicSiteSettings } from '../lib/server/siteSettings';
 import { homeProgressSections } from '../lib/data/homeProgress';
-import { getProjectSlug, getProjectUrl, sortProjects } from '../lib/content';
-import { getNoteUrl, sortNotesByDateDesc } from '../lib/notes';
+import { getPublicNoteCatalog } from '../lib/server/notes';
 import { getPublicNowStatus } from '../lib/server/now';
-import { getPublicProjectRecords } from '../lib/server/projects';
+import { getGitHubContributions } from '../lib/server/githubContributions';
+import {
+  getPublicProjectCatalog,
+  publicProjectUrl,
+} from '../lib/server/publicProjects';
 import type {
   PortfolioTerminalData,
   TerminalNote,
@@ -32,57 +28,49 @@ import type {
 } from '../lib/terminal/types';
 import { selectLatestPublicUpdate } from '../lib/terminal/updates';
 
-const databaseProjects = await getPublicProjectRecords();
-const collectionProjects = sortProjects(
-  await getCollection('projects', ({ data }) => data.visible),
-);
-const collectionProjectSlugs = new Set(collectionProjects.map(getProjectSlug));
-const allProjects =
-  databaseProjects.length > 0
-    ? databaseProjects.map((project) => {
-        const detailUrl = collectionProjectSlugs.has(project.slug)
-          ? `/projects/${project.slug}`
-          : undefined;
-        return {
-          slug: project.slug,
-          href: detailUrl,
-          url: detailUrl,
-          title: project.title,
-          description: project.description,
-          status: project.status,
-          stack: project.stack,
-          github: project.github ?? undefined,
-          demo: project.demo ?? undefined,
-          caseStudy: detailUrl,
-          category: project.category ?? undefined,
-          featured: project.featured,
-          updatedAt: project.updatedAt.toISOString(),
-        };
-      })
-    : collectionProjects.map((project) => {
-        const detailUrl = getProjectUrl(project);
-        return {
-          slug: getProjectSlug(project),
-          href: detailUrl,
-          url: detailUrl,
-          title: project.data.title,
-          description: project.data.description,
-          status: project.data.status,
-          stack: project.data.stack,
-          github: project.data.github,
-          demo: project.data.demo,
-          caseStudy: project.data.caseStudy,
-          category: project.data.category,
-          featured: project.data.featured,
-          updatedAt: project.data.date.toISOString(),
-        };
-      });
-const projects = allProjects.slice(0, 4);
-const publishedNotes = sortNotesByDateDesc(
-  await getCollection('notes', ({ data }) => data.published),
-);
-const notes = publishedNotes.slice(0, 3);
-const publicNowStatus = await getPublicNowStatus();
+const [homepage, publicSettings] = await Promise.all([
+  getHomepageConfig(),
+  getPublicSiteSettings(),
+]);
+const liveContactLinks = contactLinks.map((link) => ({
+  ...link,
+  href:
+    link.label === 'Email'
+      ? `mailto:${publicSettings.email}`
+      : link.label === 'GitHub'
+        ? publicSettings.github
+        : link.href,
+}));
+const cards = homepage.cards;
+const [projectCatalog, publishedNotes, publicNowStatus, githubContributions] =
+  await Promise.all([
+    getPublicProjectCatalog(),
+    getPublicNoteCatalog(),
+    getPublicNowStatus(),
+    getGitHubContributions(publicSettings.github),
+  ]);
+const allProjects = projectCatalog.map((project) => {
+  const detailUrl = publicProjectUrl(project);
+  return {
+    slug: project.slug,
+    href: detailUrl,
+    url: detailUrl,
+    title: project.title,
+    description: project.description,
+    status: project.status,
+    stack: project.stack,
+    github: project.github ?? undefined,
+    demo: project.demo ?? undefined,
+    caseStudy:
+      project.source === 'mdx' ? project.entry?.data.caseStudy : detailUrl,
+    category: project.category ?? undefined,
+    featured: project.featured,
+    cover: project.cover,
+    updatedAt: project.updatedAt.toISOString(),
+  };
+});
+const projects = allProjects.slice(0, homepage.projectLimit);
+const notes = publishedNotes.slice(0, homepage.noteLimit);
 const renderedNowItems = publicNowStatus?.items ?? nowItems;
 const nowMetadata = publicNowStatus
   ? (publicNowStatus.statusNote ??
@@ -90,22 +78,16 @@ const nowMetadata = publicNowStatus
       dateStyle: 'medium',
     })}.`)
   : 'Static fallback.';
-const navItems = [
-  { label: 'Projects', href: '/projects' },
-  { label: 'Notes', href: '/notes' },
-  { label: 'Lab', href: '/lab' },
-  { label: 'Search', href: '/search' },
-];
 const terminalProjects: TerminalProject[] = allProjects.map(
   ({ href: _href, caseStudy: _caseStudy, ...project }) => project,
 );
 const terminalNotes: TerminalNote[] = publishedNotes.map((note) => ({
-  slug: note.id.replace(/\.(md|mdx)$/, ''),
-  title: note.data.title,
-  summary: note.data.summary ?? note.data.description,
-  url: getNoteUrl(note),
-  createdAt: note.data.createdAt.toISOString(),
-  updatedAt: note.data.updatedAt?.toISOString(),
+  slug: note.slug,
+  title: note.title,
+  summary: note.summary ?? note.description,
+  url: `/notes/${note.slug}`,
+  createdAt: note.createdAt.toISOString(),
+  updatedAt: note.updatedAt?.toISOString(),
 }));
 const buildCommit =
   import.meta.env.VERCEL_GIT_COMMIT_SHA ??
@@ -118,22 +100,21 @@ const buildBranch =
 const buildDate = import.meta.env.BUILD_DATE;
 const latestUpdate = selectLatestPublicUpdate(terminalNotes, terminalProjects);
 const terminalData: PortfolioTerminalData = {
-  name: site.name,
+  name: homepage.heroName,
   username: 'ange',
   hostname: 'angefolio',
-  email: site.email,
-  github: site.github,
-  repositoryUrl: `${site.github}/angefolio`,
-  about:
-    'An information technology student focused on web and backend development, Linux-oriented workflows, and pragmatic tools.',
+  email: publicSettings.email,
+  github: publicSettings.github,
+  repositoryUrl: `${publicSettings.github}/angefolio`,
+  about: homepage.aboutParagraphs.join(' '),
   nowItems: renderedNowItems,
   projects: terminalProjects,
   notes: terminalNotes,
-  socials: contactLinks.map((link) => ({
+  socials: liveContactLinks.map((link) => ({
     label: link.label,
     url: link.href,
   })),
-  stack: stackGroups,
+  stack: homepage.stackGroups,
   routes: {
     home: '/',
     projects: '/projects',
@@ -148,19 +129,25 @@ const terminalData: PortfolioTerminalData = {
   latestUpdate,
   portfolioSince: 2023,
 };
+const progressSections = homeProgressSections.filter((section) => {
+  if (section.id === 'introduction') return true;
+  if (section.id === 'featured-projects') return cards.projects.visible;
+  if (section.id === 'current-focus')
+    return cards.now.visible || cards.stack.visible;
+  if (section.id === 'github-activity') return cards.activity.visible;
+  if (section.id === 'latest-notes') return cards.notes.visible;
+  if (section.id === 'contact') return cards.contact.visible;
+  return false;
+});
 ---
 
-<Layout title={site.defaultTitle} description={site.seoDescription}>
-  <HomeProgressRail client:load sections={homeProgressSections} />
-  <header class="topbar" data-pagefind-ignore>
-    <BrandLogo href="/" placement="header" priority />
-    <div class="topbar-actions">
-      <nav aria-label="Primary navigation">
-        {navItems.map((item) => <a href={item.href}>{item.label}</a>)}
-      </nav>
-      <ThemeToggle client:load />
-    </div>
-  </header>
+<Layout
+  title={`${homepage.heroName} — angefolio`}
+  title={`${publicSettings.name} — ${publicSettings.siteName}`}
+  description={publicSettings.seoDescription}
+>
+  <HomeProgressRail client:load sections={progressSections} />
+  <CollectionHeader active="home" />
   <BentoGrid class="homepage-grid">
     <BentoCard
       id="introduction"
@@ -178,10 +165,10 @@ const terminalData: PortfolioTerminalData = {
             <span class="hero-portrait-filename">portrait.jpg</span>
           </div>
           <img
-            src="/angellie.jpg"
-            alt="Angellie Marcos"
-            width="1080"
-            height="1080"
+            src={homepage.portrait}
+            alt={homepage.heroName}
+            width="460"
+            height="460"
             loading="eager"
             decoding="async"
             fetchpriority="high"
@@ -190,218 +177,233 @@ const terminalData: PortfolioTerminalData = {
         </figure>
 
         <div class="hero-copy">
-          <p class="hero-eyebrow eyebrow">~/angefolio $ status</p>
-          <h1 class="hero-heading text-balance">Angellie D. Marcos</h1>
+          <h1 class="hero-heading text-balance">{homepage.heroName}</h1>
           <p class="role-line">
             <span class="sr-only">
-              Specialties: Full-stack developer, Backend systems builder, Linux
-              workflow tinkerer, Privacy-first toolmaker.
+              Specialties: {homepage.heroRoles.join(', ')}
             </span>
 
             <span class="role-cycle" aria-hidden="true">
-              <span class="role role-1">Full-stack developer.</span>
-              <span class="role role-2">Backend systems builder.</span>
-              <span class="role role-3">Linux workflow tinkerer.</span>
-              <span class="role role-4">Privacy-first toolmaker.</span>
+              {
+                homepage.heroRoles.map((role, index) => (
+                  <span
+                    class="role"
+                    style={`--role-delay:${index * 2.2}s;--role-duration:${homepage.heroRoles.length * 2.2}s`}
+                  >
+                    {role}
+                  </span>
+                ))
+              }
             </span>
           </p>
           <div class="actions">
             <Button href="/projects" variant="primary">Projects</Button>
-            <Button href={'mailto:' + site.email} variant="ghost">Email</Button>
+            <Button href={'mailto:' + publicSettings.email} variant="ghost"
+              >Email</Button
+            >
           </div>
         </div>
       </div>
       <PortfolioTerminal client:load data={terminalData} />
     </BentoCard>
 
-    <BentoCard
-      class="about md:col-span-2 lg:col-span-4"
-      accent="soft"
-      eyebrow="About"
-      title="Coding, tinkering, and convincing computers to do my bidding."
-    >
-      <p>
-        She studies information technology at AMA Computer College and builds
-        web and backend systems through Linux-oriented workflows.
-      </p>
-      <p>
-        Her working style favors pragmatic, personalized, and sometimes
-        unconventional tools that keep the person using them in control.
-      </p>
-      <dl class="about-metadata" aria-label="About focus areas">
-        {
-          aboutMetadata.map((item) => (
-            <div>
-              <dt>{item.label}</dt>
-              <dd>{item.value}</dd>
-            </div>
-          ))
-        }
-      </dl>
-    </BentoCard>
-    <BentoCard
-      id="featured-projects"
-      class="projects home-anchor md:col-span-2 lg:col-span-12"
-      accent="strong"
-      eyebrow="Featured Projects"
-      title="Systems and ideas I am taking seriously."
-      description="A mix of active school systems, prototypes, and planned personal tools."
-    >
-      <div class="project-grid">
-        {
-          projects.map((project) => (
-            <ProjectCard
-              href={project.href}
-              title={project.title}
-              description={project.description}
-              status={project.status}
-              stack={project.stack}
-              github={project.github}
-              demo={project.demo}
-              caseStudy={project.caseStudy}
-              category={project.category}
-              featured={project.featured}
-            />
-          ))
-        }
-      </div>
-      <div class="card-footer">
-        <IconLink href="/projects" label="View all projects" />
-      </div>
-    </BentoCard>
-    <BentoCard
-      id="current-focus"
-      class="now home-anchor md:col-span-1 lg:col-span-3"
-      accent="medium"
-      eyebrow="Now"
-      title="Current focus"
-    >
-      <ul class="status-list">
-        {renderedNowItems.map((item) => <li>{item}</li>)}
-      </ul>
-      <p class="metadata">{nowMetadata}</p>
-    </BentoCard>
+    {
+      cards.about.visible && (
+        <BentoCard
+          class="about md:col-span-2 lg:col-span-4"
+          accent="soft"
+          eyebrow={cards.about.eyebrow}
+          title={cards.about.title}
+        >
+          {homepage.aboutParagraphs.map((paragraph) => (
+            <p>{paragraph}</p>
+          ))}
+          <dl class="about-metadata" aria-label="About focus areas">
+            {homepage.aboutMetadata.map((item) => (
+              <div>
+                <dt>{item.label}</dt>
+                <dd>{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </BentoCard>
+      )
+    }
+    {
+      cards.projects.visible && (
+        <BentoCard
+          id="featured-projects"
+          class="projects home-anchor md:col-span-2 lg:col-span-12"
+          accent="strong"
+          eyebrow={cards.projects.eyebrow}
+          title={cards.projects.title}
+          description={cards.projects.description}
+        >
+          <div class="project-grid">
+            {projects.map((project) => (
+              <ProjectCard
+                href={project.href}
+                title={project.title}
+                description={project.description}
+                status={project.status}
+                stack={project.stack}
+                github={project.github}
+                demo={project.demo}
+                caseStudy={project.caseStudy}
+                category={project.category}
+                featured={project.featured}
+                cover={project.cover}
+              />
+            ))}
+          </div>
+          <div class="card-footer">
+            <IconLink href="/projects" label="View all projects" />
+          </div>
+        </BentoCard>
+      )
+    }
+    {
+      cards.now.visible && (
+        <BentoCard
+          id="current-focus"
+          class="now home-anchor md:col-span-1 lg:col-span-3"
+          accent="medium"
+          eyebrow={cards.now.eyebrow}
+          title={cards.now.title}
+          description={cards.now.description || undefined}
+        >
+          <ul class="status-list">
+            {renderedNowItems.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+          <p class="metadata">{nowMetadata}</p>
+        </BentoCard>
+      )
+    }
 
-    <BentoCard
-      class="stack md:col-span-1 lg:col-span-5"
-      accent="soft"
-      eyebrow="Stack"
-      title="Tools I build with"
-    >
-      <div class="stack-groups">
-        {
-          stackGroups.map((group) => (
-            <StackGroup title={group.title} items={group.items} />
-          ))
-        }
-      </div>
-    </BentoCard>
+    {
+      cards.stack.visible && (
+        <BentoCard
+          id={!cards.now.visible ? 'current-focus' : undefined}
+          class="stack md:col-span-1 lg:col-span-5"
+          accent="soft"
+          eyebrow={cards.stack.eyebrow}
+          title={cards.stack.title}
+          description={cards.stack.description || undefined}
+        >
+          <div class="stack-groups">
+            {homepage.stackGroups.map((group) => (
+              <StackGroup title={group.title} items={group.items} />
+            ))}
+          </div>
+        </BentoCard>
+      )
+    }
 
-    <BentoCard
-      id="github-activity"
-      class="github home-anchor md:col-span-2 lg:col-span-4"
-      accent="medium"
-      eyebrow="GitHub Activity"
-      title="Building in public"
-    >
-      <p>Public work, experiments, and project commits live here.</p>
-      <div
-        class="contribution-grid"
-        aria-label="Decorative contribution activity grid"
-      >
-        {
-          activityLevels.map((level) => (
-            <span class={'level-' + level} aria-hidden="true" />
-          ))
-        }
-      </div>
-      <div class="activity-meta" aria-label="GitHub profile status">
-        <span>repo: angemarcos04</span>
-        <span>status: active learner / project builder</span>
-      </div>
-      <IconLink href={site.github} label="GitHub" external />
-    </BentoCard>
-    <BentoCard
-      id="latest-notes"
-      class="notes home-anchor md:col-span-2 lg:col-span-8"
-      accent="soft"
-      eyebrow="Latest Notes"
-      title="Things I am learning out loud"
-    >
-      <div class="note-grid">
-        {
-          notes.map((note) => (
-            <NoteCard
-              href={getNoteUrl(note)}
-              title={note.data.title}
-              description={note.data.summary ?? note.data.description}
-              category={note.data.category}
-              tags={note.data.tags}
-              createdAt={note.data.createdAt}
-              updatedAt={note.data.updatedAt}
-              featured={note.data.featured}
-            />
-          ))
-        }
-      </div>
-      <div class="card-footer">
-        <IconLink href="/notes" label="Read notes" />
-      </div>
-    </BentoCard>
+    {
+      cards.activity.visible && (
+        <BentoCard
+          id="github-activity"
+          class="github home-anchor md:col-span-2 lg:col-span-4"
+          accent="medium"
+          eyebrow={cards.activity.eyebrow}
+          title={cards.activity.title}
+        >
+          <p>{cards.activity.description}</p>
+          {githubContributions ? (
+            <>
+              <div
+                class="contribution-scroll"
+                role="img"
+                aria-label={`GitHub reports ${githubContributions.total}. Contribution activity for the past year.`}
+              >
+                <div class="contribution-grid" aria-hidden="true">
+                  {githubContributions.days.map((day) => (
+                    <span
+                      class={`level-${day.level}`}
+                      style={`grid-column: ${day.week + 1}; grid-row: ${day.weekday + 1};`}
+                      title={`${day.date}: activity level ${day.level} of 4`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <p class="activity-unavailable">
+              GitHub contribution activity is temporarily unavailable.
+            </p>
+          )}
+          <div class="activity-meta" aria-label="GitHub profile">
+            <span>
+              {new URL(publicSettings.github).pathname.replaceAll('/', '')}
+            </span>
+            {githubContributions && <span>{githubContributions.total}</span>}
+          </div>
+          <IconLink href={publicSettings.github} label="GitHub" external />
+        </BentoCard>
+      )
+    }
+    {
+      cards.notes.visible && (
+        <BentoCard
+          id="latest-notes"
+          class="notes home-anchor md:col-span-2 lg:col-span-8"
+          accent="soft"
+          eyebrow={cards.notes.eyebrow}
+          title={cards.notes.title}
+          description={cards.notes.description || undefined}
+        >
+          <div class="note-grid">
+            {notes.map((note) => (
+              <NoteCard
+                href={`/notes/${note.slug}`}
+                title={note.title}
+                description={note.summary ?? note.description}
+                category={note.category}
+                tags={note.tags}
+                createdAt={note.createdAt}
+                updatedAt={note.updatedAt ?? undefined}
+                featured={note.featured}
+              />
+            ))}
+          </div>
+          <div class="card-footer">
+            <IconLink href="/notes" label="Read notes" />
+          </div>
+        </BentoCard>
+      )
+    }
 
-    <BentoCard
-      id="contact"
-      class="contact home-anchor md:col-span-2 lg:col-span-4"
-      accent="strong"
-      eyebrow="Contact"
-      title="Let us make something useful."
-    >
-      <p>Want to talk, collaborate, or check my work?</p>
-      <div class="contact-links">
-        {
-          contactLinks.map((link) => (
-            <IconLink
-              href={link.href}
-              label={link.label}
-              external={link.external}
-            />
-          ))
-        }
-      </div>
-      <p class="contact-email">angellie.marcos0104@protonmail.me</p>
-    </BentoCard>
+    {
+      cards.contact.visible && (
+        <BentoCard
+          id="contact"
+          class="contact home-anchor md:col-span-2 lg:col-span-4"
+          accent="strong"
+          eyebrow={cards.contact.eyebrow}
+          title={cards.contact.title}
+        >
+          <p>{cards.contact.description}</p>
+          <div class="contact-links">
+            {liveContactLinks.map((link) => (
+              <IconLink
+                href={link.href}
+                label={link.label}
+                external={link.external}
+              />
+            ))}
+          </div>
+          <p class="contact-email">angellie.marcos0104@protonmail.me</p>
+        </BentoCard>
+      )
+    }
   </BentoGrid>
 </Layout>
 <style>
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    padding-bottom: 0.9rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .topbar-actions,
-  nav,
   .actions {
     display: flex;
     align-items: center;
-  }
-  .topbar-actions {
-    gap: 0.8rem;
-  }
-  nav {
-    flex-wrap: wrap;
-    gap: 0.2rem;
-  }
-  nav a {
-    padding: 0.45rem 0.55rem;
-    color: var(--muted-foreground);
-    font: 0.72rem var(--font-mono);
-  }
-  nav a:hover {
-    color: var(--accent-text);
   }
   :global(.homepage-grid) {
     align-items: stretch;
@@ -481,11 +483,6 @@ const terminalData: PortfolioTerminalData = {
   .hero-copy {
     min-width: 0;
   }
-  .hero-eyebrow {
-    margin: 0 0 0.75rem;
-    font-size: 0.7rem;
-    letter-spacing: 0.14em;
-  }
   .hero-heading {
     max-width: 18ch;
     margin: 0 0 0.85rem;
@@ -522,19 +519,8 @@ const terminalData: PortfolioTerminalData = {
     inset: 0 auto auto 0;
     opacity: 0;
     white-space: nowrap;
-    animation: role-fade 8.8s ease-in-out infinite both;
-  }
-  .role-1 {
-    animation-delay: 0s;
-  }
-  .role-2 {
-    animation-delay: 2.2s;
-  }
-  .role-3 {
-    animation-delay: 4.4s;
-  }
-  .role-4 {
-    animation-delay: 6.6s;
+    animation: role-fade var(--role-duration) ease-in-out infinite both;
+    animation-delay: var(--role-delay);
   }
   .about p,
   .github > p,
@@ -627,10 +613,15 @@ const terminalData: PortfolioTerminalData = {
   }
   .contribution-grid {
     display: grid;
-    grid-template-columns: repeat(14, minmax(0, 1fr));
-    gap: 0.25rem;
-    max-width: 100%;
+    grid-template-columns: repeat(53, minmax(0, 1fr));
+    grid-template-rows: repeat(7, minmax(0, 1fr));
+    gap: 0.22rem;
+    min-width: 24rem;
     margin: 1.1rem 0;
+  }
+  .contribution-scroll {
+    max-width: 100%;
+    overflow-x: auto;
   }
   .contribution-grid span {
     aspect-ratio: 1;
@@ -655,6 +646,11 @@ const terminalData: PortfolioTerminalData = {
     display: grid;
     gap: 0.25rem;
     margin-bottom: 1rem;
+  }
+  .activity-unavailable {
+    margin: 1rem 0;
+    color: var(--muted-foreground);
+    font-size: 0.85rem;
   }
   .note-grid {
     display: grid;
@@ -702,14 +698,6 @@ const terminalData: PortfolioTerminalData = {
     }
   }
   @media (max-width: 760px) {
-    .topbar {
-      align-items: flex-start;
-    }
-    .topbar-actions {
-      align-items: flex-end;
-      flex-direction: column-reverse;
-      gap: 0.45rem;
-    }
     :global(.hero) {
       min-height: 0;
     }
@@ -730,19 +718,6 @@ const terminalData: PortfolioTerminalData = {
     }
   }
   @media (max-width: 480px) {
-    .topbar {
-      align-items: stretch;
-      flex-direction: column;
-    }
-    .topbar-actions {
-      align-items: center;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      flex-direction: row;
-    }
-    nav a {
-      padding-inline: 0.4rem;
-    }
     .stack-groups,
     .contact-links {
       grid-template-columns: 1fr;

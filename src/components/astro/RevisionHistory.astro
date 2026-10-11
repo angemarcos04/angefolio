@@ -1,0 +1,162 @@
+---
+import type {
+  ContentRevision,
+  RevisionEntityType,
+} from '../../lib/server/revisions';
+
+interface Props {
+  entityType: RevisionEntityType;
+  entityId: string;
+  revisions: ContentRevision[];
+}
+const { entityType, entityId, revisions } = Astro.props;
+function displayName(revision: ContentRevision): string {
+  const snapshot = revision.snapshot;
+  const title = snapshot.title ?? snapshot.currentFocus ?? snapshot.heroName;
+  return typeof title === 'string' ? title : 'Saved version';
+}
+function preview(revision: ContentRevision): string {
+  const snapshot = revision.snapshot;
+  const body = snapshot.caseStudyBody ?? snapshot.body;
+  if (typeof body === 'string') return body;
+  return JSON.stringify(snapshot, null, 2);
+}
+---
+
+<section
+  class="revision-panel bento-surface"
+  aria-labelledby="revision-heading"
+>
+  <div class="panel-heading">
+    <div><p>History</p><h2 id="revision-heading">Saved versions</h2></div><span
+      >{revisions.length} recent</span
+    >
+  </div>
+  <p class="help">
+    The 50 most recent versions are kept. Restoring a version creates a new
+    snapshot.
+  </p>
+  {
+    revisions.length ? (
+      <div class="revision-list">
+        {revisions.map((revision, index) => (
+          <details open={index === 0}>
+            <summary>
+              <span>
+                {revision.createdAt.toLocaleString('en', {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                })}
+              </span>
+              <strong>{displayName(revision)}</strong>
+              {revision.restoredFromId && <em>Restored version</em>}
+            </summary>
+            <pre>
+              {preview(revision).slice(0, 5000)}
+              {preview(revision).length > 5000 ? '\n… preview truncated' : ''}
+            </pre>
+            <form method="post" action="/api/console/revisions/restore">
+              <input type="hidden" name="entityType" value={entityType} />
+              <input type="hidden" name="entityId" value={entityId} />
+              <input type="hidden" name="revisionId" value={revision.id} />
+              <button type="submit">Restore this version</button>
+            </form>
+          </details>
+        ))}
+      </div>
+    ) : (
+      <p class="empty">
+        No saved versions yet. Save content once to start its history.
+      </p>
+    )
+  }
+</section>
+<style>
+  .revision-panel {
+    margin-top: 1rem;
+    padding: 1rem;
+    box-shadow: none;
+  }
+  .panel-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+  .panel-heading p {
+    margin: 0;
+    color: var(--accent-text);
+    font: 0.65rem var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .panel-heading h2 {
+    margin: 0.25rem 0;
+    font-size: 1.1rem;
+  }
+  .panel-heading > span,
+  .help,
+  .empty {
+    color: var(--muted-foreground);
+    font: 0.68rem/1.55 var(--font-mono);
+  }
+  .help {
+    margin: 0.45rem 0 1rem;
+  }
+  .revision-list {
+    display: grid;
+    gap: 0.45rem;
+  }
+  details {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+  }
+  summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.7rem;
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary span,
+  summary em {
+    color: var(--muted-foreground);
+    font: 0.62rem var(--font-mono);
+  }
+  summary strong {
+    font: 0.72rem var(--type-ui);
+  }
+  pre {
+    max-height: 18rem;
+    overflow: auto;
+    margin: 0;
+    padding: 0.75rem;
+    border-top: 1px solid var(--border);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: var(--muted-foreground);
+    font: 0.68rem/1.55 var(--type-code);
+  }
+  form {
+    margin: 0;
+    padding: 0.65rem;
+  }
+  .revision-panel button {
+    padding: 0.45rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--muted);
+    color: var(--foreground);
+    font: 0.65rem var(--font-mono);
+    cursor: pointer;
+  }
+  .empty {
+    margin: 0.6rem 0 0;
+  }
+</style>

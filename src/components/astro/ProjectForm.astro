@@ -3,6 +3,8 @@ import type {
   ProjectFormValues,
   ProjectStatus,
 } from '../../lib/server/validation/projects';
+import MarkdownEditor from '../svelte/MarkdownEditor.svelte';
+import MediaUpload from '../svelte/MediaUpload.svelte';
 
 interface Props {
   action: string;
@@ -51,6 +53,10 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
         aria-invalid={Boolean(fieldError('slug'))}
       />
       {fieldError('slug') && <small>{fieldError('slug')}</small>}
+      <small
+        >Changing a published slug keeps the old URL working through a permanent
+        redirect.</small
+      >
     </label>
 
     <label class="full">
@@ -91,6 +97,12 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
     </label>
 
     <label>
+      <span>Project date</span>
+      <input name="projectDate" type="date" value={values.projectDate ?? ''} />
+      {fieldError('projectDate') && <small>{fieldError('projectDate')}</small>}
+    </label>
+
+    <label>
       <span>Role</span>
       <input name="role" maxlength="200" value={values.role ?? ''} />
       {fieldError('role') && <small>{fieldError('role')}</small>}
@@ -123,6 +135,13 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
         >{values.solution ?? ''}</textarea
       >
       {fieldError('solution') && <small>{fieldError('solution')}</small>}
+    </label>
+
+    <label class="full">
+      <span>Highlights</span>
+      <textarea name="highlights" rows="4">{values.highlights ?? ''}</textarea>
+      <em>One per line; up to 12.</em>
+      {fieldError('highlights') && <small>{fieldError('highlights')}</small>}
     </label>
 
     <label>
@@ -169,17 +188,26 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
     </label>
 
     <label class="full">
-      <span>Case study body</span>
-      <textarea name="caseStudyBody" maxlength="30000" rows="14"
-        >{values.caseStudyBody ?? ''}</textarea
-      >
-      <em>Stored as plain text. Database content is never executed as MDX.</em>
+      <span>Cover path or URL</span>
+      <input
+        id="project-cover"
+        name="cover"
+        maxlength="2048"
+        value={values.cover ?? ''}
+      />
+      <MediaUpload client:load targetId="project-cover" />
+      {fieldError('cover') && <small>{fieldError('cover')}</small>}
+    </label>
+
+    <div class="full">
+      <span class="field-title">Case study</span>
+      <MarkdownEditor client:load value={values.caseStudyBody ?? ''} />
       {
         fieldError('caseStudyBody') && (
           <small>{fieldError('caseStudyBody')}</small>
         )
       }
-    </label>
+    </div>
   </div>
 
   <fieldset disabled={archived}>
@@ -196,19 +224,31 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
       />
       Prioritize in project ordering
     </label>
+    <label class="check">
+      <input
+        type="checkbox"
+        name="replacesMdx"
+        checked={values.replacesMdx ?? false}
+      />
+      Use this record instead of matching MDX content
+    </label>
+    <p class="source-help">
+      Use this after reviewing the case study. Hiding or archiving an adopted
+      record also hides its matching MDX page.
+    </p>
   </fieldset>
 
   {
     archived && (
       <p class="archive-note">
-        Archived records remain private and cannot be republished in Phase 12.
+        This record is hidden. Restore it to review visibility.
       </p>
     )
   }
 
   <div class="form-actions">
     <button type="submit">{submitLabel}</button>
-    <a href="/console/projects">Cancel</a>
+    <a href="/user/projects">Cancel</a>
   </div>
 </form>
 
@@ -216,6 +256,16 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
   .project-form {
     padding: clamp(1rem, 3vw, 1.5rem);
     box-shadow: none;
+  }
+  .field-title {
+    display: block;
+    margin-bottom: 0.45rem;
+    font: 650 0.75rem var(--font-mono);
+  }
+  .source-help {
+    margin: 0.2rem 0 0;
+    color: var(--muted-foreground);
+    font-size: 0.8rem;
   }
   .form-grid {
     display: grid;

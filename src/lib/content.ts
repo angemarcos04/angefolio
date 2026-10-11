@@ -54,6 +54,12 @@ export async function getVisibleProjects(): Promise<
   return sortProjects(projects);
 }
 
+export async function getAllProjects(): Promise<
+  CollectionEntry<'projects'>[]
+> {
+  return sortProjects(await getCollection('projects'));
+}
+
 export async function getFeaturedProjects(): Promise<
   CollectionEntry<'projects'>[]
 > {
@@ -69,6 +75,10 @@ export async function getPublishedNotes(): Promise<CollectionEntry<'notes'>[]> {
   return sortNotesByDateDesc(notes);
 }
 
+export async function getAllNotes(): Promise<CollectionEntry<'notes'>[]> {
+  return sortNotesByDateDesc(await getCollection('notes'));
+}
+
 export async function getVisibleLabEntries(): Promise<
   CollectionEntry<'lab'>[]
 > {
@@ -78,4 +88,8 @@ export async function getVisibleLabEntries(): Promise<
   );
 
   return sortLabByDateDesc(entries);
+}
+
+export async function getAllLabEntries(): Promise<CollectionEntry<'lab'>[]> {
+  return sortLabByDateDesc(await getCollection('lab'));
 }

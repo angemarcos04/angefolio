@@ -1,24 +1,26 @@
 import rss from '@astrojs/rss';
 import type { APIContext } from 'astro';
-import { getPublishedNotes } from '../lib/content';
-import { getNoteUrl } from '../lib/notes';
+import { getPublicNoteCatalog } from '../lib/server/notes';
 import { site } from '../lib/data/site';
+import { getPublicSiteSettings } from '../lib/server/siteSettings';
 
-export const prerender = true;
+export const prerender = false;
 
 export async function GET(context: APIContext) {
-  const notes = await getPublishedNotes();
+  const [notes, settings] = await Promise.all([
+    getPublicNoteCatalog(),
+    getPublicSiteSettings(),
+  ]);
 
   return rss({
-    title: 'angefolio notes',
-    description:
-      'Project logs, Linux fixes, web development notes, and thoughts from Angellie Marcos.',
+    title: `${settings.siteName} notes`,
+    description: settings.seoDescription,
     site: context.site ?? site.url,
     items: notes.map((note) => ({
-      title: note.data.title,
-      description: note.data.description,
-      pubDate: note.data.createdAt,
-      link: getNoteUrl(note),
+      title: note.title,
+      description: note.description,
+      pubDate: note.createdAt,
+      link: `/notes/${note.slug}`,
     })),
     customData: '<language>en-us</language>',
   });

@@ -1,14 +1,20 @@
 ---
-import { site } from '../../lib/data/site';
 import IconLink from './IconLink.astro';
+
+interface Props {
+  name: string;
+  github: string;
+  rss: string;
+}
+const { name, github, rss } = Astro.props;
 ---
 
 <footer class="container-shell">
-  <p>Built by {site.name}. <span>Astro-first, terminal at heart.</span></p>
+  <p>Built with ❤️ by {name}. © 2026</p>
   <nav aria-label="Footer navigation">
     <IconLink href="/search" label="Search" />
-    <IconLink href={site.rss} label="RSS" />
-    <IconLink href={site.github} label="GitHub" external />
+    <IconLink href={rss} label="RSS" />
+    <IconLink href={github} label="GitHub" external />
   </nav>
 </footer>
 <style>

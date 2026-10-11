@@ -17,6 +17,12 @@
     search: (query: string) => Promise<{ results: PagefindResult[] }>;
   }
 
+  interface ProjectResult {
+    url: string;
+    title: string;
+    excerpt: string;
+  }
+
   let query = '';
   let loading = false;
   let results: SearchResultData[] = [];
@@ -48,11 +54,49 @@
     message = 'Searching…';
 
     try {
-      const searchIndex = await loadPagefind();
-      const response = await searchIndex.search(term);
-      results = await Promise.all(
-        response.results.slice(0, 20).map((result) => result.data()),
+      const [projectResponse, noteResponse, blogResponse, labResponse] =
+        await Promise.all([
+          fetch(`/api/search/projects?q=${encodeURIComponent(term)}`),
+          fetch(`/api/search/notes?q=${encodeURIComponent(term)}`),
+          fetch(`/api/search/blog?q=${encodeURIComponent(term)}`),
+          fetch(`/api/search/lab?q=${encodeURIComponent(term)}`),
+        ]);
+      if (
+        !projectResponse.ok ||
+        !noteResponse.ok ||
+        !blogResponse.ok ||
+        !labResponse.ok
+      )
+        throw new Error('Search unavailable.');
+      const projects = (await projectResponse.json()) as ProjectResult[];
+      const notes = (await noteResponse.json()) as ProjectResult[];
+      const blog = (await blogResponse.json()) as ProjectResult[];
+      const lab = (await labResponse.json()) as ProjectResult[];
+      let indexed: SearchResultData[] = [];
+      try {
+        const searchIndex = await loadPagefind();
+        const response = await searchIndex.search(term);
+        indexed = await Promise.all(
+          response.results.slice(0, 20).map((result) => result.data()),
+        );
+      } catch {
+        // Project search remains available in development before Pagefind runs.
+      }
+      const liveResults = [...projects, ...notes, ...blog, ...lab].map(
+        (project) => ({
+          url: project.url,
+          excerpt: project.excerpt
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;'),
+          meta: { title: project.title },
+        }),
       );
+      const knownUrls = new Set(liveResults.map((result) => result.url));
+      results = [
+        ...liveResults,
+        ...indexed.filter((result) => !knownUrls.has(result.url)),
+      ].slice(0, 20);
       message = `${results.length} ${results.length === 1 ? 'result' : 'results'} for “${term}”.`;
 
       const url = new URL(window.location.href);
@@ -61,7 +105,7 @@
     } catch {
       results = [];
       message =
-        'Search index is available after a production build. You can still browse Projects, Notes, and Lab directly.';
+        'Search is unavailable right now. Browse Projects, Notes, Blog, or Lab directly.';
     } finally {
       loading = false;
     }

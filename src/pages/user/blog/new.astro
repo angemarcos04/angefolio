@@ -1,0 +1,23 @@
+---
+import BlogForm from '../../../components/astro/BlogForm.astro';
+import ConsoleShell from '../../../components/astro/ConsoleShell.astro';
+import SectionHeader from '../../../components/astro/SectionHeader.astro';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/user/login');
+---
+
+<ConsoleShell
+  title="New blog post — Angellie Marcos"
+  description="Write a blog post."
+  active="blog"
+  {user}
+>
+  <SectionHeader
+    eyebrow="Private / Blog"
+    title="New post"
+    description="Write in Markdown, preview your article, and publish when it is ready."
+    headingLevel={1}
+  />
+  <BlogForm action="/api/console/blog/save" submitLabel="Save post" />
+</ConsoleShell>

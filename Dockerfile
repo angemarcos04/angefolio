@@ -36,7 +36,8 @@ COPY --chown=node:node --from=build /app/dist ./dist
 COPY --chown=node:node --from=build /app/drizzle ./drizzle
 COPY --chown=node:node package.json pnpm-lock.yaml drizzle.config.ts ./
 COPY --chown=node:node scripts ./scripts
-COPY --chown=node:node src/lib/server/db/schema.ts ./src/lib/server/db/schema.ts
+COPY --chown=node:node --from=build /app/src/lib/server ./src/lib/server
+COPY --chown=node:node --from=build /app/src/content/projects ./src/content/projects
 
 RUN mkdir -p /app/data && chown node:node /app/data
 
@@ -45,6 +46,17 @@ USER node
 EXPOSE 4321
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:4321/ > /dev/null || exit 1
+  CMD wget -qO- http://127.0.0.1:4321/health/ready > /dev/null || exit 1
 
 CMD ["sh", "-c", "./node_modules/.bin/drizzle-kit migrate && node scripts/start.mjs"]
+
+FROM runtime AS backup
+
+USER root
+RUN apk add --no-cache age rclone
+USER node
+
+CMD ["node", "scripts/offsite-backup.mjs"]
+
+# Keep plain `docker build .` on the website runtime by default.
+FROM runtime

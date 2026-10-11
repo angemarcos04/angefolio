@@ -1,5 +1,5 @@
 ---
-import { render, type CollectionEntry } from 'astro:content';
+import { render } from 'astro:content';
 import BentoCard from '../../components/astro/BentoCard.astro';
 import Button from '../../components/astro/Button.astro';
 import CollectionHeader from '../../components/astro/CollectionHeader.astro';
@@ -9,35 +9,57 @@ import ProjectMeta from '../../components/astro/ProjectMeta.astro';
 import StatusPill from '../../components/astro/StatusPill.astro';
 import Tag from '../../components/astro/Tag.astro';
 
-export const prerender = true;
+import { renderProjectMarkdownDocument } from '../../lib/server/markdown';
 import {
-  getProjectSlug,
-  getProjectUrl,
-  getVisibleProjects,
-} from '../../lib/content';
+  getPublicProjectCatalog,
+  publicProjectUrl,
+} from '../../lib/server/publicProjects';
+import { getContentRedirectTarget } from '../../lib/server/redirects';
 
-export async function getStaticPaths() {
-  const projects = await getVisibleProjects();
-
-  return projects.map((project, index) => ({
-    params: { slug: getProjectSlug(project) },
-    props: {
-      project,
-      previousProject: projects[index - 1],
-      nextProject: projects[index + 1],
+const redirectTarget = await getContentRedirectTarget(
+  `/projects/${Astro.params.slug}`,
+);
+if (redirectTarget) {
+  return new Response(null, {
+    status: 308,
+    headers: {
+      location: redirectTarget,
+      'cache-control': 'public, max-age=3600',
     },
-  }));
+  });
+}
+const projects = await getPublicProjectCatalog();
+const index = projects.findIndex(
+  (project) => project.slug === Astro.params.slug,
+);
+const project = projects[index];
+if (!project || !publicProjectUrl(project)) {
+  return new Response('Project not found.', {
+    status: 404,
+    headers: { 'content-type': 'text/plain; charset=utf-8' },
+  });
 }
 
-interface Props {
-  project: CollectionEntry<'projects'>;
-  previousProject?: CollectionEntry<'projects'>;
-  nextProject?: CollectionEntry<'projects'>;
-}
-
-const { project, previousProject, nextProject } = Astro.props;
-const { data } = project;
-const { Content } = await render(project);
+const detailProjects = projects.filter(publicProjectUrl);
+const detailIndex = detailProjects.findIndex(
+  (item) => item.slug === project.slug,
+);
+const previousProject = detailProjects[detailIndex - 1];
+const nextProject = detailProjects[detailIndex + 1];
+const data = project;
+const Content = project.entry ? (await render(project.entry)).Content : null;
+const markdownDocument =
+  project.source === 'database'
+    ? renderProjectMarkdownDocument(project.body)
+    : null;
+const renderedMarkdown = markdownDocument?.html ?? '';
+const headings = markdownDocument?.headings ?? [
+  { id: 'overview', label: 'Overview' },
+  { id: 'problem', label: 'Problem' },
+  { id: 'approach', label: 'Approach' },
+  { id: 'current-status', label: 'Current status' },
+  { id: 'what-i-am-learning', label: 'What I am learning' },
+];
 const formattedDate = new Intl.DateTimeFormat('en', {
   year: 'numeric',
   month: 'long',
@@ -51,7 +73,7 @@ const projectLinks = [
   ...(data.github
     ? [{ label: 'GitHub', href: data.github, external: true }]
     : []),
-  ...(data.links ?? []),
+  ...data.links,
 ];
 ---
 
@@ -67,6 +89,16 @@ const projectLinks = [
   </div>
 
   <BentoCard class="project-hero subtle-grid" accent="strong">
+    {
+      data.cover && (
+        <img
+          class="project-cover"
+          src={data.cover}
+          alt={`Cover image for ${data.title}`}
+          fetchpriority="high"
+        />
+      )
+    }
     <div class="hero-meta">
       <StatusPill status={data.status} />
       {data.category && <Tag tone="accent">{data.category}</Tag>}
@@ -132,17 +164,21 @@ const projectLinks = [
     )
   }
 
-  <div class="case-study-layout">
-    <nav class="local-nav bento-surface" aria-label="Case study sections">
-      <p>On this page</p>
-      <a href="#overview">Overview</a>
-      <a href="#problem">Problem</a>
-      <a href="#approach">Approach</a>
-      <a href="#current-status">Current status</a>
-      <a href="#what-i-am-learning">What I am learning</a>
-    </nav>
+  <div
+    class:list={['case-study-layout', { 'without-nav': headings.length === 0 }]}
+  >
+    {
+      headings.length > 0 && (
+        <nav class="local-nav bento-surface" aria-label="Case study sections">
+          <p>On this page</p>
+          {headings.map((heading) => (
+            <a href={`#${heading.id}`}>{heading.label}</a>
+          ))}
+        </nav>
+      )
+    }
     <article class="prose-shell bento-surface">
-      <Content />
+      {Content ? <Content /> : <Fragment set:html={renderedMarkdown} />}
     </article>
   </div>
 
@@ -151,8 +187,8 @@ const projectLinks = [
       <span>Previous project</span>
       {
         previousProject ? (
-          <a href={getProjectUrl(previousProject)}>
-            ← {previousProject.data.title}
+          <a href={publicProjectUrl(previousProject)}>
+            ← {previousProject.title}
           </a>
         ) : (
           <span>Start of list</span>
@@ -163,7 +199,7 @@ const projectLinks = [
       <span>Next project</span>
       {
         nextProject ? (
-          <a href={getProjectUrl(nextProject)}>{nextProject.data.title} →</a>
+          <a href={publicProjectUrl(nextProject)}>{nextProject.title} →</a>
         ) : (
           <a href="/projects">All projects →</a>
         )
@@ -175,6 +211,15 @@ const projectLinks = [
 <style>
   .back-link {
     margin-bottom: 1rem;
+  }
+  .project-cover {
+    display: block;
+    width: 100%;
+    max-height: 34rem;
+    margin-bottom: 1.25rem;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
   }
   :global(.project-hero) {
     padding: clamp(1.5rem, 5vw, 3rem);
@@ -250,6 +295,9 @@ const projectLinks = [
     gap: 0.75rem;
     margin-top: 0.75rem;
     align-items: start;
+  }
+  .case-study-layout.without-nav {
+    grid-template-columns: minmax(0, 1fr);
   }
   .local-nav {
     position: sticky;

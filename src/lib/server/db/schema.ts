@@ -1,4 +1,10 @@
-import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import {
+  blob,
+  index,
+  integer,
+  sqliteTable,
+  text,
+} from 'drizzle-orm/sqlite-core';
 
 // Better Auth core tables. Public sign-up remains disabled by the runtime config.
 export const user = sqliteTable('user', {
@@ -102,9 +108,19 @@ export const projectRecords = sqliteTable(
     github: text('github'),
     demo: text('demo'),
     caseStudyBody: text('case_study_body'),
+    projectDate: integer('project_date', { mode: 'timestamp' }),
+    highlights: text('highlights_json', { mode: 'json' })
+      .$type<string[]>()
+      .default([])
+      .notNull(),
+    cover: text('cover'),
+    replacesMdx: integer('replaces_mdx', { mode: 'boolean' })
+      .default(false)
+      .notNull(),
     featured: integer('featured', { mode: 'boolean' }).default(false).notNull(),
     visible: integer('visible', { mode: 'boolean' }).default(false).notNull(),
     archived: integer('archived', { mode: 'boolean' }).default(false).notNull(),
+    statusBeforeArchive: text('status_before_archive'),
     orderIndex: integer('order_index'),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
@@ -118,6 +134,168 @@ export const projectRecords = sqliteTable(
   ],
 );
 
+export const noteRecords = sqliteTable(
+  'note_records',
+  {
+    id: text('id').primaryKey(),
+    slug: text('slug').notNull().unique(),
+    title: text('title').notNull(),
+    description: text('description').notNull(),
+    summary: text('summary'),
+    category: text('category').notNull(),
+    tags: text('tags_json', { mode: 'json' }).$type<string[]>().notNull(),
+    body: text('body').notNull(),
+    published: integer('published', { mode: 'boolean' })
+      .default(false)
+      .notNull(),
+    featured: integer('featured', { mode: 'boolean' }).default(false).notNull(),
+    replacesMdx: integer('replaces_mdx', { mode: 'boolean' })
+      .default(false)
+      .notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (table) => [
+    index('note_records_public_idx').on(table.published, table.featured),
+  ],
+);
+
+export const blogRecords = sqliteTable(
+  'blog_records',
+  {
+    id: text('id').primaryKey(),
+    slug: text('slug').notNull().unique(),
+    title: text('title').notNull(),
+    description: text('description').notNull(),
+    summary: text('summary'),
+    category: text('category').notNull(),
+    tags: text('tags_json', { mode: 'json' }).$type<string[]>().notNull(),
+    body: text('body').notNull(),
+    published: integer('published', { mode: 'boolean' })
+      .default(false)
+      .notNull(),
+    featured: integer('featured', { mode: 'boolean' }).default(false).notNull(),
+    archived: integer('archived', { mode: 'boolean' }).default(false).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (table) => [
+    index('blog_records_public_idx').on(
+      table.published,
+      table.archived,
+      table.featured,
+    ),
+  ],
+);
+
+export const labRecords = sqliteTable(
+  'lab_records',
+  {
+    id: text('id').primaryKey(),
+    slug: text('slug').notNull().unique(),
+    title: text('title').notNull(),
+    description: text('description').notNull(),
+    status: text('status').notNull(),
+    category: text('category'),
+    tags: text('tags_json', { mode: 'json' }).$type<string[]>().notNull(),
+    visible: integer('visible', { mode: 'boolean' }).default(false).notNull(),
+    featured: integer('featured', { mode: 'boolean' }).default(false).notNull(),
+    repo: text('repo'),
+    demo: text('demo'),
+    relatedProject: text('related_project'),
+    tools: text('tools_json', { mode: 'json' }).$type<string[]>().notNull(),
+    lessons: text('lessons_json', { mode: 'json' }).$type<string[]>().notNull(),
+    risk: text('risk'),
+    body: text('body').notNull(),
+    replacesMdx: integer('replaces_mdx', { mode: 'boolean' })
+      .default(false)
+      .notNull(),
+    date: integer('date', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }),
+  },
+  (table) => [
+    index('lab_records_public_idx').on(table.visible, table.featured),
+  ],
+);
+
+export const contentRevisions = sqliteTable(
+  'content_revisions',
+  {
+    id: text('id').primaryKey(),
+    entityType: text('entity_type').notNull(),
+    entityId: text('entity_id').notNull(),
+    snapshot: text('snapshot_json', { mode: 'json' })
+      .$type<Record<string, unknown>>()
+      .notNull(),
+    actorUserId: text('actor_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    restoredFromId: text('restored_from_id'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  (table) => [
+    index('content_revisions_entity_idx').on(
+      table.entityType,
+      table.entityId,
+      table.createdAt,
+    ),
+  ],
+);
+
+// Phase 18 keeps uploaded media in SQLite so existing database backups also
+// capture the files referenced by content and revision snapshots.
+export const mediaAssets = sqliteTable('media_assets', {
+  id: text('id').primaryKey(),
+  mimeType: text('mime_type').notNull(),
+  data: blob('data', { mode: 'buffer' }).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
+export const homepageSettings = sqliteTable('homepage_settings', {
+  id: text('id').primaryKey(),
+  settings: text('settings_json', { mode: 'json' })
+    .$type<Record<string, unknown>>()
+    .notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});
+
+export const siteSettings = sqliteTable('site_settings', {
+  id: text('id').primaryKey(),
+  settings: text('settings_json', { mode: 'json' })
+    .$type<Record<string, unknown>>()
+    .notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});
+
+export const contentRedirects = sqliteTable('content_redirects', {
+  fromPath: text('from_path').primaryKey(),
+  toPath: text('to_path').notNull(),
+  entityType: text('entity_type').notNull(),
+  entityId: text('entity_id').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
+export const auditLog = sqliteTable(
+  'audit_log',
+  {
+    id: text('id').primaryKey(),
+    actorUserId: text('actor_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    action: text('action').notNull(),
+    entityType: text('entity_type').notNull(),
+    entityId: text('entity_id'),
+    metadata: text('metadata_json', { mode: 'json' })
+      .$type<Record<string, string | number | boolean | null>>()
+      .notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  (table) => [
+    index('audit_log_entity_idx').on(table.entityType, table.entityId),
+    index('audit_log_created_at_idx').on(table.createdAt),
+  ],
+);
+
 export const schema = {
   user,
   session,
@@ -125,4 +303,13 @@ export const schema = {
   verification,
   nowStatus,
   projectRecords,
+  noteRecords,
+  blogRecords,
+  labRecords,
+  contentRevisions,
+  mediaAssets,
+  homepageSettings,
+  siteSettings,
+  contentRedirects,
+  auditLog,
 };

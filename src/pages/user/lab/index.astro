@@ -1,0 +1,152 @@
+---
+import ConsoleShell from '../../../components/astro/ConsoleShell.astro';
+import SectionHeader from '../../../components/astro/SectionHeader.astro';
+import { getConsoleLabEntries } from '../../../lib/server/lab';
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/user/login');
+const entries = await getConsoleLabEntries();
+const error = Astro.url.searchParams.get('error');
+---
+
+<ConsoleShell
+  title="Lab — Angellie Marcos"
+  description="Manage experiments."
+  active="lab"
+  {user}
+>
+  <SectionHeader
+    eyebrow="Private / Lab"
+    title="Lab"
+    description="Track ideas, prototypes, tests, and lessons from your experiments."
+    headingLevel={1}
+  />
+  {
+    error && (
+      <p class="feedback" role="alert">
+        {error === 'slug'
+          ? 'That slug is already in use.'
+          : 'The request could not be completed.'}
+      </p>
+    )
+  }
+  <div class="toolbar">
+    <p>{entries.length} database record{entries.length === 1 ? '' : 's'}</p><a
+      href="/user/lab/new">New experiment</a
+    >
+  </div>
+  {
+    entries.length ? (
+      <div class="list">
+        {entries.map((entry) => (
+          <article>
+            <div>
+              <div class="badges">
+                <span>{entry.status}</span>
+                {entry.visible && <span>Visible</span>}
+                {entry.replacesMdx && <span>Database source</span>}
+                {entry.featured && <span>Featured</span>}
+              </div>
+              <h2>
+                <a href={`/user/lab/${entry.id}`}>{entry.title}</a>
+              </h2>
+              <p>{entry.description}</p>
+              <small>
+                /{entry.slug} ·{' '}
+                {entry.date.toLocaleDateString('en', { dateStyle: 'medium' })}
+              </small>
+            </div>
+            <a href={`/user/lab/${entry.id}`}>Edit →</a>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <div class="empty">
+        <>
+          <h2>No database experiments yet.</h2>
+          <p>
+            The three existing MDX entries remain public until you switch their
+            source.
+          </p>
+          <a href="/user/lab/new">Create an experiment →</a>
+        </>
+      </div>
+    )
+  }
+</ConsoleShell>
+<style>
+  .toolbar,
+  article,
+  .empty {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+  }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.7rem;
+    font: 0.7rem var(--font-mono);
+  }
+  .toolbar p,
+  article p,
+  .empty p {
+    margin: 0;
+    color: var(--muted-foreground);
+  }
+  .list {
+    display: grid;
+    gap: 0.55rem;
+  }
+  article {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  article h2 {
+    margin: 0.5rem 0;
+    font-size: 1rem;
+  }
+  article small {
+    color: var(--muted-foreground);
+    font: 0.65rem var(--font-mono);
+  }
+  article > a,
+  .toolbar a,
+  .empty a {
+    color: var(--accent-text);
+    font: 0.7rem var(--font-mono);
+  }
+  .badges {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+  .badges span {
+    color: var(--accent-text);
+    font: 0.6rem var(--font-mono);
+  }
+  .empty {
+    padding: 1.3rem;
+  }
+  .empty h2 {
+    margin: 0 0 0.5rem;
+  }
+  .empty a {
+    display: inline-block;
+    margin-top: 1rem;
+  }
+  .feedback {
+    padding: 0.7rem;
+    border: 1px solid var(--danger);
+    color: var(--danger-foreground);
+  }
+  @media (max-width: 600px) {
+    article {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>

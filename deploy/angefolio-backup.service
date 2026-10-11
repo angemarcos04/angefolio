@@ -1,0 +1,9 @@
+[Unit]
+Description=Create and upload an encrypted Angefolio database backup
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/angefolio
+ExecStart=/usr/bin/docker compose run --rm backup

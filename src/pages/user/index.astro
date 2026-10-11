@@ -1,0 +1,142 @@
+---
+import BentoCard from '../../components/astro/BentoCard.astro';
+import ConsoleShell from '../../components/astro/ConsoleShell.astro';
+import SectionHeader from '../../components/astro/SectionHeader.astro';
+import Tag from '../../components/astro/Tag.astro';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/user/login');
+
+const description = 'Private workspace for portfolio content.';
+---
+
+<ConsoleShell
+  title="Private workspace — Angellie Marcos"
+  {description}
+  active="overview"
+  {user}
+>
+  <SectionHeader
+    eyebrow="/user"
+    title="Workspace"
+    description="Update what appears on the portfolio."
+    headingLevel={1}
+  />
+
+  <div class="console-grid">
+    <BentoCard
+      accent="medium"
+      eyebrow="Available"
+      title="Now"
+      description="Edit your current focus and choose when it appears on the homepage."
+    >
+      <div class="card-footer">
+        <Tag tone="strong">Protected</Tag>
+        <a href="/user/now">Open editor →</a>
+      </div>
+    </BentoCard>
+
+    <BentoCard
+      accent="soft"
+      eyebrow="Available"
+      title="Homepage"
+      description="Edit the introduction, About copy, stack groups, visible sections, and preview counts."
+    >
+      <div class="card-footer">
+        <Tag tone="strong">Protected</Tag>
+        <a href="/user/homepage">Edit homepage →</a>
+      </div>
+    </BentoCard>
+
+    <BentoCard
+      accent="medium"
+      eyebrow="Available"
+      title="Settings"
+      description="Update the public site name, search description, and contact links."
+    >
+      <div class="card-footer">
+        <Tag tone="strong">Protected</Tag>
+        <a href="/user/settings">Edit site settings →</a>
+      </div>
+    </BentoCard>
+
+    <BentoCard
+      accent="medium"
+      eyebrow="Available"
+      title="Notes"
+      description="Edit writing, preview Markdown, and publish when it is ready."
+    >
+      <div class="card-footer">
+        <Tag tone="strong">Protected</Tag>
+        <a href="/user/notes">Manage notes →</a>
+      </div>
+    </BentoCard>
+
+    <BentoCard
+      accent="soft"
+      eyebrow="Available"
+      title="Blog"
+      description="Write longer articles, preview Markdown, and publish when they are ready."
+    >
+      <div class="card-footer">
+        <Tag tone="strong">Protected</Tag>
+        <a href="/user/blog">Manage posts →</a>
+      </div>
+    </BentoCard>
+
+    <BentoCard
+      accent="strong"
+      eyebrow="Available"
+      title="Projects"
+      description="Manage work, links, visibility, and archive state."
+    >
+      <div class="card-footer">
+        <Tag tone="strong">Protected</Tag>
+        <a href="/user/projects">Manage projects →</a>
+      </div>
+    </BentoCard>
+
+    <BentoCard
+      accent="soft"
+      eyebrow="Available"
+      title="Lab"
+      description="Manage experiment status, writing, and lessons learned."
+    >
+      <div class="card-footer">
+        <Tag tone="strong">Protected</Tag>
+        <a href="/user/lab">Manage Lab →</a>
+      </div>
+    </BentoCard>
+  </div>
+</ConsoleShell>
+
+<style>
+  .console-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .card-footer a {
+    color: var(--accent-text);
+    font: 0.72rem var(--font-mono);
+  }
+  .quiet {
+    margin: 1.25rem 0 0;
+    color: var(--muted-foreground);
+    font-size: 0.82rem;
+  }
+  @media (max-width: 720px) {
+    .console-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

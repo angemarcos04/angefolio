@@ -1,0 +1,62 @@
+---
+import BlogForm from '../../../components/astro/BlogForm.astro';
+import ConsoleShell from '../../../components/astro/ConsoleShell.astro';
+import RevisionHistory from '../../../components/astro/RevisionHistory.astro';
+import SectionHeader from '../../../components/astro/SectionHeader.astro';
+import { getBlogRecord } from '../../../lib/server/blog';
+import { getEntityRevisions } from '../../../lib/server/revisions';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/user/login');
+const post = await getBlogRecord(Astro.params.id ?? '');
+if (!post) return Astro.redirect('/user/blog?error=missing');
+const revisions = await getEntityRevisions('blog', post.id);
+const notice = Astro.url.searchParams.get('notice');
+const error = Astro.url.searchParams.get('error');
+---
+
+<ConsoleShell
+  title={`${post.title} — Angellie Marcos`}
+  description="Edit a blog post."
+  active="blog"
+  {user}
+>
+  <SectionHeader
+    eyebrow="Private / Blog"
+    title="Edit post"
+    description={`/${post.slug} · Updated ${post.updatedAt.toLocaleDateString('en', { dateStyle: 'medium' })}`}
+    headingLevel={1}
+  />
+  {notice === 'saved' && <p class="feedback">Saved.</p>}
+  {notice === 'restored' && <p class="feedback">Version restored.</p>}
+  {
+    notice === 'restore-failed' && (
+      <p class="feedback error">That version could not be restored.</p>
+    )
+  }
+  {
+    error && (
+      <p class="feedback error" role="alert">
+        {error === 'slug'
+          ? 'That slug is already in use or reserved for another route.'
+          : error === 'validation'
+            ? 'Review the fields and make sure a published post has a body.'
+            : 'The request could not be completed.'}
+      </p>
+    )
+  }
+  <BlogForm action="/api/console/blog/save" submitLabel="Save changes" {post} />
+  <RevisionHistory entityType="blog" entityId={post.id} {revisions} />
+</ConsoleShell>
+
+<style>
+  .feedback {
+    padding: 0.7rem;
+    border: 1px solid var(--accent);
+    background: var(--accent-soft);
+  }
+  .error {
+    border-color: var(--danger);
+    background: var(--danger);
+  }
+</style>

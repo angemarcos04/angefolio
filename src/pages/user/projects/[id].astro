@@ -1,0 +1,234 @@
+---
+import ConsoleShell from '../../../components/astro/ConsoleShell.astro';
+import ProjectForm from '../../../components/astro/ProjectForm.astro';
+import SectionHeader from '../../../components/astro/SectionHeader.astro';
+import { getProjectRecordById } from '../../../lib/server/projects';
+import type { ProjectFormValues } from '../../../lib/server/validation/projects';
+import RevisionHistory from '../../../components/astro/RevisionHistory.astro';
+import { getEntityRevisions } from '../../../lib/server/revisions';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/user/login');
+
+const id = Astro.params.id ?? '';
+const project = await getProjectRecordById(id);
+const revisions = project
+  ? await getEntityRevisions('project', project.id)
+  : [];
+const notice = Astro.url.searchParams.get('notice');
+const error = Astro.url.searchParams.get('error');
+const invalidField = Astro.url.searchParams.get('field');
+const fieldLabels: Record<string, string> = {
+  title: 'title',
+  slug: 'slug',
+  description: 'description',
+  status: 'status',
+  category: 'category',
+  role: 'role',
+  problem: 'problem',
+  solution: 'solution',
+  stack: 'stack list',
+  links: 'additional links',
+  github: 'GitHub URL',
+  demo: 'demo URL',
+  caseStudyBody: 'case study body',
+  projectDate: 'project date',
+  highlights: 'highlights',
+  cover: 'cover URL',
+  orderIndex: 'order index',
+};
+const errorMessage =
+  error === 'slug'
+    ? 'That slug is already in use or reserved for another route.'
+    : error === 'route'
+      ? 'That published URL could not be changed safely.'
+      : error === 'validation'
+        ? `Check the ${fieldLabels[invalidField ?? ''] ?? 'project fields'} and try again.`
+        : error === 'invalid'
+          ? 'The request was invalid or did not come from the trusted site origin.'
+          : error === 'unavailable'
+            ? 'The project could not be updated. Try again.'
+            : null;
+const values: Partial<ProjectFormValues> | undefined = project
+  ? {
+      title: project.title,
+      slug: project.slug,
+      description: project.description,
+      status: project.status,
+      category: project.category ?? '',
+      role: project.role ?? '',
+      problem: project.problem ?? '',
+      solution: project.solution ?? '',
+      stack: project.stack.join('\n'),
+      links: project.links
+        .map((link) => `${link.label} | ${link.href}`)
+        .join('\n'),
+      github: project.github ?? '',
+      demo: project.demo ?? '',
+      caseStudyBody: project.caseStudyBody ?? '',
+      projectDate: project.projectDate?.toISOString().slice(0, 10) ?? '',
+      highlights: project.highlights.join('\n'),
+      cover: project.cover ?? '',
+      replacesMdx: project.replacesMdx,
+      featured: project.featured,
+      visible: project.visible,
+      orderIndex: project.orderIndex?.toString() ?? '',
+    }
+  : undefined;
+---
+
+<ConsoleShell
+  title="Edit project — Angellie Marcos"
+  description="Edit a project case study."
+  active="projects"
+  {user}
+>
+  {
+    project && values ? (
+      <>
+        <SectionHeader
+          eyebrow="Private / Projects"
+          title={`Edit ${project.title}`}
+          description={
+            project.archived
+              ? 'This record is archived.'
+              : 'Update details and visibility.'
+          }
+          headingLevel={1}
+        />
+        {notice === 'restored' && (
+          <p class="feedback success" role="status">
+            Version restored. It is now the current version.
+          </p>
+        )}
+        {notice === 'restore-failed' && (
+          <p class="feedback" role="alert">
+            That version could not be restored. A slug may now belong to another
+            record.
+          </p>
+        )}
+        {errorMessage && (
+          <p class="feedback" role="alert">
+            {errorMessage}
+          </p>
+        )}
+        <ProjectForm
+          action={`/api/console/projects/${project.id}/update`}
+          submitLabel={
+            project.archived ? 'Save private changes' : 'Save changes'
+          }
+          {values}
+          archived={project.archived}
+        />
+        {!project.archived && (
+          <form
+            class="archive-panel"
+            method="post"
+            action={`/api/console/projects/${project.id}/archive`}
+          >
+            <input type="hidden" name="intent" value="archive" />
+            <div>
+              <strong>Archive project</strong>
+              <p>
+                {project.replacesMdx
+                  ? 'This hides the public page. Restore it as a draft later.'
+                  : 'This hides the database card. Matching MDX stays public.'}
+              </p>
+            </div>
+            <button type="submit">Archive record</button>
+          </form>
+        )}
+        {project.archived && (
+          <form
+            class="archive-panel restore-panel"
+            method="post"
+            action={`/api/console/projects/${project.id}/restore`}
+          >
+            <input type="hidden" name="intent" value="restore" />
+            <div>
+              <strong>Restore project</strong>
+              <p>It returns as a private draft for review.</p>
+            </div>
+            <button type="submit">Restore</button>
+          </form>
+        )}
+        <RevisionHistory
+          entityType="project"
+          entityId={project.id}
+          {revisions}
+        />
+      </>
+    ) : (
+      <div class="missing">
+        <h1>Project record not found.</h1>
+        <p>The record may have been removed outside the console.</p>
+        <a href="/user/projects">Back to projects →</a>
+      </div>
+    )
+  }
+</ConsoleShell>
+
+<style>
+  .feedback {
+    margin: 0 0 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--danger);
+    background: var(--danger);
+    color: var(--danger-foreground);
+    font: 0.7rem var(--font-mono);
+  }
+  .archive-panel,
+  .missing {
+    margin-top: 0.75rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    background: var(--card);
+  }
+  .archive-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .archive-panel strong {
+    color: var(--danger-text);
+    font: 0.75rem var(--font-mono);
+  }
+  .archive-panel p,
+  .missing p {
+    margin: 0.35rem 0 0;
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+  }
+  .archive-panel button {
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--danger);
+    background: var(--danger);
+    color: var(--danger-foreground);
+    font: 0.68rem var(--font-mono);
+    cursor: pointer;
+  }
+  .restore-panel strong {
+    color: var(--accent-text);
+  }
+  .restore-panel button {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-text);
+  }
+  .missing h1 {
+    margin-top: 0;
+  }
+  .missing a {
+    display: inline-block;
+    margin-top: 1rem;
+    color: var(--accent-text);
+    font: 0.72rem var(--font-mono);
+  }
+  @media (max-width: 640px) {
+    .archive-panel {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>

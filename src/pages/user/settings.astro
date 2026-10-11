@@ -1,0 +1,164 @@
+---
+import BentoCard from '../../components/astro/BentoCard.astro';
+import ConsoleShell from '../../components/astro/ConsoleShell.astro';
+import RevisionHistory from '../../components/astro/RevisionHistory.astro';
+import SectionHeader from '../../components/astro/SectionHeader.astro';
+import {
+  primarySiteSettingsId,
+  getPublicSiteSettings,
+} from '../../lib/server/siteSettings';
+import { getEntityRevisions } from '../../lib/server/revisions';
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/user/login');
+const [settings, revisions] = await Promise.all([
+  getPublicSiteSettings(),
+  getEntityRevisions('site_settings', primarySiteSettingsId),
+]);
+const saved = Astro.url.searchParams.get('saved') === '1';
+const notice = Astro.url.searchParams.get('notice');
+const error = Astro.url.searchParams.get('error');
+const description = 'Edit public site identity and contact links.';
+---
+
+<ConsoleShell
+  title="Settings — Angellie Marcos"
+  {description}
+  active="settings"
+  {user}
+>
+  <SectionHeader
+    eyebrow="Private / Settings"
+    title="Site settings"
+    description="Edit the public name, search description, and contact links. The canonical domain and secrets stay in deployment configuration."
+    headingLevel={1}
+  />
+
+  {
+    saved && (
+      <p class="feedback success" role="status">
+        Site settings saved.
+      </p>
+    )
+  }
+  {
+    notice === 'restored' && (
+      <p class="feedback success" role="status">
+        Saved version restored.
+      </p>
+    )
+  }
+  {
+    notice === 'restore-failed' && (
+      <p class="feedback" role="alert">
+        That version could not be restored.
+      </p>
+    )
+  }
+  {
+    error === 'validation' && (
+      <p class="feedback" role="alert">
+        Check the field limits and use a GitHub profile URL and valid email
+        address.
+      </p>
+    )
+  }
+  {
+    error === 'invalid' && (
+      <p class="feedback" role="alert">
+        The request was invalid or did not come from the trusted site origin.
+      </p>
+    )
+  }
+  {
+    error === 'unavailable' && (
+      <p class="feedback" role="alert">
+        Settings could not be saved. Try again.
+      </p>
+    )
+  }
+
+  <BentoCard accent="medium" class="settings-card">
+    <form action="/api/console/settings" method="post">
+      <label>
+        <span>Site name</span>
+        <input
+          name="siteName"
+          maxlength="50"
+          required
+          value={settings.siteName}
+        />
+      </label>
+      <label>
+        <span>Public name</span>
+        <input name="name" maxlength="100" required value={settings.name} />
+      </label>
+      <label>
+        <span>Search description</span>
+        <textarea name="seoDescription" maxlength="320" rows="4" required
+          >{settings.seoDescription}</textarea
+        >
+        <small
+          >Used as the default page description, up to 320 characters.</small
+        >
+      </label>
+      <label>
+        <span>GitHub profile</span>
+        <input
+          type="url"
+          name="github"
+          maxlength="2048"
+          required
+          value={settings.github}
+        />
+        <small>Must be an HTTPS URL on github.com.</small>
+      </label>
+      <label>
+        <span>Public email</span>
+        <input
+          type="email"
+          name="email"
+          maxlength="254"
+          required
+          value={settings.email}
+        />
+      </label>
+      <button type="submit">Save settings</button>
+    </form>
+  </BentoCard>
+
+  <RevisionHistory
+    entityType="site_settings"
+    entityId={primarySiteSettingsId}
+    {revisions}
+  />
+</ConsoleShell>
+
+<style>
+  .settings-card {
+    padding: 1rem;
+  }
+  form {
+    display: grid;
+    gap: 1rem;
+  }
+  label {
+    display: grid;
+    gap: 0.4rem;
+  }
+  label > span {
+    font: 0.7rem var(--font-mono);
+    color: var(--muted-foreground);
+  }
+  input,
+  textarea {
+    width: 100%;
+  }
+  small {
+    color: var(--muted-foreground);
+    font: 0.65rem/1.5 var(--font-mono);
+  }
+  button {
+    justify-self: start;
+  }
+</style>

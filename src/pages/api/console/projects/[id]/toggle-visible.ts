@@ -16,31 +16,31 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
   if (!id || id.length > 64 || !hasTrustedOrigin(request)) {
     return new Response(null, {
       status: 303,
-      headers: { location: '/console/projects?error=unavailable' },
+      headers: { location: '/user/projects?error=unavailable' },
     });
   }
   const form = await readUrlEncodedForm(request);
   if (!form || form.get('intent') !== 'toggle-visible') {
     return new Response(null, {
       status: 303,
-      headers: { location: '/console/projects?error=unavailable' },
+      headers: { location: '/user/projects?error=unavailable' },
     });
   }
 
   try {
-    const changed = await toggleProjectVisible(id);
+    const changed = await toggleProjectVisible(id, locals.user.id);
     return new Response(null, {
       status: 303,
       headers: {
         location: changed
-          ? '/console/projects?notice=visibility'
-          : '/console/projects?error=missing',
+          ? '/user/projects?notice=visibility'
+          : '/user/projects?error=missing',
       },
     });
   } catch {
     return new Response(null, {
       status: 303,
-      headers: { location: '/console/projects?error=unavailable' },
+      headers: { location: '/user/projects?error=unavailable' },
     });
   }
 };

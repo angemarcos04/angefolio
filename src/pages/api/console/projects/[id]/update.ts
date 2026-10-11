@@ -9,14 +9,17 @@ import {
   readUrlEncodedForm,
 } from '../../../../../lib/server/security';
 import { validateProjectForm } from '../../../../../lib/server/validation/projects';
+import { getPublicProjectCatalog } from '../../../../../lib/server/publicProjects';
+import { getAllProjects, getProjectSlug } from '../../../../../lib/content';
+import { SlugRedirectConflictError } from '../../../../../lib/server/redirects';
 
-const maximumProjectFormBytes = 64 * 1024;
+const maximumProjectFormBytes = 512 * 1024;
 
 function redirect(id: string, code: string): Response {
   return new Response(null, {
     status: 303,
     headers: {
-      location: `/console/projects/${encodeURIComponent(id)}?error=${code}`,
+      location: `/user/projects/${encodeURIComponent(id)}?error=${code}`,
     },
   });
 }
@@ -29,7 +32,7 @@ function validationRedirect(
   return new Response(null, {
     status: 303,
     headers: {
-      location: `/console/projects/${encodeURIComponent(id)}?error=validation&field=${encodeURIComponent(field)}`,
+      location: `/user/projects/${encodeURIComponent(id)}?error=validation&field=${encodeURIComponent(field)}`,
     },
   });
 }
@@ -55,7 +58,7 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
     if (!existing) {
       return new Response(null, {
         status: 303,
-        headers: { location: '/console/projects?error=missing' },
+        headers: { location: '/user/projects?error=missing' },
       });
     }
 
@@ -67,12 +70,33 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
     const slugOwner = await getConsoleProjectBySlug(result.data.slug);
     if (slugOwner && slugOwner.id !== id) return redirect(id, 'slug');
 
-    await updateProjectRecord(id, result.data);
+    const mdxCollision = (await getAllProjects()).some(
+      (entry) => getProjectSlug(entry) === result.data.slug,
+    );
+    if (
+      mdxCollision &&
+      result.data.slug !== existing.slug &&
+      !result.data.replacesMdx
+    ) {
+      return redirect(id, 'slug');
+    }
+    const currentPublic = (await getPublicProjectCatalog()).some(
+      (project) =>
+        project.slug === existing.slug && project.source === 'database',
+    );
+
+    await updateProjectRecord(
+      id,
+      result.data,
+      locals.user.id,
+      currentPublic && result.data.visible && !existing.archived,
+    );
     return new Response(null, {
       status: 303,
-      headers: { location: '/console/projects?notice=updated' },
+      headers: { location: '/user/projects?notice=updated' },
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof SlugRedirectConflictError) return redirect(id, 'slug');
     return redirect(id, 'unavailable');
   }
 };

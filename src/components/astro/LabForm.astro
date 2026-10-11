@@ -1,0 +1,232 @@
+---
+import MarkdownEditor from '../svelte/MarkdownEditor.svelte';
+import type { LabRecord } from '../../lib/server/lab';
+import { labRisks, labStatuses } from '../../lib/server/validation/lab';
+
+interface Props {
+  action: string;
+  submitLabel: string;
+  entry?: LabRecord;
+}
+const { action, submitLabel, entry } = Astro.props;
+const asLines = (value: unknown) =>
+  Array.isArray(value) ? value.join('\n') : '';
+const date = (value?: Date | null) => value?.toISOString().slice(0, 10) ?? '';
+---
+
+<form class="lab-form" method="post" action={action}>
+  {entry && <input type="hidden" name="id" value={entry.id} />}
+  <div class="fields">
+    <label
+      >Title<input
+        name="title"
+        required
+        maxlength="120"
+        value={entry?.title ?? ''}
+      /></label
+    >
+    <label
+      >URL slug<input
+        name="slug"
+        required
+        maxlength="80"
+        pattern="[a-z0-9]+(-[a-z0-9]+)*"
+        value={entry?.slug ?? ''}
+      />
+      <small
+        >Changing a published slug keeps the old URL working through a permanent
+        redirect.</small
+      ></label
+    >
+    <label class="wide"
+      >Description<textarea name="description" required maxlength="300" rows="2"
+        >{entry?.description ?? ''}</textarea
+      ></label
+    >
+    <label
+      >Status<select name="status"
+        >{
+          labStatuses.map((status) => (
+            <option value={status} selected={entry?.status === status}>
+              {status}
+            </option>
+          ))
+        }</select
+      ></label
+    >
+    <label
+      >Category<input
+        name="category"
+        maxlength="80"
+        value={entry?.category ?? ''}
+      /></label
+    >
+    <label
+      >Logged date<input
+        name="date"
+        type="date"
+        required
+        value={date(entry?.date) || new Date().toISOString().slice(0, 10)}
+      /></label
+    >
+    <label
+      >Updated date<input
+        name="updatedAt"
+        type="date"
+        value={date(entry?.updatedAt)}
+      /></label
+    >
+    <label
+      >Risk<select name="risk"
+        ><option value="">Not specified</option>{
+          labRisks.map((risk) => (
+            <option value={risk} selected={entry?.risk === risk}>
+              {risk}
+            </option>
+          ))
+        }</select
+      ></label
+    >
+    <label
+      >Repository URL<input
+        name="repo"
+        type="url"
+        maxlength="2048"
+        value={entry?.repo ?? ''}
+      /></label
+    >
+    <label
+      >Demo URL<input
+        name="demo"
+        type="url"
+        maxlength="2048"
+        value={entry?.demo ?? ''}
+      /></label
+    >
+    <label class="wide"
+      >Related project path or URL<input
+        name="relatedProject"
+        maxlength="2048"
+        value={entry?.relatedProject ?? ''}
+      /></label
+    >
+    <label class="wide"
+      >Tags <small>One per line</small><textarea name="tags" rows="3"
+        >{asLines(entry?.tags)}</textarea
+      ></label
+    >
+    <label class="wide"
+      >Tools <small>One per line</small><textarea name="tools" rows="3"
+        >{asLines(entry?.tools)}</textarea
+      ></label
+    >
+    <label class="wide"
+      >Lessons <small>One per line</small><textarea name="lessons" rows="4"
+        >{asLines(entry?.lessons)}</textarea
+      ></label
+    >
+  </div>
+  <label class="body-label">Experiment notes</label>
+  <MarkdownEditor
+    client:load
+    value={entry?.body ?? ''}
+    fieldName="body"
+    ariaLabel="Experiment notes in Markdown"
+    maxLength={200000}
+  />
+  <div class="options">
+    <label
+      ><input
+        type="checkbox"
+        name="visible"
+        checked={entry?.visible ?? false}
+      /> Visible</label
+    >
+    <label
+      ><input
+        type="checkbox"
+        name="featured"
+        checked={entry?.featured ?? false}
+      /> Featured</label
+    >
+    <label
+      ><input
+        type="checkbox"
+        name="replacesMdx"
+        checked={entry?.replacesMdx ?? false}
+      /> Use this record for the public page</label
+    >
+  </div>
+  <p class="help">
+    Existing MDX entries stay public until you switch the source. Hidden records
+    remain private.
+  </p>
+  <button type="submit">{submitLabel}</button>
+</form>
+<style>
+  .lab-form {
+    display: grid;
+    gap: 1rem;
+  }
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+  }
+  label {
+    display: grid;
+    gap: 0.35rem;
+    color: var(--muted-foreground);
+    font: 0.68rem var(--font-mono);
+  }
+  label small,
+  .help {
+    color: var(--muted-foreground);
+    font-size: 0.72rem;
+  }
+  input:not([type='checkbox']),
+  textarea,
+  select {
+    width: 100%;
+    padding: 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    color: var(--foreground);
+    font: 0.85rem/1.5 var(--type-body);
+  }
+  .wide {
+    grid-column: 1/-1;
+  }
+  .body-label {
+    margin-bottom: -0.7rem;
+  }
+  .options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .options label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .help {
+    margin: -0.6rem 0 0;
+  }
+  button {
+    justify-self: start;
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    font: 0.72rem var(--font-mono);
+    cursor: pointer;
+  }
+  @media (max-width: 640px) {
+    .fields {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

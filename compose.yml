@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runtime
     container_name: angefolio
     ports:
       - '4321:4321'
@@ -23,6 +24,29 @@ services:
     tmpfs:
       - /tmp
     stop_grace_period: 10s
+
+  backup:
+    profiles: ['backup']
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backup
+    environment:
+      DATABASE_URL: file:/app/data/angefolio.db
+      BACKUP_REMOTE: ${BACKUP_REMOTE:-}
+      BACKUP_AGE_RECIPIENT: ${BACKUP_AGE_RECIPIENT:-}
+      RCLONE_CONFIG: /run/secrets/rclone.conf
+    volumes:
+      - portfolio_data:/app/data
+      - ${RCLONE_CONFIG_PATH:-./rclone.conf}:/run/secrets/rclone.conf:ro
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    restart: 'no'
+    healthcheck:
+      disable: true
 
 volumes:
   portfolio_data:

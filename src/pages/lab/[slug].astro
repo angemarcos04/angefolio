@@ -1,5 +1,5 @@
 ---
-import { render, type CollectionEntry } from 'astro:content';
+import { render } from 'astro:content';
 import BentoCard from '../../components/astro/BentoCard.astro';
 import Button from '../../components/astro/Button.astro';
 import CollectionHeader from '../../components/astro/CollectionHeader.astro';
@@ -8,34 +8,32 @@ import Layout from '../../components/astro/Layout.astro';
 import ProjectMeta from '../../components/astro/ProjectMeta.astro';
 import StatusPill from '../../components/astro/StatusPill.astro';
 import Tag from '../../components/astro/Tag.astro';
-import { getVisibleLabEntries } from '../../lib/content';
 import { formatDate } from '../../lib/date';
+import { renderProjectMarkdown } from '../../lib/server/markdown';
+import { getPublicLabCatalog } from '../../lib/server/lab';
+import { getContentRedirectTarget } from '../../lib/server/redirects';
 
-export const prerender = true;
-import { getLabSlug, getLabUrl } from '../../lib/lab';
-
-export async function getStaticPaths() {
-  const entries = await getVisibleLabEntries();
-
-  return entries.map((entry, index) => ({
-    params: { slug: getLabSlug(entry) },
-    props: {
-      entry,
-      newerEntry: entries[index - 1],
-      olderEntry: entries[index + 1],
+export const prerender = false;
+const redirectTarget = await getContentRedirectTarget(`/lab/${Astro.params.slug}`);
+if (redirectTarget) {
+  return new Response(null, {
+    status: 308,
+    headers: {
+      location: redirectTarget,
+      'cache-control': 'public, max-age=3600',
     },
-  }));
+  });
 }
-
-interface Props {
-  entry: CollectionEntry<'lab'>;
-  newerEntry?: CollectionEntry<'lab'>;
-  olderEntry?: CollectionEntry<'lab'>;
-}
-
-const { entry, newerEntry, olderEntry } = Astro.props;
-const { data } = entry;
-const { Content } = await render(entry);
+const entries = await getPublicLabCatalog();
+const index = entries.findIndex((item) => item.slug === Astro.params.slug);
+const entry = entries[index];
+if (!entry) return new Response('Lab entry not found.', { status: 404 });
+const data = entry;
+const Content = entry.entry ? (await render(entry.entry)).Content : null;
+const renderedBody =
+  entry.source === 'database' ? renderProjectMarkdown(entry.body) : '';
+const newerEntry = entries[index - 1];
+const olderEntry = entries[index + 1];
 const links = [
   ...(data.demo
     ? [{ label: 'Open demo', href: data.demo, external: true }]
@@ -143,7 +141,7 @@ const links = [
   }
 
   <article class="prose-shell bento-surface">
-    <Content />
+    {Content ? <Content /> : <div set:html={renderedBody} />}
   </article>
 
   <nav class="lab-navigation" aria-label="Lab entry navigation">
@@ -151,7 +149,7 @@ const links = [
       <span>Older experiment</span>
       {
         olderEntry ? (
-          <a href={getLabUrl(olderEntry)}>← {olderEntry.data.title}</a>
+          <a href={`/lab/${olderEntry.slug}`}>← {olderEntry.title}</a>
         ) : (
           <span>End of archive</span>
         )
@@ -161,7 +159,7 @@ const links = [
       <span>Newer experiment</span>
       {
         newerEntry ? (
-          <a href={getLabUrl(newerEntry)}>{newerEntry.data.title} →</a>
+          <a href={`/lab/${newerEntry.slug}`}>{newerEntry.title} →</a>
         ) : (
           <a href="/lab">All experiments →</a>
         )

@@ -26,8 +26,8 @@ export default defineConfig({
     }),
     mdx(),
     sitemap({
-      // Private console routes must never be advertised by the public sitemap.
-      filter: (page) => !new URL(page).pathname.startsWith('/console'),
+      // Private workspace routes must never be advertised by the public sitemap.
+      filter: (page) => !new URL(page).pathname.startsWith('/user'),
     }),
   ],
   vite: {

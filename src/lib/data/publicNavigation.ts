@@ -1,5 +1,5 @@
 export interface PublicRoute {
-  key: 'home' | 'projects' | 'notes' | 'lab' | 'search';
+  key: 'home' | 'projects' | 'notes' | 'blog' | 'lab' | 'search';
   href: string;
   label: string;
   matches: (pathname: string) => boolean;
@@ -32,6 +32,13 @@ export const primaryPublicRoutes: PublicRoute[] = [
     label: 'Notes',
     matches: (pathname) =>
       pathname === '/notes' || pathname.startsWith('/notes/'),
+  },
+  {
+    key: 'blog',
+    href: '/blog',
+    label: 'Blog',
+    matches: (pathname) =>
+      pathname === '/blog' || pathname.startsWith('/blog/'),
   },
   {
     key: 'lab',

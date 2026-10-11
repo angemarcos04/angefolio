@@ -16,7 +16,7 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
   if (!id || id.length > 64 || !hasTrustedOrigin(request)) {
     return new Response(null, {
       status: 303,
-      headers: { location: '/console/projects?error=unavailable' },
+      headers: { location: '/user/projects?error=unavailable' },
     });
   }
 
@@ -24,24 +24,24 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
   if (!form || form.get('intent') !== 'archive') {
     return new Response(null, {
       status: 303,
-      headers: { location: '/console/projects?error=unavailable' },
+      headers: { location: '/user/projects?error=unavailable' },
     });
   }
 
   try {
-    const archived = await archiveProjectRecord(id);
+    const archived = await archiveProjectRecord(id, locals.user.id);
     return new Response(null, {
       status: 303,
       headers: {
         location: archived
-          ? '/console/projects?notice=archived'
-          : '/console/projects?error=missing',
+          ? '/user/projects?notice=archived'
+          : '/user/projects?error=missing',
       },
     });
   } catch {
     return new Response(null, {
       status: 303,
-      headers: { location: '/console/projects?error=unavailable' },
+      headers: { location: '/user/projects?error=unavailable' },
     });
   }
 };

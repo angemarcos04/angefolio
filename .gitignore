@@ -4,6 +4,7 @@ dist/
 .env
 .env.*
 !.env.example
+rclone.conf
 .DS_Store
 pagefind/
 playwright-report/

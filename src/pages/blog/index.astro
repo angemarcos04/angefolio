@@ -1,0 +1,94 @@
+---
+import ArchiveIntro from '../../components/astro/ArchiveIntro.astro';
+import CardGrid from '../../components/astro/CardGrid.astro';
+import CollectionHeader from '../../components/astro/CollectionHeader.astro';
+import Layout from '../../components/astro/Layout.astro';
+import NoteCard from '../../components/astro/NoteCard.astro';
+import Tag from '../../components/astro/Tag.astro';
+import { getPublicBlogCatalog } from '../../lib/server/blog';
+import { getPublicSiteSettings } from '../../lib/server/siteSettings';
+
+export const prerender = false;
+const [posts, settings] = await Promise.all([
+  getPublicBlogCatalog(),
+  getPublicSiteSettings(),
+]);
+const description =
+  'Articles, tutorials, and longer reflections by Angellie Marcos.';
+const categories = [...new Set(posts.map((post) => post.category))].sort();
+const tags = [...new Set(posts.flatMap((post) => post.tags))].sort();
+---
+
+<Layout title={`Blog — ${settings.name}`} {description}>
+  <CollectionHeader active="blog" />
+  <ArchiveIntro
+    id="blog-title"
+    path="/blog"
+    title="Blog"
+    {description}
+    count={`${posts.length} published ${posts.length === 1 ? 'post' : 'posts'}`}
+    asideTitle="Longer-form writing"
+  >
+    <p class="archive-note">
+      Articles, tutorials, and ideas that deserve more room to unfold.
+    </p>
+    {
+      categories.length > 0 && (
+        <div class="archive-topic">
+          <strong>Categories</strong>
+          <p>{categories.join(', ')}</p>
+        </div>
+      )
+    }
+    {
+      tags.length > 0 && (
+        <div class="archive-topic">
+          <strong>Tags</strong>
+          <div class="archive-tags">
+            {tags.map((tag) => (
+              <Tag>{tag}</Tag>
+            ))}
+          </div>
+        </div>
+      )
+    }
+  </ArchiveIntro>
+  <section aria-label="Blog archive">
+    {
+      posts.length ? (
+        <CardGrid class="collection-grid">
+          {posts.map((post) => (
+            <NoteCard
+              href={`/blog/${post.slug}`}
+              title={post.title}
+              description={post.summary ?? post.description}
+              category={post.category}
+              tags={post.tags}
+              createdAt={post.createdAt}
+              updatedAt={post.updatedAt}
+              featured={post.featured}
+            />
+          ))}
+        </CardGrid>
+      ) : (
+        <p class="empty-state">No published posts yet.</p>
+      )
+    }
+  </section>
+</Layout>
+
+<style>
+  :global(.collection-grid .content-card) {
+    height: 100%;
+    border-radius: var(--radius-md);
+    box-shadow: none;
+  }
+  .empty-state {
+    margin: 0;
+    padding: 2rem;
+    border: 1px dashed var(--border);
+    background: var(--card);
+    color: var(--muted-foreground);
+    font: 1rem/1.65 var(--type-body);
+  }
+</style>

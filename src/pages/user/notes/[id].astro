@@ -1,0 +1,68 @@
+---
+import ConsoleShell from '../../../components/astro/ConsoleShell.astro';
+import NoteForm from '../../../components/astro/NoteForm.astro';
+import SectionHeader from '../../../components/astro/SectionHeader.astro';
+import { getNoteRecord } from '../../../lib/server/notes';
+import RevisionHistory from '../../../components/astro/RevisionHistory.astro';
+import { getEntityRevisions } from '../../../lib/server/revisions';
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/user/login');
+const note = await getNoteRecord(Astro.params.id ?? '');
+if (!note) return Astro.redirect('/user/notes?error=missing');
+const revisions = await getEntityRevisions('note', note.id);
+const notice = Astro.url.searchParams.get('notice');
+const error = Astro.url.searchParams.get('error');
+---
+
+<ConsoleShell
+  title={`${note.title} — Angellie Marcos`}
+  description="Edit a portfolio note."
+  active="notes"
+  {user}
+>
+  <SectionHeader
+    eyebrow="Private / Notes"
+    title="Edit note"
+    description={`/${note.slug} · Updated ${note.updatedAt.toLocaleDateString('en', { dateStyle: 'medium' })}`}
+    headingLevel={1}
+  />
+  {notice === 'saved' && <p class="feedback">Saved.</p>}
+  {
+    notice === 'restored' && (
+      <p class="feedback">Version restored. It is now the current version.</p>
+    )
+  }
+  {
+    notice === 'restore-failed' && (
+      <p class="feedback error">That version could not be restored.</p>
+    )
+  }
+  {
+    error && (
+      <p class="feedback error">
+        {error === 'slug'
+          ? 'That slug is already in use or reserved for another route.'
+          : error === 'route'
+            ? 'That route cannot be changed safely.'
+            : 'The request could not be completed. Review the fields and try again.'}
+      </p>
+    )
+  }
+  <NoteForm
+    action="/api/console/notes/save"
+    submitLabel="Save changes"
+    {note}
+  />
+  <RevisionHistory entityType="note" entityId={note.id} {revisions} />
+</ConsoleShell>
+<style>
+  .feedback {
+    padding: 0.7rem;
+    border: 1px solid var(--accent);
+    background: var(--accent-soft);
+  }
+  .error {
+    border-color: var(--danger);
+    background: var(--danger);
+  }
+</style>

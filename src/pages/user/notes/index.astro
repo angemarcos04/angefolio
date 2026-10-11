@@ -1,0 +1,153 @@
+---
+import ConsoleShell from '../../../components/astro/ConsoleShell.astro';
+import SectionHeader from '../../../components/astro/SectionHeader.astro';
+import { getConsoleNotes } from '../../../lib/server/notes';
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/user/login');
+const notes = await getConsoleNotes();
+const error = Astro.url.searchParams.get('error');
+---
+
+<ConsoleShell
+  title="Notes — Angellie Marcos"
+  description="Manage portfolio writing."
+  active="notes"
+  {user}
+>
+  <SectionHeader
+    eyebrow="Private / Notes"
+    title="Notes"
+    description="Edit writing, draft safely, and choose when a database version becomes public."
+    headingLevel={1}
+  />
+  {
+    error && (
+      <p class="feedback" role="alert">
+        {error === 'slug'
+          ? 'That slug is already in use.'
+          : 'The request could not be completed.'}
+      </p>
+    )
+  }
+  <div class="toolbar">
+    <p>{notes.length} database record{notes.length === 1 ? '' : 's'}</p><a
+      href="/user/notes/new">New note</a
+    >
+  </div>
+  {
+    notes.length ? (
+      <div class="list">
+        {notes.map((note) => (
+          <article>
+            <div>
+              <div class="badges">
+                <span>{note.published ? 'Published' : 'Draft'}</span>
+                {note.replacesMdx && <span>Database source</span>}
+                {note.featured && <span>Featured</span>}
+              </div>
+              <h2>
+                <a href={`/user/notes/${note.id}`}>{note.title}</a>
+              </h2>
+              <p>{note.description}</p>
+              <small>
+                /{note.slug} · Updated{' '}
+                {note.updatedAt.toLocaleDateString('en', {
+                  dateStyle: 'medium',
+                })}
+              </small>
+            </div>
+            <a href={`/user/notes/${note.id}`}>Edit →</a>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <div class="empty">
+        <>
+          <h2>No database notes yet.</h2>
+          <p>
+            The three current MDX notes remain public until a database record is
+            explicitly switched in.
+          </p>
+          <a href="/user/notes/new">Create a note →</a>
+        </>
+      </div>
+    )
+  }
+</ConsoleShell>
+<style>
+  .toolbar,
+  article,
+  .empty {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+  }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.7rem;
+    font: 0.7rem var(--font-mono);
+  }
+  .toolbar p,
+  article p,
+  .empty p {
+    margin: 0;
+    color: var(--muted-foreground);
+  }
+  .list {
+    display: grid;
+    gap: 0.55rem;
+  }
+  article {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  article h2 {
+    margin: 0.5rem 0;
+    font-size: 1rem;
+  }
+  article small {
+    color: var(--muted-foreground);
+    font: 0.65rem var(--font-mono);
+  }
+  article > a,
+  .toolbar a,
+  .empty a {
+    color: var(--accent-text);
+    font: 0.7rem var(--font-mono);
+  }
+  .badges {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+  .badges span {
+    color: var(--accent-text);
+    font: 0.6rem var(--font-mono);
+  }
+  .empty {
+    padding: 1.3rem;
+  }
+  .empty h2 {
+    margin: 0 0 0.5rem;
+  }
+  .empty a {
+    display: inline-block;
+    margin-top: 1rem;
+  }
+  .feedback {
+    padding: 0.7rem;
+    border: 1px solid var(--danger);
+    color: var(--danger-foreground);
+  }
+  @media (max-width: 600px) {
+    article {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>

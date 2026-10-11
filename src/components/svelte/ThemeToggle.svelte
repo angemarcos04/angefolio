@@ -64,7 +64,7 @@
 <style>
   button {
     display: inline-flex;
-    min-height: 2.35rem;
+    min-height: 2.6rem;
     align-items: center;
     justify-content: center;
     gap: 0.45rem;
@@ -74,7 +74,7 @@
     background: var(--muted);
     color: var(--foreground);
     font-family: var(--type-ui);
-    font-size: 0.7rem;
+    font-size: 0.82rem;
     font-weight: 600;
     font-variant-ligatures: none;
     font-feature-settings:

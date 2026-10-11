@@ -1,0 +1,131 @@
+---
+import BentoGrid from './BentoGrid.astro';
+
+interface Props {
+  id: string;
+  path: string;
+  title: string;
+  description: string;
+  count?: string;
+  asideTitle: string;
+}
+
+const { id, path, title, description, count, asideTitle } = Astro.props;
+---
+
+<BentoGrid class="archive-intro">
+  <section
+    class="archive-hero bento-surface subtle-grid md:col-span-2 lg:col-span-8"
+    aria-labelledby={id}
+  >
+    <p class="eyebrow">{path}</p>
+    <h1 id={id} class="text-balance">{title}</h1>
+    <p class="archive-description">{description}</p>
+    {count && <p class="archive-count">{count}</p>}
+  </section>
+  <aside class="archive-aside bento-surface md:col-span-2 lg:col-span-4">
+    <p class="eyebrow">At a glance</p>
+    <h2>{asideTitle}</h2>
+    <slot />
+  </aside>
+</BentoGrid>
+
+<style>
+  :global(.archive-intro) {
+    align-items: stretch;
+    margin-bottom: 1rem;
+  }
+  .archive-hero,
+  .archive-aside {
+    min-width: 0;
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+  .archive-hero {
+    position: relative;
+    display: flex;
+    min-height: 15rem;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    border-left: 2px solid var(--accent-hover);
+  }
+  .eyebrow {
+    margin: 0 0 0.55rem;
+  }
+  h1 {
+    max-width: 18ch;
+    margin: 0;
+    font-size: clamp(2.25rem, 5vw, 3.5rem);
+    line-height: 1.15;
+  }
+  .archive-description {
+    max-width: 65ch;
+    margin: 0.9rem 0 0;
+    color: var(--muted-foreground);
+    font-size: clamp(0.95rem, 1.4vw, 1.08rem);
+  }
+  .archive-count {
+    width: fit-content;
+    margin: 1.3rem 0 0;
+    padding: 0.3rem 0.55rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    color: var(--accent-text);
+    font: 0.72rem/1.4 var(--type-ui);
+  }
+  .archive-aside {
+    border-left: 2px solid var(--accent);
+  }
+  h2 {
+    margin: 0 0 0.8rem;
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+    line-height: 1.25;
+  }
+  .archive-aside :global(p:not(.eyebrow)) {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: 0.92rem;
+  }
+  .archive-aside :global(.archive-note) {
+    margin-bottom: 1rem;
+  }
+  .archive-aside :global(.archive-tags) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .archive-aside :global(.archive-topic + .archive-topic) {
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+  .archive-aside :global(.archive-note + .archive-topic) {
+    margin-top: 1rem;
+  }
+  .archive-aside :global(.archive-links) {
+    display: grid;
+    gap: 0.45rem;
+    margin-top: 1rem;
+  }
+  .archive-aside :global(.archive-links a) {
+    color: var(--accent-text);
+    font: 0.78rem var(--type-ui);
+  }
+  .archive-aside :global(.archive-links a:hover) {
+    color: var(--accent-hover);
+  }
+  .archive-aside :global(.archive-topic strong) {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--accent-text);
+    font: 0.65rem var(--type-ui);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  @media (max-width: 760px) {
+    .archive-hero {
+      min-height: 0;
+    }
+  }
+</style>
