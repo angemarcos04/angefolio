@@ -5,9 +5,9 @@ interface Props {
   id: string;
   path: string;
   title: string;
-  description: string;
+  description?: string;
   count?: string;
-  asideTitle: string;
+  asideTitle?: string;
 }
 
 const { id, path, title, description, count, asideTitle } = Astro.props;
@@ -15,19 +15,26 @@ const { id, path, title, description, count, asideTitle } = Astro.props;
 
 <BentoGrid class="archive-intro">
   <section
-    class="archive-hero bento-surface subtle-grid md:col-span-2 lg:col-span-8"
+    class:list={[
+      'archive-hero bento-surface subtle-grid md:col-span-2',
+      asideTitle ? 'lg:col-span-8' : 'lg:col-span-12',
+    ]}
     aria-labelledby={id}
   >
     <p class="eyebrow">{path}</p>
     <h1 id={id} class="text-balance">{title}</h1>
-    <p class="archive-description">{description}</p>
+    {description && <p class="archive-description">{description}</p>}
     {count && <p class="archive-count">{count}</p>}
   </section>
-  <aside class="archive-aside bento-surface md:col-span-2 lg:col-span-4">
-    <p class="eyebrow">At a glance</p>
-    <h2>{asideTitle}</h2>
-    <slot />
-  </aside>
+  {
+    asideTitle && (
+      <aside class="archive-aside bento-surface md:col-span-2 lg:col-span-4">
+        <p class="eyebrow">At a glance</p>
+        <h2>{asideTitle}</h2>
+        <slot />
+      </aside>
+    )
+  }
 </BentoGrid>
 
 <style>

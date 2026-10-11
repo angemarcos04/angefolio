@@ -13,25 +13,19 @@ const [posts, settings] = await Promise.all([
   getPublicBlogCatalog(),
   getPublicSiteSettings(),
 ]);
-const description =
-  'Articles, tutorials, and longer reflections by Angellie Marcos.';
 const categories = [...new Set(posts.map((post) => post.category))].sort();
 const tags = [...new Set(posts.flatMap((post) => post.tags))].sort();
 ---
 
-<Layout title={`Blog — ${settings.name}`} {description}>
+<Layout title={`Blog — ${settings.name}`}>
   <CollectionHeader active="blog" />
   <ArchiveIntro
     id="blog-title"
     path="/blog"
     title="Blog"
-    {description}
     count={`${posts.length} published ${posts.length === 1 ? 'post' : 'posts'}`}
     asideTitle="Longer-form writing"
   >
-    <p class="archive-note">
-      Articles, tutorials, and ideas that deserve more room to unfold.
-    </p>
     {
       categories.length > 0 && (
         <div class="archive-topic">

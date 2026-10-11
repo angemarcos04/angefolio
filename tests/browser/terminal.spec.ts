@@ -219,6 +219,27 @@ test('mobile navigation exposes routes, appearance, and keyboard dismissal', asy
   await expect(summary).toBeFocused();
 });
 
+test('hero roles stay visible without a cycling animation', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/');
+
+  const roles = page.locator('.role-item');
+  await expect(roles.first()).toBeVisible();
+  const originalText = await roles.allTextContents();
+  expect(originalText.length).toBeGreaterThan(0);
+  expect(
+    await roles
+      .first()
+      .evaluate((element) => getComputedStyle(element).animationName),
+  ).toBe('none');
+
+  await page.waitForTimeout(2500);
+  await expect(roles.first()).toBeVisible();
+  expect(await roles.allTextContents()).toEqual(originalText);
+});
+
 for (const width of [
   320, 360, 375, 390, 414, 430, 767, 768, 1024, 1280, 1440,
 ]) {

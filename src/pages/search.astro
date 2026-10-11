@@ -7,21 +7,17 @@ import { getPublicSiteSettings } from '../lib/server/siteSettings';
 
 export const prerender = false;
 
-const description =
-  'Search projects, notes, blog posts, lab entries, and public portfolio pages.';
 const settings = await getPublicSiteSettings();
 ---
 
-<Layout title={`Search — ${settings.name}`} {description}>
+<Layout title={`Search — ${settings.name}`}>
   <CollectionHeader active="search" />
   <ArchiveIntro
     id="search-title"
     path="/search"
     title="Search"
-    {description}
     asideTitle="Browse the archive"
   >
-    <p>Follow a section if you already know what you want to explore.</p>
     <nav class="archive-links" aria-label="Browse sections">
       <a href="/projects">Projects →</a>
       <a href="/notes">Notes →</a>

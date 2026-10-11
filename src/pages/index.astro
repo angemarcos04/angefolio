@@ -214,18 +214,16 @@ const progressSections = homeProgressSections.filter((section) => {
         <div class="hero-copy">
           <h1 class="hero-heading text-balance">{homepage.heroName}</h1>
           <p class="role-line">
-            <span class="sr-only">
-              Specialties: {homepage.heroRoles.join(', ')}
-            </span>
-
-            <span class="role-cycle" aria-hidden="true">
+            <span class="role-list">
               {
                 homepage.heroRoles.map((role, index) => (
-                  <span
-                    class="role"
-                    style={`--role-delay:${index * 2.2}s;--role-duration:${homepage.heroRoles.length * 2.2}s`}
-                  >
-                    {role}
+                  <span class="role-item">
+                    {index > 0 && (
+                      <span class="role-separator" aria-hidden="true">
+                        ·
+                      </span>
+                    )}
+                    <span>{role}</span>
                   </span>
                 ))
               }
@@ -594,7 +592,6 @@ const progressSections = homeProgressSections.filter((section) => {
     scroll-margin-top: clamp(1.5rem, 4vw, 3rem);
   }
   .role-line {
-    min-height: 1.4em;
     margin: 0.45rem 0 0;
     color: var(--accent);
     font-family: var(--type-ui);
@@ -606,21 +603,19 @@ const progressSections = homeProgressSections.filter((section) => {
       'calt' 0,
       'liga' 0;
   }
-  .role-cycle {
-    position: relative;
-    display: inline-block;
-    inline-size: min(100%, 28ch);
-    height: 1.4em;
-    vertical-align: bottom;
-    white-space: nowrap;
+  .role-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 0.45rem;
   }
-  .role {
-    position: absolute;
-    inset: 0 auto auto 0;
-    opacity: 0;
-    white-space: nowrap;
-    animation: role-fade var(--role-duration) ease-in-out infinite both;
-    animation-delay: var(--role-delay);
+  .role-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    overflow-wrap: anywhere;
+  }
+  .role-separator {
+    color: var(--subtle-foreground);
   }
   .about p,
   .github > p,
@@ -772,32 +767,6 @@ const progressSections = homeProgressSections.filter((section) => {
   .contact-email {
     overflow-wrap: anywhere;
   }
-  @keyframes role-fade {
-    0%,
-    3% {
-      opacity: 0;
-    }
-
-    7%,
-    20% {
-      opacity: 1;
-    }
-
-    24%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .role {
-      animation: none;
-      opacity: 0;
-    }
-
-    .role:first-child {
-      opacity: 1;
-    }
-  }
   @media (min-width: 1120px) {
     .project-grid {
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -835,18 +804,6 @@ const progressSections = homeProgressSections.filter((section) => {
       align-self: start;
       font-size: clamp(0.82rem, 3.5vw, 0.94rem);
       line-height: 1.35;
-    }
-    .role-cycle {
-      display: block;
-      width: 100%;
-      height: auto;
-      min-height: 2.7em;
-      white-space: normal;
-    }
-    .role {
-      inset: 0;
-      white-space: normal;
-      overflow-wrap: anywhere;
     }
     .actions {
       grid-area: actions;

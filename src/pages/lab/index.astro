@@ -10,8 +10,6 @@ import { LAB_STATUS_ORDER } from '../../lib/lab';
 
 export const prerender = false;
 
-const description =
-  'Small prototypes, UI experiments, terminal setups, AI persona concepts, and unfinished ideas that might become real projects.';
 const entries = await getPublicLabCatalog();
 const groups = LAB_STATUS_ORDER.map((status) => ({
   status,
@@ -27,20 +25,15 @@ const tags = [
 ].sort();
 ---
 
-<Layout title="Lab — Angellie Marcos" {description}>
+<Layout title="Lab — Angellie Marcos">
   <CollectionHeader active="lab" />
   <ArchiveIntro
     id="lab-title"
     path="/lab"
     title="Lab"
-    {description}
     count={`${entries.length} visible`}
     asideTitle="The workshop"
   >
-    <p class="archive-note">
-      Ideas can be incomplete, paused, or weird. Each entry documents what I
-      tried and learned.
-    </p>
     {
       entries.length > 0 && (
         <div class="archive-topic">

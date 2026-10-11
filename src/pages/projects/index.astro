@@ -9,8 +9,6 @@ import {
   publicProjectUrl,
 } from '../../lib/server/publicProjects';
 
-const description =
-  "Selected systems, prototypes, and experiments I'm building while learning full-stack development, backend workflows, Linux, and AI-assisted tools.";
 const projects = (await getPublicProjectCatalog()).map((project) => {
   const detailUrl = publicProjectUrl(project);
   return {
@@ -30,21 +28,14 @@ const projects = (await getPublicProjectCatalog()).map((project) => {
 });
 ---
 
-<Layout title="Projects — Angellie Marcos" {description}>
+<Layout title="Projects — Angellie Marcos">
   <CollectionHeader active="projects" />
   <ArchiveIntro
     id="projects-title"
     path="/projects"
     title="Projects"
-    {description}
     count={`${projects.length} visible`}
-    asideTitle="Work in progress"
-  >
-    <p>
-      Some projects are in progress or planning. I keep unfinished work visible
-      when the direction is useful.
-    </p>
-  </ArchiveIntro>
+  />
   <section aria-label="Project archive">
     {
       projects.length > 0 ? (

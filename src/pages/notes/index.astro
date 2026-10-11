@@ -8,26 +8,20 @@ import Tag from '../../components/astro/Tag.astro';
 import { getPublicNoteCatalog } from '../../lib/server/notes';
 
 export const prerender = false;
-const description =
-  'Project logs, Linux fixes, web development notes, and thoughts from building things.';
 const notes = await getPublicNoteCatalog();
 const categories = [...new Set(notes.map((note) => note.category))].sort();
 const tags = [...new Set(notes.flatMap((note) => note.tags))].sort();
 ---
 
-<Layout title="Notes — Angellie Marcos" {description}>
+<Layout title="Notes — Angellie Marcos">
   <CollectionHeader active="notes" />
   <ArchiveIntro
     id="notes-title"
     path="/notes"
     title="Notes"
-    {description}
     count={`${notes.length} published`}
     asideTitle="Learning out loud"
   >
-    <p class="archive-note">
-      What I am learning, breaking, fixing, and slowly understanding.
-    </p>
     {
       notes.length > 0 && (
         <div class="archive-topic">
