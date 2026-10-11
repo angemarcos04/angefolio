@@ -52,18 +52,16 @@ const tooltipId = `affiliation-tooltip-${index}`;
     aspect-ratio: 1;
     place-items: center;
     padding: 8px;
-    border: 1px solid var(--border);
+    border: 1px solid #b8b6b0;
     border-radius: var(--radius-sm);
-    background: var(--card);
+    background: #ece9e1;
     cursor: pointer;
-    transition:
-      border-color 140ms ease,
-      background-color 140ms ease;
+    transition: border-color 140ms ease;
   }
   .logo-trigger:hover,
-  .logo-trigger[aria-expanded='true'] {
-    border-color: var(--border-strong);
-    background: var(--muted);
+  .logo-trigger[aria-expanded='true'],
+  .logo-trigger:focus-visible {
+    border-color: var(--accent);
   }
   .logo-trigger:focus-visible {
     outline: 2px solid var(--accent);
