@@ -46,8 +46,9 @@ export const defaultHomepageConfig: HomepageConfig = {
   ],
   portrait: '/91889584.jpeg',
   aboutParagraphs: [
-    'She studies information technology at AMA Computer College and builds web and backend systems through Linux-oriented workflows.',
-    'Her working style favors pragmatic, personalized, and sometimes unconventional tools that keep the person using them in control.',
+    "I'm an Information Technology student at AMA Computer College – Santiago, building web applications and backend systems while exploring Linux and the tools around it.",
+    'I like practical, personalized, and sometimes unconventional approaches to development. I prefer understanding how things work and building tools that give people more control.',
+    "Lately, I've also been exploring cybersecurity in my free time.",
   ],
   aboutMetadata: [
     { label: 'domains', value: 'linux  backend  ai/data  digital gardens' },

@@ -213,22 +213,6 @@ const progressSections = homeProgressSections.filter((section) => {
 
         <div class="hero-copy">
           <h1 class="hero-heading text-balance">{homepage.heroName}</h1>
-          <p class="role-line">
-            <span class="role-list">
-              {
-                homepage.heroRoles.map((role, index) => (
-                  <span class="role-item">
-                    {index > 0 && (
-                      <span class="role-separator" aria-hidden="true">
-                        ·
-                      </span>
-                    )}
-                    <span>{role}</span>
-                  </span>
-                ))
-              }
-            </span>
-          </p>
           <div class="actions">
             <Button href="/projects" variant="primary">Projects</Button>
             <Button href={'mailto:' + publicSettings.email} variant="ghost"
@@ -591,32 +575,6 @@ const progressSections = homeProgressSections.filter((section) => {
   :global(.home-anchor) {
     scroll-margin-top: clamp(1.5rem, 4vw, 3rem);
   }
-  .role-line {
-    margin: 0.45rem 0 0;
-    color: var(--accent);
-    font-family: var(--type-ui);
-    font-size: clamp(0.95rem, 1.5vw, 1.1rem);
-    font-weight: 600;
-    line-height: 1.4;
-    font-variant-ligatures: none;
-    font-feature-settings:
-      'calt' 0,
-      'liga' 0;
-  }
-  .role-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.15rem 0.45rem;
-  }
-  .role-item {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.45rem;
-    overflow-wrap: anywhere;
-  }
-  .role-separator {
-    color: var(--subtle-foreground);
-  }
   .about p,
   .github > p,
   .contact > p {
@@ -780,7 +738,6 @@ const progressSections = homeProgressSections.filter((section) => {
       grid-template-columns: minmax(0, 1fr) clamp(5.5rem, 24vw, 6.75rem);
       grid-template-areas:
         'heading portrait'
-        'role portrait'
         'actions actions';
       align-items: start;
       gap: 0.55rem 0.75rem;
@@ -796,14 +753,6 @@ const progressSections = homeProgressSections.filter((section) => {
       line-height: 1.16;
       letter-spacing: 0;
       overflow-wrap: anywhere;
-    }
-    .role-line {
-      grid-area: role;
-      min-width: 0;
-      margin: 0;
-      align-self: start;
-      font-size: clamp(0.82rem, 3.5vw, 0.94rem);
-      line-height: 1.35;
     }
     .actions {
       grid-area: actions;
