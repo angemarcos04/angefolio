@@ -667,15 +667,57 @@
   }
   @media (max-width: 700px) {
     .terminal-dialog {
-      padding: max(0.5rem, env(safe-area-inset-top)) 0.5rem
-        max(0.5rem, env(safe-area-inset-bottom));
+      width: 100vw;
+      height: 100dvh;
+      max-height: 100dvh;
+      padding: max(0.5rem, env(safe-area-inset-top))
+        max(0.5rem, env(safe-area-inset-right))
+        max(0.5rem, env(safe-area-inset-bottom))
+        max(0.5rem, env(safe-area-inset-left));
     }
     .terminal-window {
       width: 100%;
       height: min(92dvh, 50rem);
+      max-height: calc(
+        100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1rem
+      );
+      grid-template-rows: auto minmax(0, 1fr) auto;
+    }
+    .terminal-window .terminal-bar {
+      min-height: 2.65rem;
+    }
+    .terminal-output {
+      min-height: 0;
+      padding: 0.75rem;
+      overscroll-behavior: contain;
+    }
+    .input-row input {
+      font-size: 16px;
     }
     .terminal-help {
       text-align: left;
+      padding: 0.55rem 0.65rem;
+      line-height: 1.5;
+    }
+  }
+  @media (max-width: 767px) {
+    .terminal-preview {
+      margin-top: 0.85rem;
+      border-radius: var(--radius-md);
+    }
+    .terminal-preview .terminal-bar {
+      min-height: 1.95rem;
+      padding: 0.35rem 0.6rem;
+    }
+    .preview-body {
+      gap: 0.14rem;
+      padding: 0.65rem 0.75rem;
+      font-size: 0.75rem;
+      line-height: 1.45;
+    }
+    .interaction-hint {
+      margin-top: 0.3rem;
+      font-size: 0.7rem;
     }
   }
   @media (prefers-reduced-motion: reduce) {

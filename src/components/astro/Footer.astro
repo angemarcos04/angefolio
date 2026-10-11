@@ -35,10 +35,12 @@ const { name, github, rss } = Astro.props;
     flex-wrap: wrap;
     gap: 0.9rem;
   }
-  @media (max-width: 540px) {
+  @media (max-width: 767px) {
     footer {
       align-items: flex-start;
       flex-direction: column;
+      gap: 0.65rem;
+      padding-block: 1rem 1.5rem;
     }
     footer span {
       display: block;

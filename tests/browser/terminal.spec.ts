@@ -177,16 +177,80 @@ test('navigation closes the terminal and stops the remaining chain', async ({
   expect(await page.locator('html').getAttribute('data-theme')).toBe('light');
 });
 
-for (const width of [320, 375, 768, 1440]) {
-  test(`terminal remains usable without viewport overflow at ${width}px`, async ({
+test('mobile navigation exposes routes, appearance, and keyboard dismissal', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.addInitScript(() => localStorage.setItem('theme', 'dark'));
+  await page.goto('/');
+  const menu = page.locator('.mobile-menu');
+  const summary = menu.locator('summary');
+
+  await expect(page.getByRole('link', { name: 'angefolio' })).toBeVisible();
+  await expect(page.locator('.mobile-search')).toBeVisible();
+  await summary.click();
+  await expect(menu).toHaveAttribute('open', '');
+  await expect(summary).toHaveAttribute('aria-expanded', 'true');
+
+  for (const label of ['Home', 'Projects', 'Notes', 'Blog', 'Lab', 'Search']) {
+    await expect(
+      menu
+        .getByRole('navigation', { name: 'Mobile navigation' })
+        .getByRole('link', { name: label }),
+    ).toBeVisible();
+  }
+  await expect(
+    menu
+      .getByRole('navigation', { name: 'Mobile navigation' })
+      .getByRole('link', { name: 'Home' }),
+  ).toHaveAttribute('aria-current', 'page');
+
+  const themeToggle = menu.getByRole('button', { name: /Current theme: Dark/ });
+  await themeToggle.click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(page).toHaveURL('/');
+  expect(await page.evaluate(() => localStorage.getItem('theme'))).toBe(
+    'light',
+  );
+
+  await page.keyboard.press('Escape');
+  await expect(menu).not.toHaveAttribute('open', '');
+  await expect(summary).toHaveAttribute('aria-expanded', 'false');
+  await expect(summary).toBeFocused();
+});
+
+for (const width of [
+  320, 360, 375, 390, 414, 430, 767, 768, 1024, 1280, 1440,
+]) {
+  test(`homepage and terminal fit the viewport at ${width}px`, async ({
     page,
   }) => {
-    await page.setViewportSize({ width, height: 800 });
+    await page.setViewportSize({ width, height: 844 });
     await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+
     await openTerminal(page);
     await expect(
       page.getByRole('button', { name: 'Close portfolio terminal' }),
     ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+  });
+}
+
+for (const route of ['/projects', '/notes', '/blog', '/lab', '/search']) {
+  test(`${route} remains within a 320px mobile viewport`, async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 700 });
+    await page.goto(route);
+    await expect(page.locator('.mobile-menu > summary')).toBeVisible();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth,

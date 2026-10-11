@@ -803,36 +803,143 @@ const progressSections = homeProgressSections.filter((section) => {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
-  @media (max-width: 760px) {
+  @media (max-width: 767px) {
     :global(.hero) {
       min-height: 0;
     }
     .hero-intro {
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
+      grid-template-columns: minmax(0, 1fr) clamp(5.5rem, 24vw, 6.75rem);
+      grid-template-areas:
+        'heading portrait'
+        'role portrait'
+        'actions actions';
+      align-items: start;
+      gap: 0.55rem 0.75rem;
     }
     .hero-copy {
-      order: -1;
+      display: contents;
+    }
+    .hero-heading {
+      grid-area: heading;
+      max-width: none;
+      margin: 0;
+      font-size: clamp(1.625rem, 7.2vw, 1.875rem);
+      line-height: 1.16;
+      letter-spacing: 0;
+      overflow-wrap: anywhere;
+    }
+    .role-line {
+      grid-area: role;
+      min-width: 0;
+      margin: 0;
+      align-self: start;
+      font-size: clamp(0.82rem, 3.5vw, 0.94rem);
+      line-height: 1.35;
+    }
+    .role-cycle {
+      display: block;
+      width: 100%;
+      height: auto;
+      min-height: 2.7em;
+      white-space: normal;
+    }
+    .role {
+      inset: 0;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .actions {
+      grid-area: actions;
+      margin-top: 0.5rem;
+      gap: 0.5rem;
     }
     .hero-portrait {
-      width: min(13rem, 58vw);
-      justify-self: start;
+      grid-area: portrait;
+      width: 100%;
+      max-width: 6.75rem;
+      aspect-ratio: 4 / 5;
+      justify-self: end;
+      align-self: start;
+    }
+    .hero-portrait-titlebar {
+      min-height: 1.45rem;
+      gap: 0.35rem;
+      padding-inline: 0.45rem;
+    }
+    .hero-portrait-controls {
+      gap: 0.2rem;
+    }
+    .hero-portrait-control {
+      width: 0.32rem;
+      height: 0.32rem;
+    }
+    .hero-portrait-filename {
+      font-size: 0.58rem;
+    }
+    .actions :global(.button) {
+      min-height: 2.75rem;
+      padding: 0.55rem 0.8rem;
+      font-size: 0.82rem;
     }
     .project-grid,
     .note-grid,
     .feature-grid {
       grid-template-columns: 1fr;
+      gap: 0.65rem;
     }
-  }
-  @media (max-width: 480px) {
-    .stack-groups,
+    .stack-groups {
+      gap: 0.75rem;
+    }
+    .about p,
+    .github > p,
+    .contact > p,
+    .status-list li {
+      font-size: 0.96rem;
+      line-height: 1.55;
+    }
+    .about-metadata {
+      gap: 0.4rem;
+      margin-top: 0.8rem;
+      padding-top: 0.7rem;
+      font-size: 0.74rem;
+    }
+    .about-metadata div {
+      grid-template-columns: minmax(4.1rem, auto) minmax(0, 1fr);
+      gap: 0.45rem;
+    }
     .contact-links {
-      grid-template-columns: 1fr;
+      gap: 0.5rem;
+      margin: 0.9rem 0;
+    }
+    .contribution-grid {
+      min-width: 27rem;
+      gap: 0.18rem;
+      margin-block: 0.75rem;
+    }
+    .contribution-scroll {
+      overscroll-behavior-inline: contain;
+      scrollbar-color: var(--border-strong) transparent;
+      scrollbar-width: thin;
+    }
+    .activity-meta,
+    .metadata,
+    .contact-email {
+      font-size: 0.72rem;
+    }
+    :global(.homepage-grid) {
+      gap: 0.75rem;
     }
   }
-  @media (max-width: 420px) {
-    .hero-portrait {
-      width: min(11rem, 58vw);
+  @media (max-width: 359px) {
+    .hero-intro {
+      grid-template-columns: minmax(0, 1fr) 5.5rem;
+      column-gap: 0.55rem;
+    }
+    .hero-heading {
+      font-size: 1.55rem;
+    }
+    .stack-groups {
+      grid-template-columns: 1fr;
     }
   }
 </style>

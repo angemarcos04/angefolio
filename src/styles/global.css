@@ -541,9 +541,88 @@ pre code,
     'liga' 0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
   .container-shell {
-    width: min(100% - 1.25rem, 1180px);
+    width: min(100% - 1.5rem, 1180px);
+  }
+  .container-shell .bento-card {
+    padding: 0.9rem;
+  }
+  .container-shell .bento-card > header {
+    margin-bottom: 0.75rem;
+  }
+  .container-shell .bento-card h1 {
+    font-size: clamp(1.55rem, 7vw, 2rem);
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+  }
+  .container-shell .bento-card h2 {
+    font-size: clamp(1.125rem, 5vw, 1.25rem);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  .container-shell .prose-shell {
+    padding: 1rem;
+  }
+  .prose-shell h1 {
+    font-size: clamp(1.55rem, 7vw, 2rem);
+    line-height: 1.18;
+  }
+  .prose-shell h2 {
+    margin-top: 1.8rem;
+    font-size: clamp(1.2rem, 5.4vw, 1.5rem);
+  }
+  .prose-shell p,
+  .prose-shell li,
+  .prose-shell blockquote {
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+  .container-shell .content-card {
+    padding: 0.9rem;
+  }
+  .container-shell .collection-grid {
+    gap: 0.75rem;
+  }
+  .content-card h3 {
+    margin-top: 0.7rem;
+    font-size: 1rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .content-card > p {
+    margin-block: 0.4rem 0.75rem;
+    font-size: 0.94rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+  .content-card .meta,
+  .content-card .tags {
+    gap: 0.3rem;
+  }
+  .content-card .tag {
+    font-size: 0.7rem;
+  }
+  .content-card .button {
+    min-height: 2.5rem;
+  }
+  .prose-shell pre,
+  .prose-shell table {
+    max-width: calc(100vw - 3.5rem);
+  }
+  .prose-shell table {
+    overscroll-behavior-inline: contain;
+  }
+  .mobile-menu-panel,
+  .bento-card,
+  .content-card {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 359px) {
+  .container-shell {
+    width: calc(100% - 1.25rem);
   }
 }
 

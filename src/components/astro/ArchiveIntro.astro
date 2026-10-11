@@ -123,9 +123,28 @@ const { id, path, title, description, count, asideTitle } = Astro.props;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-  @media (max-width: 760px) {
+  @media (max-width: 767px) {
     .archive-hero {
       min-height: 0;
+      justify-content: flex-start;
+      padding: 1rem;
+    }
+    .archive-aside {
+      padding: 1rem;
+    }
+    h1 {
+      max-width: none;
+      font-size: clamp(1.8rem, 8vw, 2.5rem);
+      line-height: 1.16;
+      overflow-wrap: anywhere;
+    }
+    .archive-description {
+      margin-top: 0.65rem;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+    .archive-count {
+      margin-top: 0.85rem;
     }
   }
 </style>

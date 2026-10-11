@@ -1,5 +1,6 @@
 ---
 import ThemeToggle from '../svelte/ThemeToggle.svelte';
+import { getPublicSiteSettings } from '../../lib/server/siteSettings';
 import {
   collectionNavigationRoutes,
   primaryPublicRoutes,
@@ -12,9 +13,17 @@ interface Props {
 const { active } = Astro.props;
 const routes =
   active === 'home' ? collectionNavigationRoutes : primaryPublicRoutes;
+const publicSettings = await getPublicSiteSettings();
 ---
 
 <header class="collection-topbar" data-pagefind-ignore>
+  <a
+    class="mobile-wordmark"
+    href="/"
+    aria-label={`${publicSettings.siteName} home`}
+  >
+    {publicSettings.siteName}
+  </a>
   <div class="topbar-actions">
     <nav aria-label="Primary navigation">
       {
@@ -30,7 +39,58 @@ const routes =
     </nav>
     <ThemeToggle client:load />
   </div>
+  <div class="mobile-actions">
+    <a class="mobile-search" href="/search" aria-label="Search" title="Search">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="10.8" cy="10.8" r="6.3"></circle>
+        <path d="m15.5 15.5 4.2 4.2"></path>
+      </svg>
+    </a>
+    <details class="mobile-menu">
+      <summary aria-controls="mobile-navigation-panel" aria-expanded="false">
+        <span class="menu-lines" aria-hidden="true"><i></i><i></i></span>
+        <span>Menu</span>
+      </summary>
+      <div class="mobile-menu-panel" id="mobile-navigation-panel">
+        <nav aria-label="Mobile navigation">
+          {
+            primaryPublicRoutes.map((item) => (
+              <a
+                href={item.href}
+                aria-current={active === item.key ? 'page' : undefined}
+              >
+                {item.label}
+              </a>
+            ))
+          }
+        </nav>
+        <div class="mobile-appearance">
+          <span>Appearance</span>
+          <ThemeToggle client:load />
+        </div>
+      </div>
+    </details>
+  </div>
 </header>
+
+<script>
+  const menus = document.querySelectorAll<HTMLDetailsElement>('.mobile-menu');
+  for (const menu of menus) {
+    const summary = menu.querySelector('summary');
+    const syncExpanded = () =>
+      summary?.setAttribute('aria-expanded', String(menu.open));
+    menu.addEventListener('toggle', syncExpanded);
+    document.addEventListener('click', (event) => {
+      if (menu.open && !menu.contains(event.target as Node)) menu.open = false;
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && menu.open) {
+        menu.open = false;
+        summary?.focus();
+      }
+    });
+  }
+</script>
 
 <style>
   .collection-topbar {
@@ -41,6 +101,10 @@ const routes =
     margin-bottom: 1rem;
     padding-bottom: 0.9rem;
     border-bottom: 1px solid var(--border);
+  }
+  .mobile-wordmark,
+  .mobile-actions {
+    display: none;
   }
   .topbar-actions,
   nav {
@@ -71,6 +135,116 @@ const routes =
   nav a[aria-current='page'] {
     background: var(--accent-soft);
     color: var(--accent-text);
+  }
+  @media (max-width: 767px) {
+    .collection-topbar {
+      min-height: 3.4rem;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.65rem;
+    }
+    .mobile-wordmark {
+      display: inline-flex;
+      min-width: 0;
+      align-items: center;
+      color: var(--foreground);
+      font: 700 0.92rem/1.2 var(--type-heading);
+      letter-spacing: 0.015em;
+      overflow-wrap: anywhere;
+    }
+    .topbar-actions {
+      display: none;
+    }
+    .mobile-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .mobile-search,
+    .mobile-menu > summary {
+      display: inline-flex;
+      min-width: 2.65rem;
+      min-height: 2.65rem;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.45rem 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--muted);
+      color: var(--foreground);
+      font: 600 0.77rem/1.1 var(--type-ui);
+      cursor: pointer;
+      list-style: none;
+    }
+    .mobile-search:hover,
+    .mobile-menu > summary:hover,
+    .mobile-menu[open] > summary {
+      border-color: var(--border-strong);
+      background: var(--accent-soft);
+      color: var(--accent-text);
+    }
+    .mobile-search svg {
+      width: 1.05rem;
+      height: 1.05rem;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+    }
+    .mobile-menu {
+      position: relative;
+    }
+    .mobile-menu > summary::-webkit-details-marker {
+      display: none;
+    }
+    .menu-lines {
+      display: grid;
+      width: 1rem;
+      gap: 0.24rem;
+    }
+    .menu-lines i {
+      height: 1px;
+      background: currentColor;
+    }
+    .mobile-menu-panel {
+      position: absolute;
+      z-index: 40;
+      top: calc(100% + 0.5rem);
+      right: 0;
+      width: min(18rem, calc(100vw - 1.5rem));
+      padding: 0.55rem;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-md);
+      background: var(--card);
+      color: var(--card-foreground);
+      box-shadow: var(--shadow-soft);
+    }
+    .mobile-menu-panel nav {
+      display: grid;
+      gap: 0.15rem;
+    }
+    .mobile-menu-panel nav a {
+      min-height: 2.65rem;
+      justify-content: flex-start;
+      padding-inline: 0.7rem;
+      font-size: 0.84rem;
+    }
+    .mobile-appearance {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-top: 0.35rem;
+      padding: 0.55rem 0.15rem 0.05rem 0.7rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted-foreground);
+      font: 0.72rem var(--type-ui);
+    }
+    .mobile-appearance :global(button) {
+      min-height: 2.4rem;
+    }
   }
   @media (max-width: 760px) {
     .topbar-actions {
