@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: angefolio
+    runtime: docker
+    plan: 0.5c-512mb
+    region: singapore
+    autoDeployTrigger: off
+    healthCheckPath: /health/ready
+    disk:
+      name: angefolio-data
+      mountPath: /app/data
+      sizeGB: 5
+    envVars:
+      - key: PORT
+        value: '4321'
+      - key: DATABASE_URL
+        value: file:/app/data/angefolio.db
+      - key: AUTH_SECRET
+        generateValue: true

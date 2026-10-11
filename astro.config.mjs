@@ -7,8 +7,10 @@ import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  // Replace this documented placeholder when the final production domain is known.
-  site: 'https://angellie-marcos.dev',
+  site:
+    process.env.PUBLIC_SITE_URL ||
+    process.env.RENDER_EXTERNAL_URL ||
+    'https://angellie-marcos.dev',
   output: 'server',
   devToolbar: {
     enabled: process.env.PLAYWRIGHT_TEST !== 'true',

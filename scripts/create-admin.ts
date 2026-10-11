@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import { stdin, stdout } from 'node:process';
+import { createInterface } from 'node:readline/promises';
 import { eq } from 'drizzle-orm';
 import { createAuth } from '../src/lib/server/auth';
 import {
@@ -7,11 +9,38 @@ import {
   migrateDatabase,
 } from '../src/lib/server/db/client';
 import { user } from '../src/lib/server/db/schema';
-import { getSiteOrigin, requireServerEnv } from '../src/lib/server/env';
+import {
+  getServerEnv,
+  getSiteOrigin,
+  requireServerEnv,
+} from '../src/lib/server/env';
+import { promptSecret } from './prompt-secret';
 
-const email = requireServerEnv('ADMIN_EMAIL').toLowerCase();
-const password = requireServerEnv('ADMIN_PASSWORD');
 requireServerEnv('AUTH_SECRET');
+
+let email = getServerEnv('ADMIN_EMAIL');
+let password = getServerEnv('ADMIN_PASSWORD');
+
+if (!email) {
+  if (!stdin.isTTY) requireServerEnv('ADMIN_EMAIL');
+  const prompt = createInterface({ input: stdin, output: stdout });
+  try {
+    email = (await prompt.question('Owner email: ')).trim();
+  } finally {
+    prompt.close();
+  }
+}
+
+if (!password) {
+  if (!stdin.isTTY) requireServerEnv('ADMIN_PASSWORD');
+  password = await promptSecret('Owner password (hidden): ');
+  const confirmation = await promptSecret('Confirm owner password: ');
+  if (password !== confirmation) {
+    throw new Error('Passwords did not match. No account was created.');
+  }
+}
+
+email = email.toLowerCase();
 
 if (!/^\S+@\S+\.\S+$/.test(email)) {
   throw new Error('ADMIN_EMAIL must be a valid email address.');
@@ -56,6 +85,6 @@ await bootstrapAuth.api.signUpEmail({
 });
 
 console.log(
-  'Initial console admin created. Remove ADMIN_EMAIL and ADMIN_PASSWORD.',
+  'Initial console admin created. Remove any ADMIN_EMAIL and ADMIN_PASSWORD environment values.',
 );
 closeDatabase();

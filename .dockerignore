@@ -12,6 +12,8 @@ coverage
 .env
 .env.*
 !.env.example
+data/
+rclone.conf
 data/*.db
 data/*.db-*
 data/*.sqlite

@@ -38,13 +38,13 @@ pnpm dev
 
 Open `http://localhost:4321`. The private workspace is at `/user`.
 
-Create the one allowed administrator once, after filling `AUTH_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` in the local environment:
+Create the one allowed administrator once. Set `AUTH_SECRET` first; the command prompts for the email and a hidden password if `ADMIN_EMAIL` and `ADMIN_PASSWORD` are unset:
 
 ```bash
 pnpm console:bootstrap
 ```
 
-Remove the two `ADMIN_` values immediately afterward. Public sign-up is disabled, and the bootstrap refuses to add a second account.
+Remove any `ADMIN_` values afterward. Public sign-up is disabled, and the bootstrap refuses to add a second account.
 
 Build the production server and search index:
 
@@ -126,9 +126,9 @@ Expected public output includes project, note, and Lab indexes/details; `/search
 
 Copy `.env.example` to `.env` locally. `AUTH_SECRET` is server-only and must be at least 32 random characters in production. `DATABASE_URL` defaults to `file:./data/angefolio.db` only in development. `PUBLIC_SITE_URL` and `AUTH_TRUSTED_ORIGIN` must match the browser-visible origin so Better Auth and the same-origin write checks agree.
 
-`ADMIN_EMAIL` and `ADMIN_PASSWORD` are one-time inputs consumed only by `pnpm console:bootstrap`; the web application never reads them. Never prefix auth, database, or bootstrap values with `PUBLIC_`.
+`ADMIN_EMAIL` and `ADMIN_PASSWORD` are optional one-time inputs consumed only by `pnpm console:bootstrap`; the web application never reads them. The command prompts interactively when they are unset. Never prefix auth, database, or bootstrap values with `PUBLIC_`.
 
-Before a real deployment, replace `https://angellie-marcos.dev` in both `astro.config.mjs` and `src/lib/data/site.ts`, then rebuild. Inject authentication and database values only as server-side runtime secrets; never commit them or expose them through `PUBLIC_` variables.
+On Render, the public URL defaults to `RENDER_EXTERNAL_URL` at build and runtime. Set `PUBLIC_SITE_URL` to the final HTTPS origin when using a custom domain, then redeploy so canonical URLs, sitemap, robots metadata, and RSS use it. Inject authentication and database values only as server-side runtime secrets; never commit them or expose them through `PUBLIC_` variables.
 
 ## CI
 
@@ -136,17 +136,18 @@ Before a real deployment, replace `https://angellie-marcos.dev` in both `astro.c
 
 ## Deployment notes
 
+- For Render, review [the Render deployment guide](docs/render-deployment.md) and `render.yaml` before creating the paid web service and persistent disk. The Blueprint has automatic deploys disabled until you choose to enable them.
 - Deploy the Node image to a host that supports a long-running process, container port `4321`, persistent volumes, runtime secrets, and health checks.
 - Terminate HTTPS at the hosting platform or reverse proxy. Secure cookies are enabled automatically when `NODE_ENV=production`.
 - Back up the SQLite volume with `node scripts/db-maintenance.mjs backup <new-file>`. Verify and rehearse restore using [operations.md](docs/operations.md). Configure the encrypted off-host job and daily systemd timer before depending on live edits.
 - Run migrations before the new server receives traffic. The Docker command does this automatically.
 - Notes and Lab publish through `/user`; archives, articles, search, and sitemaps update on request. RSS includes Notes only. Direct source MDX changes still need a rebuild.
 
-## Production URL placeholder
+## Production URL
 
-Astro currently uses `https://angellie-marcos.dev` as a clearly documented placeholder in `astro.config.mjs` and `src/lib/data/site.ts`. Sitemap, RSS, canonical URLs, robots metadata, and social metadata need an absolute origin, but this repository does not yet confirm a deployed domain.
+Astro uses `PUBLIC_SITE_URL` when set, then Render's `RENDER_EXTERNAL_URL`, then the documented `https://angellie-marcos.dev` fallback for builds outside Render. Sitemap, RSS, canonical URLs, robots metadata, and social metadata need an absolute origin.
 
-Replace both placeholder values with the real public origin before deployment, and set the matching `PUBLIC_SITE_URL`/`AUTH_TRUSTED_ORIGIN` at runtime. These public origin values are not secrets.
+Set `PUBLIC_SITE_URL` to the real public origin for any non-Render deployment and when switching Render to a custom domain. `AUTH_TRUSTED_ORIGIN` can add other trusted browser origins if needed. These public origin values are not secrets.
 
 ## Phase 2 design system
 

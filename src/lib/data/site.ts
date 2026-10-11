@@ -5,7 +5,10 @@ export const site = {
   role: 'Information Technology Student',
   seoDescription:
     'The personal developer portfolio of Angellie Marcos, an IT student building practical web systems with a Linux-minded, creative edge.',
-  url: 'https://angellie-marcos.dev',
+  url:
+    process.env.PUBLIC_SITE_URL ||
+    process.env.RENDER_EXTERNAL_URL ||
+    'https://angellie-marcos.dev',
   socialImage: '/og.png',
   rss: '/rss.xml',
   github: 'https://github.com/angemarcos04',

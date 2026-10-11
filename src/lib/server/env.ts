@@ -25,15 +25,16 @@ export function isProduction(): boolean {
 
 export function getSiteOrigin(): string {
   const configured =
-    getServerEnv('AUTH_TRUSTED_ORIGIN')?.split(',')[0] ??
     getServerEnv('PUBLIC_SITE_URL') ??
+    getServerEnv('AUTH_TRUSTED_ORIGIN')?.split(',')[0] ??
+    getServerEnv('RENDER_EXTERNAL_URL') ??
     'http://localhost:4321';
 
   try {
     return new URL(configured).origin;
   } catch {
     throw new Error(
-      'AUTH_TRUSTED_ORIGIN or PUBLIC_SITE_URL must be a valid URL.',
+      'PUBLIC_SITE_URL, AUTH_TRUSTED_ORIGIN, or RENDER_EXTERNAL_URL must be a valid URL.',
     );
   }
 }
@@ -42,6 +43,7 @@ export function getTrustedOrigins(): string[] {
   const configured = [
     ...(getServerEnv('AUTH_TRUSTED_ORIGIN')?.split(',') ?? []),
     getServerEnv('PUBLIC_SITE_URL'),
+    getServerEnv('RENDER_EXTERNAL_URL'),
   ].filter((value): value is string => Boolean(value));
 
   const origins =

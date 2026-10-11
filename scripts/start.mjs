@@ -13,10 +13,14 @@ if (process.env.AUTH_SECRET.trim().length < 32) {
 }
 
 const origin =
-  process.env.AUTH_TRUSTED_ORIGIN?.split(',')[0] ?? process.env.PUBLIC_SITE_URL;
+  process.env.PUBLIC_SITE_URL ||
+  process.env.AUTH_TRUSTED_ORIGIN?.split(',')[0] ||
+  process.env.RENDER_EXTERNAL_URL;
 
 if (!origin) {
-  throw new Error('AUTH_TRUSTED_ORIGIN or PUBLIC_SITE_URL is required.');
+  throw new Error(
+    'PUBLIC_SITE_URL, AUTH_TRUSTED_ORIGIN, or RENDER_EXTERNAL_URL is required.',
+  );
 }
 
 new URL(origin);
