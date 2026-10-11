@@ -39,6 +39,11 @@ const description = 'Edit homepage copy, sections, portrait, and stack groups.';
 const pairLines = config.aboutMetadata
   .map((item) => `${item.label} | ${item.value}`)
   .join('\n');
+const affiliationLines = config.affiliations
+  .map((item) =>
+    [item.name, item.relationship, item.logo, item.url ?? ''].join(' | '),
+  )
+  .join('\n');
 const groupLines = config.stackGroups
   .map((group) => `${group.title} | ${group.items.join(', ')}`)
   .join('\n');
@@ -153,10 +158,14 @@ const groupLines = config.stackGroups
           >
         </label>
         <label>
-          <span>Focus details</span>
-          <textarea name="aboutMetadata" rows="4">{pairLines}</textarea>
-          <small>One per line: label | value. Up to 6 details.</small>
+          <span>Education &amp; affiliations</span>
+          <textarea name="affiliations" rows="5">{affiliationLines}</textarea>
+          <small>
+            One per line: organization | relationship | logo path | optional
+            HTTPS link. Logo paths should point to site assets. Up to 6 entries.
+          </small>
         </label>
+        <input type="hidden" name="aboutMetadata" value={pairLines} />
       </fieldset>
 
       <fieldset>

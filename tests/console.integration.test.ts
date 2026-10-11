@@ -533,6 +533,8 @@ test('private edits, audit history, recovery, and database backup', async () => 
       heroRoles: 'Developer',
       portrait: '/91889584.jpeg',
       aboutParagraphs: 'Testing the homepage settings.',
+      affiliations:
+        'AMA Computer College – Santiago | Education | /affiliations/ama-computer-college.png',
       aboutMetadata: 'focus | Testing',
       projectLimit: '0',
       noteLimit: '0',
@@ -558,6 +560,11 @@ test('private edits, audit history, recovery, and database backup', async () => 
       savedHomepage.headers.get('location'),
       '/user/homepage?saved=1',
     );
+    const publicHomepage = await (await fetch(`${origin}/`)).text();
+    assert.match(publicHomepage, /Education &amp; Affiliations/);
+    assert.match(publicHomepage, /AMA Computer College – Santiago/);
+    assert.match(publicHomepage, /\/affiliations\/ama-computer-college\.png/);
+    assert.doesNotMatch(publicHomepage, /about-metadata/);
     const homepageEditor = await (
       await fetch(`${origin}/user/homepage`, { headers: { cookie } })
     ).text();

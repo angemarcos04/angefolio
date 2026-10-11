@@ -1,6 +1,7 @@
 import {
   defaultHomepageConfig,
   homepageCardKeys,
+  type HomepageAffiliation,
   type HomepageCardKey,
   type HomepageConfig,
 } from '../../data/homepage';
@@ -37,11 +38,42 @@ function parsePairs(value: string, label: string, errors: string[]) {
   return entries;
 }
 
+function parseAffiliations(value: string, errors: string[]) {
+  const entries: HomepageAffiliation[] = [];
+  for (const line of lines(value)) {
+    const [name, relationship, logo, url, ...extra] = line
+      .split('|')
+      .map((part) => part.trim());
+    if (
+      !name ||
+      !relationship ||
+      !logo ||
+      extra.length ||
+      (url && !validHttpsUrl(url))
+    ) {
+      errors.push(
+        'Use organization | relationship | site logo path | optional HTTPS link on each affiliation line.',
+      );
+      continue;
+    }
+    entries.push({ name, relationship, logo, ...(url ? { url } : {}) });
+  }
+  return entries;
+}
+
 function validImageReference(value: string): boolean {
   if (!value || value.length > 2048) return false;
   if (value.startsWith('/') && !value.startsWith('//')) {
     return !value.includes('..') && !/[?#\\\s]/.test(value);
   }
+  try {
+    return new URL(value).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function validHttpsUrl(value: string): boolean {
   try {
     return new URL(value).protocol === 'https:';
   } catch {
@@ -63,6 +95,9 @@ export function validateHomepageForm(
     'label',
     errors,
   );
+  const affiliations = form.has('affiliations')
+    ? parseAffiliations(text(form, 'affiliations'), errors)
+    : defaultHomepageConfig.affiliations;
 
   if (!heroName || heroName.length > 100)
     errors.push('Name is required (100 characters maximum).');
@@ -96,6 +131,25 @@ export function validateHomepageForm(
   ) {
     errors.push(
       'Use up to 6 About details with labels up to 40 and values up to 180 characters.',
+    );
+  }
+  if (
+    affiliations.length > 6 ||
+    affiliations.some(
+      (item) =>
+        item.name.length > 120 ||
+        item.relationship.length > 100 ||
+        !item.logo.startsWith('/') ||
+        item.logo.startsWith('//') ||
+        item.logo.includes('..') ||
+        /[?#\\\s]/.test(item.logo) ||
+        item.logo.length > 2048 ||
+        (item.url !== undefined &&
+          (item.url.length > 2048 || !validHttpsUrl(item.url))),
+    )
+  ) {
+    errors.push(
+      'Use up to 6 affiliations with a name (120 characters maximum), relationship (100 maximum), and a local image path.',
     );
   }
 
@@ -199,6 +253,7 @@ export function validateHomepageForm(
       heroRoles,
       portrait,
       aboutParagraphs,
+      affiliations,
       aboutMetadata,
       projectLimit,
       noteLimit,

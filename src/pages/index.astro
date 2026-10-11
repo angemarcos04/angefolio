@@ -1,5 +1,6 @@
 ---
 import BentoCard from '../components/astro/BentoCard.astro';
+import AffiliationCard from '../components/astro/AffiliationCard.astro';
 import BentoGrid from '../components/astro/BentoGrid.astro';
 import Button from '../components/astro/Button.astro';
 import CollectionHeader from '../components/astro/CollectionHeader.astro';
@@ -235,14 +236,17 @@ const progressSections = homeProgressSections.filter((section) => {
           {homepage.aboutParagraphs.map((paragraph) => (
             <p>{paragraph}</p>
           ))}
-          <dl class="about-metadata" aria-label="About focus areas">
-            {homepage.aboutMetadata.map((item) => (
-              <div>
-                <dt>{item.label}</dt>
-                <dd>{item.value}</dd>
-              </div>
-            ))}
-          </dl>
+          <section
+            class="about-affiliations"
+            aria-label="Education and affiliations"
+          >
+            <h3>Education &amp; Affiliations</h3>
+            <ul class="about-affiliation-list">
+              {homepage.affiliations.map((affiliation) => (
+                <AffiliationCard affiliation={affiliation} />
+              ))}
+            </ul>
+          </section>
         </BentoCard>
       )
     }
@@ -597,26 +601,27 @@ const progressSections = homeProgressSections.filter((section) => {
   :global(.bento-card.about > p + p) {
     margin-top: 1.125rem;
   }
-  .about-metadata {
+  .about-affiliations {
     display: grid;
-    gap: 0.45rem;
+    gap: 0.6rem;
     margin-top: 1.625rem;
     padding-top: 0.85rem;
     border-top: 1px solid var(--border);
-    font: 0.68rem/1.55 var(--font-mono);
   }
-  .about-metadata div {
-    display: grid;
-    grid-template-columns: 4.5rem minmax(0, 1fr);
-    gap: 0.65rem;
-  }
-  .about-metadata dt {
-    color: var(--accent-text);
-  }
-  .about-metadata dd {
+  .about-affiliations h3 {
     margin: 0;
-    color: var(--muted-foreground);
-    overflow-wrap: anywhere;
+    color: var(--accent-text);
+    font: 0.68rem/1.55 var(--font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .about-affiliation-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
   .project-grid {
     display: grid;
@@ -816,15 +821,10 @@ const progressSections = homeProgressSections.filter((section) => {
       font-size: 0.96rem;
       line-height: 1.55;
     }
-    .about-metadata {
-      gap: 0.4rem;
-      margin-top: 1.625rem;
+    .about-affiliations {
+      gap: 0.5rem;
+      margin-top: 1.5rem;
       padding-top: 0.7rem;
-      font-size: 0.74rem;
-    }
-    .about-metadata div {
-      grid-template-columns: minmax(4.1rem, auto) minmax(0, 1fr);
-      gap: 0.45rem;
     }
     .contact-links {
       gap: 0.5rem;

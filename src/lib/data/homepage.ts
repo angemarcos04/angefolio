@@ -21,11 +21,20 @@ export interface HomepageCardConfig {
   description: string;
 }
 
+export interface HomepageAffiliation {
+  name: string;
+  relationship: string;
+  logo: string;
+  url?: string;
+}
+
 export interface HomepageConfig {
   heroName: string;
   heroRoles: string[];
   portrait: string;
   aboutParagraphs: string[];
+  affiliations: HomepageAffiliation[];
+  /** Retained for compatibility with settings and revisions saved before affiliations. */
   aboutMetadata: Array<{ label: string; value: string }>;
   projectLimit: number;
   noteLimit: number;
@@ -49,6 +58,23 @@ export const defaultHomepageConfig: HomepageConfig = {
     "I'm an Information Technology student at AMA Computer College – Santiago, building web applications and backend systems while exploring Linux and the tools around it.",
     'I like practical, personalized, and sometimes unconventional approaches to development. I prefer understanding how things work and building tools that give people more control.',
     "Lately, I've also been exploring cybersecurity in my free time.",
+  ],
+  affiliations: [
+    {
+      name: 'AMA Computer College – Santiago',
+      relationship: 'Education',
+      logo: '/affiliations/ama-computer-college.png',
+    },
+    {
+      name: 'Junior Philippine Computer Society (JPCS)',
+      relationship: 'Student Organization · Member',
+      logo: '/affiliations/jpcs.png',
+    },
+    {
+      name: 'Hack5Gov',
+      relationship: 'Participant',
+      logo: '/affiliations/hack5gov.png',
+    },
   ],
   aboutMetadata: [
     { label: 'domains', value: 'linux  backend  ai/data  digital gardens' },
