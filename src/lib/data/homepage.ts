@@ -64,16 +64,19 @@ export const defaultHomepageConfig: HomepageConfig = {
       name: 'AMA Computer College – Santiago',
       relationship: 'Education',
       logo: '/affiliations/ama-computer-college.png',
+      url: 'https://www.amaes.edu.ph/',
     },
     {
       name: 'Junior Philippine Computer Society (JPCS)',
       relationship: 'Member',
       logo: '/affiliations/jpcs.png',
+      url: 'https://philippinecomputersociety.org/jpcs/',
     },
     {
       name: 'Hack5Gov',
       relationship: 'Participant',
       logo: '/affiliations/hack5gov.png',
+      url: 'https://www.facebook.com/share/p/19fyNZf5Jj/',
     },
   ],
   aboutMetadata: [

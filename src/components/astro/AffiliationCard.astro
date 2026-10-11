@@ -23,7 +23,20 @@ const tooltipId = `affiliation-tooltip-${index}`;
     <img src={affiliation.logo} alt="" width="72" height="72" loading="lazy" />
   </button>
   <div class="affiliation-tooltip" id={tooltipId} role="tooltip" hidden>
-    <strong>{affiliation.name}</strong>
+    {
+      affiliation.url ? (
+        <a
+          class="affiliation-link"
+          href={affiliation.url}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {affiliation.name}
+        </a>
+      ) : (
+        <strong>{affiliation.name}</strong>
+      )
+    }
     <span>{affiliation.relationship}</span>
   </div>
 </li>
@@ -86,10 +99,22 @@ const tooltipId = `affiliation-tooltip-${index}`;
     opacity: 1;
     transform: translateY(0);
   }
+  .affiliation-link,
   .affiliation-tooltip strong,
   .affiliation-tooltip span {
     display: block;
     overflow-wrap: anywhere;
+  }
+  .affiliation-link {
+    color: var(--foreground);
+    font: 0.84rem/1.4 var(--type-ui);
+    text-decoration: none;
+  }
+  .affiliation-link:hover,
+  .affiliation-link:focus-visible {
+    color: var(--accent-hover);
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
   .affiliation-tooltip strong {
     font: 0.84rem/1.4 var(--type-ui);

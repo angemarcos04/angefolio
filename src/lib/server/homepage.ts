@@ -18,6 +18,17 @@ export async function getHomepageConfig(): Promise<HomepageConfig> {
     return {
       ...defaultHomepageConfig,
       ...saved,
+      affiliations: (
+        saved.affiliations ?? defaultHomepageConfig.affiliations
+      ).map((affiliation) => ({
+        ...affiliation,
+        url:
+          affiliation.url ??
+          defaultHomepageConfig.affiliations.find(
+            (defaultAffiliation) =>
+              defaultAffiliation.name === affiliation.name,
+          )?.url,
+      })),
       cards: { ...defaultHomepageConfig.cards, ...saved.cards },
     };
   } catch {

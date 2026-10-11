@@ -242,6 +242,11 @@ test('affiliation logos reveal details by hover, tap, and keyboard', async ({
     ['Junior Philippine Computer Society (JPCS)', 'Member'],
     ['Hack5Gov', 'Participant'],
   ];
+  const affiliationUrls = [
+    'https://www.amaes.edu.ph/',
+    'https://philippinecomputersociety.org/jpcs/',
+    'https://www.facebook.com/share/p/19fyNZf5Jj/',
+  ];
 
   for (const [index, [name, label]] of entries.entries()) {
     const item = gallery.locator(':scope > li').nth(index);
@@ -249,6 +254,16 @@ test('affiliation logos reveal details by hover, tap, and keyboard', async ({
     const tooltip = item.locator('[role="tooltip"]');
     await expect(tooltip).toContainText(name);
     await expect(tooltip).toContainText(label);
+    const organizationLink = item.locator('.affiliation-tooltip a');
+    await expect(organizationLink).toHaveAttribute(
+      'href',
+      affiliationUrls[index],
+    );
+    await expect(organizationLink).toHaveAttribute('target', '_blank');
+    await expect(organizationLink).toHaveAttribute(
+      'rel',
+      'noopener noreferrer',
+    );
     await expect(item.locator('img')).toHaveCSS('object-fit', 'contain');
     if (index === 0) {
       const desktopBounds = await tooltip.boundingBox();
