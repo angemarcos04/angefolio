@@ -230,6 +230,69 @@ test('homepage hero omits role descriptions', async ({ page }) => {
   await expect(hero.getByRole('link', { name: 'Email' })).toBeVisible();
 });
 
+test('affiliation logos reveal details by hover, tap, and keyboard', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+
+  const gallery = page.locator('[data-affiliation-gallery]');
+  const entries: [string, string][] = [
+    ['AMA Computer College – Santiago', 'Education'],
+    ['Junior Philippine Computer Society (JPCS)', 'Member'],
+    ['Hack5Gov', 'Participant'],
+  ];
+
+  for (const [index, [name, label]] of entries.entries()) {
+    const item = gallery.locator(':scope > li').nth(index);
+    await item.locator('button').hover();
+    const tooltip = item.locator('[role="tooltip"]');
+    await expect(tooltip).toContainText(name);
+    await expect(tooltip).toContainText(label);
+    await expect(item.locator('img')).toHaveCSS('object-fit', 'contain');
+    if (index === 0) {
+      const desktopBounds = await tooltip.boundingBox();
+      expect(desktopBounds).not.toBeNull();
+      expect(desktopBounds!.x).toBeGreaterThanOrEqual(0);
+      expect(desktopBounds!.x + desktopBounds!.width).toBeLessThanOrEqual(1440);
+    }
+    await page.mouse.move(10, 10);
+    await expect(tooltip).toBeHidden();
+  }
+
+  const trigger = gallery.getByRole('button', {
+    name: 'AMA Computer College – Santiago',
+  });
+  const tooltip = gallery
+    .locator(':scope > li')
+    .first()
+    .locator('[role="tooltip"]');
+
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.locator('h1').hover();
+  await trigger.dispatchEvent('click', { detail: 1 });
+  await expect(tooltip).toContainText('Education');
+  await trigger.dispatchEvent('click', { detail: 1 });
+  await expect(tooltip).toBeHidden();
+  await trigger.dispatchEvent('click', { detail: 1 });
+  await page.locator('h1').dispatchEvent('pointerdown', {
+    pointerType: 'touch',
+  });
+  await expect(tooltip).toBeHidden();
+
+  await trigger.focus();
+  await trigger.press('Enter');
+  await expect(tooltip).toContainText('AMA Computer College – Santiago');
+  await trigger.press('Escape');
+  await expect(tooltip).toBeHidden();
+  await expect(trigger).toBeFocused();
+
+  await trigger.press('Space');
+  await expect(tooltip).toContainText('Education');
+  await trigger.press('Escape');
+  await expect(tooltip).toBeHidden();
+});
+
 for (const width of [
   320, 360, 375, 390, 414, 430, 767, 768, 1024, 1280, 1440,
 ]) {
@@ -239,6 +302,13 @@ for (const width of [
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    const affiliationItems = page.locator('.about-affiliation-list > li');
+    await expect(affiliationItems).toHaveCount(3);
+    for (const [index, naturalWidth] of [500, 300, 512].entries()) {
+      const logo = affiliationItems.nth(index).locator('img');
+      await logo.scrollIntoViewIfNeeded();
+      await expect(logo).toHaveJSProperty('naturalWidth', naturalWidth);
+    }
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth,

@@ -240,10 +240,10 @@ const progressSections = homeProgressSections.filter((section) => {
             class="about-affiliations"
             aria-label="Education and affiliations"
           >
-            <h3>Education &amp; Affiliations</h3>
-            <ul class="about-affiliation-list">
-              {homepage.affiliations.map((affiliation) => (
-                <AffiliationCard affiliation={affiliation} />
+            <h3>Education &amp; Involvement</h3>
+            <ul class="about-affiliation-list" data-affiliation-gallery>
+              {homepage.affiliations.map((affiliation, index) => (
+                <AffiliationCard affiliation={affiliation} index={index} />
               ))}
             </ul>
           </section>
@@ -616,9 +616,11 @@ const progressSections = homeProgressSections.filter((section) => {
     text-transform: uppercase;
   }
   .about-affiliation-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
-    gap: 0.5rem;
+    display: flex;
+    max-width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: clamp(0.875rem, 1.1vw, 1rem);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -825,6 +827,9 @@ const progressSections = homeProgressSections.filter((section) => {
       gap: 0.5rem;
       margin-top: 1.5rem;
       padding-top: 0.7rem;
+    }
+    .about-affiliation-list {
+      gap: clamp(0.625rem, 3vw, 0.75rem);
     }
     .contact-links {
       gap: 0.5rem;

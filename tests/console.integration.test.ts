@@ -561,7 +561,7 @@ test('private edits, audit history, recovery, and database backup', async () => 
       '/user/homepage?saved=1',
     );
     const publicHomepage = await (await fetch(`${origin}/`)).text();
-    assert.match(publicHomepage, /Education &amp; Affiliations/);
+    assert.match(publicHomepage, /Education &amp; Involvement/);
     assert.match(publicHomepage, /AMA Computer College – Santiago/);
     assert.match(publicHomepage, /\/affiliations\/ama-computer-college\.png/);
     assert.doesNotMatch(publicHomepage, /about-metadata/);

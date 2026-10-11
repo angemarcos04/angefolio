@@ -3,94 +3,235 @@ import type { HomepageAffiliation } from '../../lib/data/homepage';
 
 interface Props {
   affiliation: HomepageAffiliation;
+  index: number;
 }
 
-const { affiliation } = Astro.props;
+const { affiliation, index } = Astro.props;
+const tooltipId = `affiliation-tooltip-${index}`;
 ---
 
-<li class="affiliation-entry">
-  {
-    affiliation.url ? (
-      <a
-        class="affiliation-card"
-        href={affiliation.url}
-        target="_blank"
-        rel="noreferrer"
-      >
-        <img
-          src={affiliation.logo}
-          alt={affiliation.name}
-          width="40"
-          height="40"
-          loading="lazy"
-        />
-        <span class="affiliation-copy">
-          <span class="affiliation-name">{affiliation.name}</span>
-          <span class="affiliation-relationship">
-            {affiliation.relationship}
-          </span>
-        </span>
-      </a>
-    ) : (
-      <div class="affiliation-card">
-        <img
-          src={affiliation.logo}
-          alt={affiliation.name}
-          width="40"
-          height="40"
-          loading="lazy"
-        />
-        <span class="affiliation-copy">
-          <span class="affiliation-name">{affiliation.name}</span>
-          <span class="affiliation-relationship">
-            {affiliation.relationship}
-          </span>
-        </span>
-      </div>
-    )
-  }
+<li class="affiliation-entry" data-affiliation-item>
+  <button
+    class="logo-trigger"
+    type="button"
+    aria-label={affiliation.name}
+    aria-description={affiliation.relationship}
+    aria-controls={tooltipId}
+    aria-expanded="false"
+    data-affiliation-trigger
+  >
+    <img src={affiliation.logo} alt="" width="72" height="72" loading="lazy" />
+  </button>
+  <div class="affiliation-tooltip" id={tooltipId} role="tooltip" hidden>
+    <strong>{affiliation.name}</strong>
+    <span>{affiliation.relationship}</span>
+  </div>
 </li>
 
 <style>
   .affiliation-entry {
-    min-width: 0;
-    margin: 0;
-    padding: 0.55rem;
+    position: relative;
+    flex: 0 0 auto;
+  }
+  .logo-trigger {
+    display: grid;
+    width: clamp(72px, 6.4vw, 92px);
+    aspect-ratio: 1;
+    place-items: center;
+    padding: 8px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
+    background: var(--card);
+    cursor: pointer;
+    transition:
+      border-color 140ms ease,
+      background-color 140ms ease;
   }
-  .affiliation-card {
-    display: flex;
-    min-width: 0;
-    min-height: 2.75rem;
-    align-items: center;
-    gap: 0.6rem;
-    color: inherit;
-    text-decoration: none;
+  .logo-trigger:hover,
+  .logo-trigger[aria-expanded='true'] {
+    border-color: var(--border-strong);
+    background: var(--muted);
   }
-  a.affiliation-card:hover .affiliation-name {
-    color: var(--accent-hover);
+  .logo-trigger:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
   }
   img {
     display: block;
-    width: 2.5rem;
-    height: 2.5rem;
-    flex: 0 0 2.5rem;
+    width: min(100%, 72px);
+    height: min(100%, 72px);
     object-fit: contain;
   }
-  .affiliation-copy {
-    display: grid;
-    min-width: 0;
-    gap: 0.2rem;
-  }
-  .affiliation-name {
+  .affiliation-tooltip {
+    position: fixed;
+    z-index: 100;
+    width: max-content;
+    max-width: min(240px, calc(100vw - 24px));
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--card);
     color: var(--foreground);
-    font: 0.8rem/1.3 var(--type-ui);
+    opacity: 0;
+    pointer-events: auto;
+    transform: translateY(4px);
+    transition:
+      opacity 140ms ease,
+      transform 140ms ease;
+  }
+  .affiliation-tooltip[hidden] {
+    display: none;
+  }
+  .affiliation-tooltip.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .affiliation-tooltip strong,
+  .affiliation-tooltip span {
+    display: block;
     overflow-wrap: anywhere;
   }
-  .affiliation-relationship {
+  .affiliation-tooltip strong {
+    font: 0.84rem/1.4 var(--type-ui);
+  }
+  .affiliation-tooltip span {
+    margin-top: 0.15rem;
     color: var(--muted-foreground);
-    font: 0.68rem/1.35 var(--font-mono);
-    overflow-wrap: anywhere;
+    font: 0.75rem/1.4 var(--font-mono);
+  }
+  @media (max-width: 767px) {
+    .logo-trigger {
+      width: clamp(72px, 20vw, 80px);
+      padding: 5px;
+    }
+    img {
+      width: min(100%, 64px);
+      height: min(100%, 64px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .logo-trigger,
+    .affiliation-tooltip {
+      transition: none;
+    }
   }
 </style>
+
+<script>
+  const galleryItems = document.querySelectorAll<HTMLElement>(
+    '[data-affiliation-item]',
+  );
+
+  function triggerFor(item: HTMLElement) {
+    return item.querySelector<HTMLButtonElement>('[data-affiliation-trigger]');
+  }
+
+  function tooltipFor(item: HTMLElement) {
+    return item.querySelector<HTMLElement>('.affiliation-tooltip');
+  }
+
+  function closeItem(item: HTMLElement, returnFocus = false) {
+    const trigger = triggerFor(item);
+    const tooltip = tooltipFor(item);
+    if (!trigger || !tooltip) return;
+
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.removeAttribute('aria-describedby');
+    tooltip.classList.remove('is-visible');
+    window.setTimeout(() => {
+      if (trigger.getAttribute('aria-expanded') === 'false')
+        tooltip.hidden = true;
+    }, 140);
+    if (returnFocus) trigger.focus();
+  }
+
+  function closeOthers(except?: HTMLElement) {
+    galleryItems.forEach((item) => {
+      if (item !== except) closeItem(item);
+    });
+  }
+
+  function openItem(item: HTMLElement) {
+    const trigger = triggerFor(item);
+    const tooltip = tooltipFor(item);
+    if (!trigger || !tooltip) return;
+
+    closeOthers(item);
+    tooltip.hidden = false;
+    trigger.setAttribute('aria-expanded', 'true');
+    trigger.setAttribute('aria-describedby', tooltip.id);
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const margin = 8;
+    const left = Math.min(
+      Math.max(
+        triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2,
+        margin,
+      ),
+      window.innerWidth - tooltipRect.width - margin,
+    );
+    let top = triggerRect.top - tooltipRect.height - margin;
+    if (top < margin) top = triggerRect.bottom + margin;
+    top = Math.min(
+      Math.max(top, margin),
+      window.innerHeight - tooltipRect.height - margin,
+    );
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+    requestAnimationFrame(() => tooltip.classList.add('is-visible'));
+  }
+
+  galleryItems.forEach((item) => {
+    const trigger = triggerFor(item);
+    if (!trigger) return;
+
+    item.addEventListener('pointerenter', (event) => {
+      if (event.pointerType === 'mouse') openItem(item);
+    });
+    item.addEventListener('pointerleave', () => {
+      if (trigger.matches(':focus-visible')) return;
+      closeItem(item);
+    });
+    item.addEventListener('focusin', () => {
+      if (trigger.matches(':focus-visible')) openItem(item);
+    });
+    item.addEventListener('focusout', () => {
+      window.setTimeout(() => {
+        if (!item.contains(document.activeElement) && !item.matches(':hover')) {
+          closeItem(item);
+        }
+      }, 0);
+    });
+    trigger.addEventListener('click', (event) => {
+      const mouseHover =
+        window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+        item.matches(':hover');
+      if (event.detail === 0 || mouseHover) {
+        openItem(item);
+      } else if (trigger.getAttribute('aria-expanded') === 'true') {
+        closeItem(item);
+      } else {
+        openItem(item);
+      }
+    });
+  });
+
+  document.addEventListener('pointerdown', (event) => {
+    if ((event.target as Element).closest('[data-affiliation-gallery]')) return;
+    closeOthers();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const openItemElement = [...galleryItems].find(
+      (item) => triggerFor(item)?.getAttribute('aria-expanded') === 'true',
+    );
+    if (!openItemElement) return;
+    event.preventDefault();
+    closeItem(openItemElement, true);
+  });
+
+  window.addEventListener('resize', () => closeOthers());
+  window.addEventListener('scroll', () => closeOthers(), { passive: true });
+</script>

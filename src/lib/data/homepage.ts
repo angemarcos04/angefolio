@@ -67,7 +67,7 @@ export const defaultHomepageConfig: HomepageConfig = {
     },
     {
       name: 'Junior Philippine Computer Society (JPCS)',
-      relationship: 'Student Organization · Member',
+      relationship: 'Member',
       logo: '/affiliations/jpcs.png',
     },
     {
