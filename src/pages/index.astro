@@ -158,15 +158,31 @@ const terminalData: PortfolioTerminalData = {
   latestUpdate,
   portfolioSince: 2023,
 };
+const showNowCard = cards.now.visible && renderedNowItems.length > 0;
+const showStackCard = cards.stack.visible;
+const showActivityCard = cards.activity.visible;
+const desktopDashboardSpans = { now: 0, stack: 0, activity: 0 };
+if (showNowCard && showStackCard && showActivityCard) {
+  Object.assign(desktopDashboardSpans, { now: 3, stack: 5, activity: 4 });
+} else if (showNowCard && showStackCard) {
+  Object.assign(desktopDashboardSpans, { now: 4, stack: 8 });
+} else if (showNowCard && showActivityCard) {
+  Object.assign(desktopDashboardSpans, { now: 8, activity: 4 });
+} else if (showStackCard && showActivityCard) {
+  Object.assign(desktopDashboardSpans, { stack: 8, activity: 4 });
+} else if (showNowCard) {
+  desktopDashboardSpans.now = 12;
+} else if (showStackCard) {
+  desktopDashboardSpans.stack = 12;
+} else if (showActivityCard) {
+  desktopDashboardSpans.activity = 12;
+}
 const progressSections = homeProgressSections.filter((section) => {
   if (section.id === 'introduction') return true;
   if (section.id === 'featured-projects')
     return cards.projects.visible && featuredProjects.length > 0;
-  if (section.id === 'current-focus')
-    return (
-      (cards.now.visible && renderedNowItems.length > 0) || cards.stack.visible
-    );
-  if (section.id === 'github-activity') return cards.activity.visible;
+  if (section.id === 'current-focus') return showNowCard || showStackCard;
+  if (section.id === 'github-activity') return showActivityCard;
   if (section.id === 'latest-notes')
     return cards.notes.visible && featuredNotes.length > 0;
   if (section.id === 'featured-blog')
@@ -185,71 +201,81 @@ const progressSections = homeProgressSections.filter((section) => {
   <HomeProgressRail client:load sections={progressSections} />
   <CollectionHeader active="home" />
   <BentoGrid class="homepage-grid">
-    <BentoCard
+    <div
       id="introduction"
-      class="hero home-anchor subtle-grid md:col-span-2 lg:col-span-8"
-      accent="strong"
+      class:list={[
+        'desktop-introduction-grid home-anchor md:col-span-2 lg:col-span-12',
+        cards.about.visible ? 'has-about' : 'without-about',
+      ]}
     >
-      <div class="hero-intro">
-        <figure class="hero-portrait">
-          <div class="hero-portrait-titlebar" aria-hidden="true">
-            <span class="hero-portrait-controls">
-              <span class="hero-portrait-control"></span>
-              <span class="hero-portrait-control"></span>
-              <span class="hero-portrait-control"></span>
-            </span>
-            <span class="hero-portrait-filename">portrait.jpg</span>
-          </div>
-          <img
-            src={homepage.portrait}
-            alt={homepage.heroName}
-            width="460"
-            height="460"
-            loading="eager"
-            decoding="async"
-            fetchpriority="high"
-            class="hero-portrait-image"
-          />
-        </figure>
-
-        <div class="hero-copy">
-          <h1 class="hero-heading text-balance">{homepage.heroName}</h1>
-          <div class="actions">
-            <Button href="/projects" variant="primary">Projects</Button>
-            <Button href={'mailto:' + publicSettings.email} variant="ghost"
-              >Email</Button
-            >
-          </div>
+      <BentoCard class="hero subtle-grid" accent="strong">
+        <div class="desktop-profile-stack">
+          <BentoCard class="desktop-profile-tile subtle-grid" accent="strong">
+            <div class="hero-intro">
+              <div class="hero-copy">
+                <h1 class="hero-heading text-balance">{homepage.heroName}</h1>
+                <div class="actions">
+                  <Button href="/projects" variant="primary">Projects</Button>
+                  <Button
+                    href={'mailto:' + publicSettings.email}
+                    variant="ghost">Email</Button
+                  >
+                </div>
+              </div>
+              <figure class="hero-portrait">
+                <div class="hero-portrait-titlebar" aria-hidden="true">
+                  <span class="hero-portrait-controls">
+                    <span class="hero-portrait-control"></span>
+                    <span class="hero-portrait-control"></span>
+                    <span class="hero-portrait-control"></span>
+                  </span>
+                  <span class="hero-portrait-filename">portrait.jpg</span>
+                </div>
+                <img
+                  src={homepage.portrait}
+                  alt={homepage.heroName}
+                  width="460"
+                  height="460"
+                  loading="eager"
+                  decoding="async"
+                  fetchpriority="high"
+                  class="hero-portrait-image"
+                />
+              </figure>
+            </div>
+          </BentoCard>
+          <BentoCard class="desktop-terminal-tile">
+            <PortfolioTerminal client:load data={terminalData} />
+          </BentoCard>
         </div>
-      </div>
-      <PortfolioTerminal client:load data={terminalData} />
-    </BentoCard>
+      </BentoCard>
 
-    {
-      cards.about.visible && (
-        <BentoCard
-          class="about md:col-span-2 lg:col-span-4"
-          accent="soft"
-          eyebrow={cards.about.eyebrow}
-          title={cards.about.title}
-        >
-          {homepage.aboutParagraphs.map((paragraph) => (
-            <p>{paragraph}</p>
-          ))}
-          <section
-            class="about-affiliations"
-            aria-label="Education and affiliations"
+      {
+        cards.about.visible && (
+          <BentoCard
+            class="about"
+            accent="soft"
+            eyebrow={cards.about.eyebrow}
+            title={cards.about.title}
           >
-            <h3>Education &amp; Involvement</h3>
-            <ul class="about-affiliation-list" data-affiliation-gallery>
-              {homepage.affiliations.map((affiliation, index) => (
-                <AffiliationCard affiliation={affiliation} index={index} />
-              ))}
-            </ul>
-          </section>
-        </BentoCard>
-      )
-    }
+            {homepage.aboutParagraphs.map((paragraph) => (
+              <p>{paragraph}</p>
+            ))}
+            <section
+              class="about-affiliations"
+              aria-label="Education and affiliations"
+            >
+              <h3>Education &amp; Involvement</h3>
+              <ul class="about-affiliation-list" data-affiliation-gallery>
+                {homepage.affiliations.map((affiliation, index) => (
+                  <AffiliationCard affiliation={affiliation} index={index} />
+                ))}
+              </ul>
+            </section>
+          </BentoCard>
+        )
+      }
+    </div>
     {
       cards.projects.visible && featuredProjects.length > 0 && (
         <BentoCard
@@ -284,10 +310,11 @@ const progressSections = homeProgressSections.filter((section) => {
       )
     }
     {
-      cards.now.visible && renderedNowItems.length > 0 && (
+      showNowCard && (
         <BentoCard
           id="current-focus"
-          class="now home-anchor md:col-span-1 lg:col-span-3"
+          class="now home-anchor md:col-span-1 dashboard-card"
+          style={`--dashboard-span: ${desktopDashboardSpans.now}`}
           accent="medium"
           eyebrow={cards.now.eyebrow}
           title={cards.now.title}
@@ -304,14 +331,11 @@ const progressSections = homeProgressSections.filter((section) => {
     }
 
     {
-      cards.stack.visible && (
+      showStackCard && (
         <BentoCard
-          id={
-            !cards.now.visible || renderedNowItems.length === 0
-              ? 'current-focus'
-              : undefined
-          }
-          class="stack md:col-span-1 lg:col-span-5"
+          id={!showNowCard ? 'current-focus' : undefined}
+          class="stack md:col-span-1 dashboard-card"
+          style={`--dashboard-span: ${desktopDashboardSpans.stack}`}
           accent="soft"
           eyebrow={cards.stack.eyebrow}
           title={cards.stack.title}
@@ -327,10 +351,11 @@ const progressSections = homeProgressSections.filter((section) => {
     }
 
     {
-      cards.activity.visible && (
+      showActivityCard && (
         <BentoCard
           id="github-activity"
-          class="github home-anchor md:col-span-2 lg:col-span-4"
+          class="github home-anchor md:col-span-2 dashboard-card"
+          style={`--dashboard-span: ${desktopDashboardSpans.activity}`}
           accent="medium"
           eyebrow={cards.activity.eyebrow}
           title={cards.activity.title}
@@ -487,6 +512,12 @@ const progressSections = homeProgressSections.filter((section) => {
   </BentoGrid>
 </Layout>
 <style>
+  .desktop-introduction-grid {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
   .actions {
     display: flex;
     align-items: center;
@@ -576,6 +607,17 @@ const progressSections = homeProgressSections.filter((section) => {
     line-height: 1.15;
     letter-spacing: 0.01em;
   }
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .hero-intro {
+      grid-template-areas: 'portrait copy';
+    }
+    .hero-portrait {
+      grid-area: portrait;
+    }
+    .hero-copy {
+      grid-area: copy;
+    }
+  }
   :global(.home-anchor) {
     scroll-margin-top: clamp(1.5rem, 4vw, 3rem);
   }
@@ -592,11 +634,51 @@ const progressSections = homeProgressSections.filter((section) => {
     margin-top: 1.2rem;
   }
   @media (min-width: 1024px) {
+    .desktop-introduction-grid.has-about {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
+    :global(.desktop-introduction-grid.without-about) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    :global(.desktop-introduction-grid > .hero) {
+      display: contents;
+    }
+    :global(.desktop-introduction-grid > .hero::before) {
+      display: none;
+    }
+    .desktop-profile-stack {
+      display: grid;
+      min-width: 0;
+      grid-template-columns: minmax(0, 1fr);
+      align-content: start;
+      gap: 1rem;
+    }
+    :global(
+      .desktop-introduction-grid .desktop-profile-stack > .desktop-profile-tile
+    ) {
+      padding: 1.25rem;
+    }
+    :global(
+      .desktop-introduction-grid .desktop-profile-stack > .desktop-terminal-tile
+    ) {
+      padding: 0.875rem;
+    }
+    :global(.desktop-terminal-tile .terminal-preview) {
+      margin-top: 0;
+    }
+    :global(.desktop-introduction-grid > .about) {
+      align-self: start;
+      min-width: 0;
+    }
+    :global(.homepage-grid .dashboard-card) {
+      grid-column: span var(--dashboard-span);
+    }
     .hero-intro {
-      grid-template-columns: minmax(0, 1fr) minmax(11.25rem, 13rem);
+      grid-template-columns: minmax(0, 1fr) minmax(9.375rem, 11.875rem);
       grid-template-areas: 'copy portrait';
       align-items: start;
-      gap: clamp(1.25rem, 2vw, 1.5rem);
+      gap: clamp(0.75rem, 1.6vw, 1.25rem);
     }
     .hero-copy {
       grid-area: copy;
@@ -608,7 +690,7 @@ const progressSections = homeProgressSections.filter((section) => {
     .hero-heading {
       max-width: 13ch;
       margin-bottom: 0.75rem;
-      font-size: clamp(2.75rem, 4vw, 3.25rem);
+      font-size: clamp(2.5rem, 3.4vw, 3rem);
       line-height: 1.12;
     }
     .actions {
@@ -652,6 +734,25 @@ const progressSections = homeProgressSections.filter((section) => {
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+  @media (max-width: 1023px) {
+    :global(.hero .desktop-profile-stack) {
+      display: block;
+    }
+    :global(.hero .desktop-profile-stack > .desktop-profile-tile),
+    :global(.hero .desktop-profile-stack > .desktop-terminal-tile) {
+      overflow: visible;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      transition: none;
+    }
+    :global(.hero .desktop-profile-stack > .desktop-profile-tile::before),
+    :global(.hero .desktop-profile-stack > .desktop-terminal-tile::before) {
+      display: none;
+    }
   }
   .project-grid {
     display: grid;
@@ -773,6 +874,9 @@ const progressSections = homeProgressSections.filter((section) => {
     }
   }
   @media (max-width: 767px) {
+    .desktop-introduction-grid {
+      gap: 0.75rem;
+    }
     :global(.container-shell .bento-card.about > header) {
       margin-bottom: 1.25rem;
     }

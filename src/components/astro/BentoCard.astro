@@ -5,6 +5,7 @@ interface Props {
   eyebrow?: string;
   description?: string;
   class?: string;
+  style?: string;
   accent?: 'none' | 'soft' | 'medium' | 'strong';
 }
 const {
@@ -13,12 +14,14 @@ const {
   eyebrow,
   description,
   class: className = '',
+  style,
   accent = 'none',
 } = Astro.props;
 ---
 
 <section
   {id}
+  {style}
   class:list={['bento-card bento-surface', `accent-${accent}`, className]}
 >
   {
