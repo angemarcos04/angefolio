@@ -65,33 +65,47 @@ test('technology chips keep their labels and load mapped local icons', async ({
   ).toHaveCount(0);
 });
 
-test('all listed credentials appear with Credly artwork and assertion links', async ({
+test('homepage spotlights one credential and links to the full archive', async ({
   page,
 }) => {
   await page.goto('/');
-  const tiles = page.locator('.credential-tile');
-  await expect(tiles).toHaveCount(18);
+  const spotlight = page.locator('.credential-spotlight');
+  await expect(spotlight).toHaveCount(1);
+  await expect(spotlight).toContainText('Prompt Like an Engineer');
+  await expect(spotlight).toContainText('Cisco');
+  await expect(spotlight).toContainText('Digital badge');
+  await expect(spotlight.locator('.credential-verify')).toHaveAttribute(
+    'href',
+    'https://www.credly.com/badges/7301a65b-2bd8-495e-a12e-514d8def5a66',
+  );
   await expect(
-    tiles.filter({ hasText: 'CompTIA Tech+ Certification' }),
-  ).toHaveCount(1);
+    page.getByRole('link', { name: 'All credentials →' }),
+  ).toHaveAttribute('href', '/credentials');
+});
+
+test('credential archive renders public records, filters types, and expands details', async ({
+  page,
+}) => {
+  await page.goto('/credentials');
+  const rows = page.locator('.credential-row');
+  await expect(rows).toHaveCount(18);
   await expect(
-    tiles.filter({ hasText: 'Prompt Like an Engineer' }),
-  ).toHaveCount(1);
-  await expect(
-    tiles.filter({ hasText: 'Microsoft Azure Fundamentals (AZ-900)' }),
+    rows.filter({ hasText: 'Microsoft Azure Fundamentals (AZ-900)' }),
   ).toContainText('20180bff907b977398922ed27b8bf2dbb6429aa2');
   await expect(
-    tiles.filter({ hasText: 'Microsoft Certified: Azure Fundamentals' }),
+    rows.filter({ hasText: 'Microsoft Certified: Azure Fundamentals' }),
   ).toContainText('31DB658B399D15C5');
-  await expect(tiles.filter({ hasText: 'Network Cable' })).toContainText(
+  await expect(rows.filter({ hasText: 'Network Cable' })).toContainText(
     'LetsDefend',
   );
-  const assets = await page.locator('.credential-image').evaluateAll((images) =>
-    images.map((image) => ({
-      src: (image as HTMLImageElement).getAttribute('src'),
-      loaded: (image as HTMLImageElement).naturalWidth > 0,
-    })),
-  );
+  const assets = await page
+    .locator('.credential-thumb img')
+    .evaluateAll((images) =>
+      images.map((image) => ({
+        src: (image as HTMLImageElement).getAttribute('src'),
+        loaded: (image as HTMLImageElement).naturalWidth > 0,
+      })),
+    );
   expect(assets).toHaveLength(13);
   expect(
     assets.every(
@@ -99,7 +113,9 @@ test('all listed credentials appear with Credly artwork and assertion links', as
     ),
   ).toBe(true);
   const verificationLinks = await page
-    .locator('.credential-tile a')
+    .locator(
+      '.credential-row .credential-actions a[href*="credly.com/badges/"]',
+    )
     .evaluateAll((links) =>
       links.map((link) => (link as HTMLAnchorElement).href),
     );
@@ -109,6 +125,56 @@ test('all listed credentials appear with Credly artwork and assertion links', as
       /^https:\/\/www\.credly\.com\/badges\/[0-9a-f-]+$/.test(href),
     ),
   ).toBe(true);
+  const courseFilter = page.getByRole('button', { name: 'Courses' });
+  await courseFilter.click();
+  await expect(courseFilter).toHaveAttribute('aria-pressed', 'true');
+  await expect(
+    rows.filter({ hasText: 'Foundations of Project Management' }),
+  ).toBeVisible();
+  await expect(
+    rows.filter({ hasText: 'Prompt Like an Engineer' }),
+  ).toBeHidden();
+  await rows
+    .filter({ hasText: 'Foundations of Project Management' })
+    .locator('summary')
+    .click();
+  await expect(
+    rows.filter({ hasText: 'Foundations of Project Management' }),
+  ).toHaveAttribute('open', '');
+  await expect(
+    rows.filter({ hasText: 'Foundations of Project Management' }),
+  ).toContainText('Course completion');
+  await page.getByRole('button', { name: 'All', exact: true }).click();
+  await rows
+    .filter({ hasText: 'Prompt Like an Engineer' })
+    .locator('summary')
+    .click();
+  await expect(
+    rows.filter({ hasText: 'Foundations of Project Management' }),
+  ).toHaveAttribute('open', '');
+  await expect(
+    rows.filter({ hasText: 'Prompt Like an Engineer' }),
+  ).toHaveAttribute('open', '');
+  for (const width of [
+    320, 360, 375, 390, 430, 768, 820, 1024, 1280, 1440, 1920,
+  ]) {
+    await page.setViewportSize({ width, height: 850 });
+    const widths = await page.evaluate(() => ({
+      document: document.documentElement.scrollWidth,
+      listRight: Math.ceil(
+        document.querySelector('.credential-list')?.getBoundingClientRect()
+          .right ?? 0,
+      ),
+    }));
+    expect(
+      widths.document,
+      `archive overflow at ${width}px`,
+    ).toBeLessThanOrEqual(width);
+    expect(
+      widths.listRight,
+      `archive list overflow at ${width}px`,
+    ).toBeLessThanOrEqual(width);
+  }
 });
 
 test('stack and credential layouts do not cause horizontal overflow', async ({

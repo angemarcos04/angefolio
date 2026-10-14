@@ -574,6 +574,21 @@ test('private edits, audit history, recovery, and database backup', async () => 
           visible: false,
           order: 1,
         },
+        {
+          id: 'visible-nonfeatured-test-credential',
+          title: 'Visible non-featured credential',
+          issuer: 'Second Test Issuer',
+          type: 'license',
+          image: null,
+          verificationUrl: null,
+          source: 'manual',
+          sourceUrl: null,
+          issuedAt: '2024-05',
+          expiresAt: null,
+          featured: false,
+          visible: true,
+          order: 2,
+        },
       ]),
     };
     for (const key of homepageCardKeys) {
@@ -598,12 +613,26 @@ test('private edits, audit history, recovery, and database backup', async () => 
     assert.match(publicHomepage, /AMA Computer College – Santiago/);
     assert.match(publicHomepage, /\/affiliations\/ama-computer-college\.png/);
     assert.match(publicHomepage, /Test verified badge/);
-    assert.match(publicHomepage, /ID: TEST-ID-123/);
+    assert.doesNotMatch(publicHomepage, /ID: TEST-ID-123/);
     assert.match(
       publicHomepage,
       /https:\/\/www\.credly\.com\/badges\/test-assertion/,
     );
     assert.doesNotMatch(publicHomepage, /Hidden test credential/);
+    const publicCredentialArchive = await (
+      await fetch(`${origin}/credentials`)
+    ).text();
+    assert.match(publicCredentialArchive, /Test verified badge/);
+    assert.match(publicCredentialArchive, /TEST-ID-123/);
+    assert.match(publicCredentialArchive, /Visible non-featured credential/);
+    assert.doesNotMatch(publicCredentialArchive, /Hidden test credential/);
+    const credentialsSitemap = await (
+      await fetch(`${origin}/sitemap-credentials.xml`)
+    ).text();
+    assert.match(
+      credentialsSitemap,
+      /<loc>https:\/\/[^<]+\/credentials<\/loc>/,
+    );
     assert.doesNotMatch(publicHomepage, /about-metadata/);
     const homepageEditor = await (
       await fetch(`${origin}/user/homepage`, { headers: { cookie } })

@@ -59,7 +59,7 @@ export interface HomepageConfig {
   portrait: string;
   aboutParagraphs: string[];
   affiliations: HomepageAffiliation[];
-  /** Public Credly records, with images and assertion pages verified. */
+  /** Curated credential records used by the homepage and public archive. */
   credentials: HomepageCredential[];
   /** Retained for compatibility with settings and revisions saved before affiliations. */
   aboutMetadata: Array<{ label: string; value: string }>;
