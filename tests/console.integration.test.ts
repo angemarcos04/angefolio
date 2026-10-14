@@ -542,6 +542,39 @@ test('private edits, audit history, recovery, and database backup', async () => 
       labLimit: '0',
       stackGroups: 'Frontend | Astro',
       activityStatus: defaultHomepageConfig.activityStatus,
+      credentials: JSON.stringify([
+        {
+          id: 'test-credential',
+          title: 'Test verified badge',
+          issuer: 'Test Issuer',
+          type: 'digital_badge',
+          image: '/credentials/test-badge.webp',
+          verificationUrl: 'https://www.credly.com/badges/test-assertion',
+          credentialId: 'TEST-ID-123',
+          source: 'credly',
+          sourceUrl: 'https://www.credly.com/users/test-owner',
+          issuedAt: '2025-04-12',
+          expiresAt: null,
+          featured: true,
+          visible: true,
+          order: 0,
+        },
+        {
+          id: 'hidden-test-credential',
+          title: 'Hidden test credential',
+          issuer: 'Test Issuer',
+          type: 'course',
+          image: null,
+          verificationUrl: null,
+          source: 'manual',
+          sourceUrl: null,
+          issuedAt: null,
+          expiresAt: null,
+          featured: true,
+          visible: false,
+          order: 1,
+        },
+      ]),
     };
     for (const key of homepageCardKeys) {
       const card = defaultHomepageConfig.cards[key];
@@ -564,12 +597,24 @@ test('private edits, audit history, recovery, and database backup', async () => 
     assert.match(publicHomepage, /Education &amp; Involvement/);
     assert.match(publicHomepage, /AMA Computer College – Santiago/);
     assert.match(publicHomepage, /\/affiliations\/ama-computer-college\.png/);
+    assert.match(publicHomepage, /Test verified badge/);
+    assert.match(publicHomepage, /ID: TEST-ID-123/);
+    assert.match(
+      publicHomepage,
+      /https:\/\/www\.credly\.com\/badges\/test-assertion/,
+    );
+    assert.doesNotMatch(publicHomepage, /Hidden test credential/);
     assert.doesNotMatch(publicHomepage, /about-metadata/);
     const homepageEditor = await (
       await fetch(`${origin}/user/homepage`, { headers: { cookie } })
     ).text();
     assert.match(homepageEditor, /name="blogLimit"/);
     assert.match(homepageEditor, /name="labLimit"/);
+    assert.match(homepageEditor, /Credential collection/);
+    assert.match(homepageEditor, /Add credential/);
+    assert.match(homepageEditor, /Verification URL/);
+    assert.match(homepageEditor, /Credential ID/);
+    assert.match(homepageEditor, /Test verified badge/);
     assert.match(homepageEditor, /value="0"/);
 
     const logout = await formRequest(origin, '/user/logout', {}, cookie);

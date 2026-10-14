@@ -1,4 +1,5 @@
 import { stackGroups } from './home';
+import { initialCredentials } from './credentials';
 
 export const homepageCardKeys = [
   'about',
@@ -9,6 +10,7 @@ export const homepageCardKeys = [
   'notes',
   'blog',
   'lab',
+  'credentials',
   'contact',
 ] as const;
 
@@ -28,12 +30,37 @@ export interface HomepageAffiliation {
   url?: string;
 }
 
+export type HomepageCredentialType =
+  'certification' | 'digital_badge' | 'course' | 'training' | 'license';
+
+export type HomepageCredentialSource =
+  'credly' | 'linkedin' | 'issuer' | 'manual';
+
+export interface HomepageCredential {
+  id: string;
+  title: string;
+  issuer: string;
+  type: HomepageCredentialType;
+  image: string | null;
+  verificationUrl: string | null;
+  credentialId?: string | null;
+  source: HomepageCredentialSource;
+  sourceUrl: string | null;
+  issuedAt: string | null;
+  expiresAt: string | null;
+  featured: boolean;
+  visible: boolean;
+  order: number;
+}
+
 export interface HomepageConfig {
   heroName: string;
   heroRoles: string[];
   portrait: string;
   aboutParagraphs: string[];
   affiliations: HomepageAffiliation[];
+  /** Public Credly records, with images and assertion pages verified. */
+  credentials: HomepageCredential[];
   /** Retained for compatibility with settings and revisions saved before affiliations. */
   aboutMetadata: Array<{ label: string; value: string }>;
   projectLimit: number;
@@ -79,6 +106,7 @@ export const defaultHomepageConfig: HomepageConfig = {
       url: 'https://www.facebook.com/share/p/19fyNZf5Jj/',
     },
   ],
+  credentials: initialCredentials,
   aboutMetadata: [
     { label: 'domains', value: 'linux  backend  ai/data  digital gardens' },
     { label: 'focus', value: 'practical tools  privacy-first systems' },
@@ -136,6 +164,12 @@ export const defaultHomepageConfig: HomepageConfig = {
       visible: true,
       eyebrow: 'Featured Lab',
       title: 'Experiments worth sharing',
+      description: '',
+    },
+    credentials: {
+      visible: true,
+      eyebrow: 'Credentials',
+      title: 'Certifications & Badges',
       description: '',
     },
     contact: {

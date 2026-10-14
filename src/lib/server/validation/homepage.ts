@@ -3,6 +3,7 @@ import {
   homepageCardKeys,
   type HomepageAffiliation,
   type HomepageCardKey,
+  type HomepageCredential,
   type HomepageConfig,
 } from '../../data/homepage';
 
@@ -81,6 +82,137 @@ function validHttpsUrl(value: string): boolean {
   }
 }
 
+function validCredentialDate(value: unknown): value is string | null {
+  if (value === null || value === '') return true;
+  if (typeof value !== 'string') return false;
+  if (/^\d{4}-\d{2}$/.test(value)) {
+    const [year, month] = value.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, 1));
+    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1;
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return (
+    !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+  );
+}
+
+function validLocalCredentialImage(value: unknown): value is string | null {
+  return (
+    value === null ||
+    (typeof value === 'string' &&
+      value.length <= 2048 &&
+      value.startsWith('/') &&
+      !value.startsWith('//') &&
+      !value.includes('..') &&
+      !/[?#\\\s]/.test(value))
+  );
+}
+
+function parseCredentials(
+  value: string,
+  errors: string[],
+): HomepageCredential[] {
+  if (!value) return [];
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    errors.push('Credential records could not be read.');
+    return [];
+  }
+  if (!Array.isArray(parsed) || parsed.length > 100) {
+    errors.push('Use no more than 100 credential records.');
+    return [];
+  }
+
+  const entries: HomepageCredential[] = [];
+  const ids = new Set<string>();
+  const types = new Set([
+    'certification',
+    'digital_badge',
+    'course',
+    'training',
+    'license',
+  ]);
+  const sources = new Set(['credly', 'linkedin', 'issuer', 'manual']);
+  for (const raw of parsed) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      errors.push('Each credential must be a record.');
+      continue;
+    }
+    const item = raw as Record<string, unknown>;
+    const id = typeof item.id === 'string' ? item.id.trim() : '';
+    const title = typeof item.title === 'string' ? item.title.trim() : '';
+    const issuer = typeof item.issuer === 'string' ? item.issuer.trim() : '';
+    const type = item.type;
+    const source = item.source;
+    const verificationUrl =
+      item.verificationUrl === '' ? null : item.verificationUrl;
+    const credentialId =
+      typeof item.credentialId === 'string' && item.credentialId.trim()
+        ? item.credentialId.trim()
+        : null;
+    const sourceUrl = item.sourceUrl === '' ? null : item.sourceUrl;
+    const issuedAt = item.issuedAt === '' ? null : item.issuedAt;
+    const expiresAt = item.expiresAt === '' ? null : item.expiresAt;
+    const order = item.order;
+    if (
+      !/^[A-Za-z0-9_-]{1,80}$/.test(id) ||
+      ids.has(id) ||
+      !title ||
+      title.length > 160 ||
+      !issuer ||
+      issuer.length > 120 ||
+      typeof type !== 'string' ||
+      !types.has(type) ||
+      typeof source !== 'string' ||
+      !sources.has(source) ||
+      !validLocalCredentialImage(item.image) ||
+      (verificationUrl !== null &&
+        (typeof verificationUrl !== 'string' ||
+          verificationUrl.length > 2048 ||
+          !validHttpsUrl(verificationUrl))) ||
+      (credentialId !== null && credentialId.length > 200) ||
+      (sourceUrl !== null &&
+        (typeof sourceUrl !== 'string' ||
+          sourceUrl.length > 2048 ||
+          !validHttpsUrl(sourceUrl))) ||
+      !validCredentialDate(issuedAt) ||
+      !validCredentialDate(expiresAt) ||
+      typeof item.featured !== 'boolean' ||
+      typeof item.visible !== 'boolean' ||
+      !Number.isInteger(order) ||
+      (order as number) < 0 ||
+      (order as number) > 999
+    ) {
+      errors.push(
+        'Check credential titles, types, HTTPS links, local image paths, dates, and display order.',
+      );
+      continue;
+    }
+    ids.add(id);
+    entries.push({
+      id,
+      title,
+      issuer,
+      type: type as HomepageCredential['type'],
+      image: item.image,
+      verificationUrl,
+      credentialId,
+      source: source as HomepageCredential['source'],
+      sourceUrl,
+      issuedAt,
+      expiresAt,
+      featured: item.featured,
+      visible: item.visible,
+      order: order as number,
+    });
+  }
+  return entries;
+}
+
 export function validateHomepageForm(
   form: URLSearchParams,
 ): HomepageValidationResult {
@@ -98,6 +230,9 @@ export function validateHomepageForm(
   const affiliations = form.has('affiliations')
     ? parseAffiliations(text(form, 'affiliations'), errors)
     : defaultHomepageConfig.affiliations;
+  const credentials = form.has('credentials')
+    ? parseCredentials(text(form, 'credentials'), errors)
+    : defaultHomepageConfig.credentials;
 
   if (!heroName || heroName.length > 100)
     errors.push('Name is required (100 characters maximum).');
@@ -254,6 +389,7 @@ export function validateHomepageForm(
       portrait,
       aboutParagraphs,
       affiliations,
+      credentials,
       aboutMetadata,
       projectLimit,
       noteLimit,

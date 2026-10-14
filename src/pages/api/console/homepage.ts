@@ -17,7 +17,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user)
     return new Response('Authentication required.', { status: 401 });
   if (!hasTrustedOrigin(request)) return redirect('error=invalid');
-  const form = await readUrlEncodedForm(request, 64 * 1024);
+  const form = await readUrlEncodedForm(request, 256 * 1024);
   if (!form) return redirect('error=invalid');
 
   const result = validateHomepageForm(form);

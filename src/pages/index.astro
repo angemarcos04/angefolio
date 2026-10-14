@@ -99,6 +99,26 @@ const featuredLab = preview(
   visibleLab.filter((entry) => entry.featured),
   homepage.labLimit,
 );
+const featuredCredentials = homepage.credentials
+  .filter((credential) => credential.visible && credential.featured)
+  .sort((first, second) => first.order - second.order);
+const credentialDateLabel = (value: string): string => {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day ?? 1)).toLocaleDateString(
+    'en',
+    { month: 'short', year: 'numeric', timeZone: 'UTC' },
+  );
+};
+const credentialIsExpired = (value: string): boolean => {
+  const [year, month, day] = value.split('-').map(Number);
+  const expiry = day
+    ? Date.UTC(year, month - 1, day, 23, 59, 59, 999)
+    : Date.UTC(year, month, 0, 23, 59, 59, 999);
+  return expiry < Date.now();
+};
+const showCredentialsCard =
+  homepage.cards.credentials.visible && featuredCredentials.length > 0;
+const showContactCard = homepage.cards.contact.visible;
 const renderedNowItems = publicNowStatus?.items ?? nowItems;
 const nowMetadata = publicNowStatus
   ? (publicNowStatus.statusNote ??
@@ -487,10 +507,69 @@ const progressSections = homeProgressSections.filter((section) => {
     }
 
     {
-      cards.contact.visible && (
+      showCredentialsCard && (
+        <BentoCard
+          class="credentials md:col-span-2 dashboard-card"
+          style={`--dashboard-span: ${showContactCard ? 8 : 12}`}
+          accent="soft"
+          eyebrow={cards.credentials.eyebrow}
+          title={cards.credentials.title}
+        >
+          <div class="credential-grid">
+            {featuredCredentials.map((credential) => (
+              <article class="credential-tile">
+                {credential.image && (
+                  <img
+                    class="credential-image"
+                    src={credential.image}
+                    alt=""
+                    width="76"
+                    height="76"
+                    loading="lazy"
+                  />
+                )}
+                <h3>{credential.title}</h3>
+                <p>{credential.issuer}</p>
+                {credential.credentialId && (
+                  <p class="credential-id">ID: {credential.credentialId}</p>
+                )}
+                {credential.issuedAt && (
+                  <p class="credential-date">
+                    Issued {credentialDateLabel(credential.issuedAt)}
+                  </p>
+                )}
+                {credential.expiresAt && (
+                  <p class="credential-date">
+                    {credentialIsExpired(credential.expiresAt)
+                      ? 'Expired'
+                      : 'Expires'}{' '}
+                    {credentialDateLabel(credential.expiresAt)}
+                  </p>
+                )}
+                {credential.verificationUrl && (
+                  <a
+                    href={credential.verificationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View credential
+                  </a>
+                )}
+              </article>
+            ))}
+          </div>
+        </BentoCard>
+      )
+    }
+
+    {
+      showContactCard && (
         <BentoCard
           id="contact"
-          class="contact home-anchor md:col-span-2 lg:col-span-4"
+          class:list={[
+            'contact home-anchor md:col-span-2',
+            showCredentialsCard ? 'lg:col-span-4' : 'lg:col-span-12',
+          ]}
           accent="strong"
           eyebrow={cards.contact.eyebrow}
           title={cards.contact.title}
@@ -808,6 +887,55 @@ const progressSections = homeProgressSections.filter((section) => {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.2rem 1rem;
   }
+  .credential-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+  .credential-tile {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--muted);
+  }
+  .credential-image {
+    width: 4.5rem;
+    height: 4.5rem;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+    background: #ece9e1;
+  }
+  .credential-tile h3 {
+    margin: 0.25rem 0 0;
+    color: var(--foreground);
+    font: 600 0.82rem/1.4 var(--type-ui);
+    overflow-wrap: anywhere;
+  }
+  .credential-tile p {
+    margin: 0;
+    color: var(--muted-foreground);
+    font: 0.74rem/1.45 var(--type-ui);
+    overflow-wrap: anywhere;
+  }
+  .credential-tile .credential-date {
+    font: 0.67rem/1.45 var(--font-mono);
+  }
+  .credential-tile a {
+    margin-top: 0.25rem;
+    color: var(--accent-text);
+    font: 0.7rem/1.4 var(--font-mono);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+  .credential-tile a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
   .contribution-grid {
     display: grid;
     grid-template-columns: repeat(53, minmax(0, 1fr));
@@ -948,6 +1076,17 @@ const progressSections = homeProgressSections.filter((section) => {
     .stack-groups {
       gap: 0.75rem;
     }
+    .credential-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+    .credential-tile {
+      padding: 0.65rem;
+    }
+    .credential-image {
+      width: 3.75rem;
+      height: 3.75rem;
+    }
     .about p,
     .github > p,
     .contact > p,
@@ -996,6 +1135,9 @@ const progressSections = homeProgressSections.filter((section) => {
     }
     .stack-groups {
       grid-template-columns: 1fr;
+    }
+    .credential-grid {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 </style>

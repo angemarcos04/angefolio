@@ -29,6 +29,7 @@ export async function getHomepageConfig(): Promise<HomepageConfig> {
               defaultAffiliation.name === affiliation.name,
           )?.url,
       })),
+      credentials: saved.credentials ?? defaultHomepageConfig.credentials,
       cards: { ...defaultHomepageConfig.cards, ...saved.cards },
     };
   } catch {

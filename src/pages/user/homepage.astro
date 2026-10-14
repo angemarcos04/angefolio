@@ -2,6 +2,7 @@
 import BentoCard from '../../components/astro/BentoCard.astro';
 import ConsoleShell from '../../components/astro/ConsoleShell.astro';
 import MediaUpload from '../../components/svelte/MediaUpload.svelte';
+import CredentialEditor from '../../components/svelte/CredentialEditor.svelte';
 import RevisionHistory from '../../components/astro/RevisionHistory.astro';
 import SectionHeader from '../../components/astro/SectionHeader.astro';
 import {
@@ -33,6 +34,7 @@ const cardLabels: Record<HomepageCardKey, string> = {
   notes: 'Featured notes',
   blog: 'Featured blog',
   lab: 'Featured Lab',
+  credentials: 'Credentials',
   contact: 'Contact',
 };
 const description = 'Edit homepage copy, sections, portrait, and stack groups.';
@@ -281,6 +283,15 @@ const groupLines = config.stackGroups
             group.</small
           >
         </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Credential collection</legend>
+        <p>
+          Visible featured records appear on the homepage. Use individual
+          verification URLs and issuer-provided artwork when available.
+        </p>
+        <CredentialEditor client:load credentials={config.credentials} />
       </fieldset>
 
       <fieldset>
