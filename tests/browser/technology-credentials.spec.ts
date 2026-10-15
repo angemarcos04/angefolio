@@ -99,10 +99,26 @@ test('credential archive renders public records, filters types, and expands deta
     page.getByRole('heading', { name: 'Credentials' }),
   ).toBeVisible();
   await expect(page.locator('.credential-eyebrow')).toHaveText('~/credentials');
+  await expect(page.locator('.credential-intro')).not.toContainText(
+    'Certifications & Badges',
+  );
   await expect(page.locator('.credential-result-count')).toHaveCount(1);
   await expect(page.locator('.archive-count')).toHaveCount(0);
   const rows = page.locator('.credential-row');
   await expect(rows).toHaveCount(18);
+  expect(
+    await rows.evaluateAll((entries) =>
+      entries.every((entry) => entry.tagName === 'ARTICLE'),
+    ),
+  ).toBe(true);
+  await expect(rows.locator('summary')).toHaveCount(0);
+  await expect(rows.locator('.credential-toggle').first()).toBeHidden();
+  await expect(rows.locator('.credential-details').first()).toBeVisible();
+  expect(
+    await rows.evaluateAll((entries) =>
+      entries.every((entry) => entry.querySelectorAll('img').length <= 1),
+    ),
+  ).toBe(true);
   await expect(
     rows.filter({ hasText: '20180bff907b977398922ed27b8bf2dbb6429aa2' }),
   ).toContainText('20180bff907b977398922ed27b8bf2dbb6429aa2');
@@ -126,6 +142,7 @@ test('credential archive renders public records, filters types, and expands deta
       ({ src, loaded }) => loaded && src?.startsWith('/credentials/'),
     ),
   ).toBe(true);
+  await expect(rows.locator('.credential-large-art img')).toHaveCount(0);
   const verificationLinks = await page
     .locator(
       '.credential-row .credential-actions a[href*="credly.com/badges/"]',
@@ -151,42 +168,47 @@ test('credential archive renders public records, filters types, and expands deta
   await expect(
     rows.filter({ hasText: 'Prompt Like an Engineer' }),
   ).toBeHidden();
-  await rows
-    .filter({ hasText: 'Foundations of Project Management' })
-    .locator('summary')
-    .click();
   const foundations = rows.filter({
     hasText: 'Foundations of Project Management',
   });
-  await expect(foundations).toHaveAttribute('open', '');
-  await expect(foundations.locator('.credential-detail-copy h2')).toHaveCount(
-    0,
+  await expect(foundations.locator('h2')).toHaveCount(0);
+  await expect(foundations.locator('.credential-details')).not.toContainText(
+    'Google',
   );
-  await expect(
-    foundations.locator('.credential-detail-copy'),
-  ).not.toContainText('Google');
-  await expect(
-    foundations.locator('.credential-detail-copy'),
-  ).not.toContainText('Issued');
-  await expect(foundations.locator('.credential-detail-copy')).toContainText(
+  await expect(foundations.locator('.credential-details')).not.toContainText(
+    'Issued',
+  );
+  await expect(foundations.locator('.credential-details')).toContainText(
     'Course completion',
   );
   await expect(
     page.getByRole('link', { name: 'Source listing ↗' }),
   ).toHaveCount(0);
+
   await page.getByRole('button', { name: 'All', exact: true }).click();
-  await rows
-    .filter({ hasText: 'Prompt Like an Engineer' })
-    .locator('summary')
-    .click();
-  await expect(
-    rows.filter({ hasText: 'Foundations of Project Management' }),
-  ).toHaveAttribute('open', '');
-  await expect(
-    rows.filter({ hasText: 'Prompt Like an Engineer' }),
-  ).toHaveAttribute('open', '');
+  await page.setViewportSize({ width: 390, height: 850 });
+  const prompt = rows.filter({ hasText: 'Prompt Like an Engineer' });
+  const toggle = prompt.locator('.credential-toggle');
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(prompt.locator('.credential-details')).toBeHidden();
+  await toggle.focus();
+  await page.keyboard.press('Enter');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(prompt.locator('.credential-details')).toBeVisible();
+  await expect(prompt.locator('img')).toHaveCount(1);
+  await expect(prompt.locator('.credential-details img')).toHaveCount(0);
+  await toggle.click();
+  await expect(prompt.locator('.credential-details')).toBeHidden();
+
+  await page.setViewportSize({ width: 1024, height: 850 });
+  await expect(rows.locator('.credential-toggle').first()).toBeHidden();
+  await expect(foundations.locator('.credential-details')).toBeVisible();
+  await page.setViewportSize({ width: 1023, height: 850 });
+  await expect(rows.locator('.credential-toggle').first()).toBeVisible();
+  await expect(prompt.locator('.credential-details')).toBeHidden();
   for (const width of [
-    320, 360, 375, 390, 430, 768, 820, 1023, 1024, 1280, 1366, 1440, 1920,
+    320, 360, 375, 390, 430, 768, 820, 1023, 1024, 1120, 1280, 1366, 1440, 1920,
   ]) {
     await page.setViewportSize({ width, height: 850 });
     const widths = await page.evaluate(() => ({
