@@ -71,12 +71,20 @@ test('homepage spotlights one credential and links to the full archive', async (
   await page.goto('/');
   const spotlight = page.locator('.credential-spotlight');
   await expect(spotlight).toHaveCount(1);
-  await expect(spotlight).toContainText('Prompt Like an Engineer');
-  await expect(spotlight).toContainText('Cisco');
-  await expect(spotlight).toContainText('Digital badge');
+  await expect(spotlight).toContainText(
+    'Microsoft Azure Fundamentals (AZ-900)',
+  );
+  await expect(spotlight).toContainText('Microsoft');
+  await expect(spotlight).toContainText('Certification');
   await expect(spotlight.locator('.credential-verify')).toHaveAttribute(
     'href',
-    'https://www.credly.com/badges/7301a65b-2bd8-495e-a12e-514d8def5a66',
+    'https://learn.microsoft.com/api/credentials/share/en-us/angelliemarcos/31DB658B399D15C5?sharingId=8A574B58CC54B2D7',
+  );
+  await expect(
+    spotlight.locator('.credential-spotlight-art img'),
+  ).toHaveAttribute(
+    'src',
+    '/credentials/microsoft-certified-fundamentals-badge.svg',
   );
   await expect(
     page.getByRole('link', { name: 'All credentials →' }),
@@ -87,14 +95,20 @@ test('credential archive renders public records, filters types, and expands deta
   page,
 }) => {
   await page.goto('/credentials');
+  await expect(
+    page.getByRole('heading', { name: 'Credentials' }),
+  ).toBeVisible();
+  await expect(page.locator('.credential-eyebrow')).toHaveText('~/credentials');
+  await expect(page.locator('.credential-result-count')).toHaveCount(1);
+  await expect(page.locator('.archive-count')).toHaveCount(0);
   const rows = page.locator('.credential-row');
   await expect(rows).toHaveCount(18);
   await expect(
-    rows.filter({ hasText: 'Microsoft Azure Fundamentals (AZ-900)' }),
+    rows.filter({ hasText: '20180bff907b977398922ed27b8bf2dbb6429aa2' }),
   ).toContainText('20180bff907b977398922ed27b8bf2dbb6429aa2');
-  await expect(
-    rows.filter({ hasText: 'Microsoft Certified: Azure Fundamentals' }),
-  ).toContainText('31DB658B399D15C5');
+  await expect(rows.filter({ hasText: '31DB658B399D15C5' })).toContainText(
+    'Microsoft Azure Fundamentals (AZ-900)',
+  );
   await expect(rows.filter({ hasText: 'Network Cable' })).toContainText(
     'LetsDefend',
   );
@@ -106,7 +120,7 @@ test('credential archive renders public records, filters types, and expands deta
         loaded: (image as HTMLImageElement).naturalWidth > 0,
       })),
     );
-  expect(assets).toHaveLength(13);
+  expect(assets).toHaveLength(14);
   expect(
     assets.every(
       ({ src, loaded }) => loaded && src?.startsWith('/credentials/'),
@@ -128,6 +142,9 @@ test('credential archive renders public records, filters types, and expands deta
   const courseFilter = page.getByRole('button', { name: 'Courses' });
   await courseFilter.click();
   await expect(courseFilter).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.credential-result-count')).toHaveText(
+    '3 credentials',
+  );
   await expect(
     rows.filter({ hasText: 'Foundations of Project Management' }),
   ).toBeVisible();
@@ -138,12 +155,25 @@ test('credential archive renders public records, filters types, and expands deta
     .filter({ hasText: 'Foundations of Project Management' })
     .locator('summary')
     .click();
+  const foundations = rows.filter({
+    hasText: 'Foundations of Project Management',
+  });
+  await expect(foundations).toHaveAttribute('open', '');
+  await expect(foundations.locator('.credential-detail-copy h2')).toHaveCount(
+    0,
+  );
   await expect(
-    rows.filter({ hasText: 'Foundations of Project Management' }),
-  ).toHaveAttribute('open', '');
+    foundations.locator('.credential-detail-copy'),
+  ).not.toContainText('Google');
   await expect(
-    rows.filter({ hasText: 'Foundations of Project Management' }),
-  ).toContainText('Course completion');
+    foundations.locator('.credential-detail-copy'),
+  ).not.toContainText('Issued');
+  await expect(foundations.locator('.credential-detail-copy')).toContainText(
+    'Course completion',
+  );
+  await expect(
+    page.getByRole('link', { name: 'Source listing ↗' }),
+  ).toHaveCount(0);
   await page.getByRole('button', { name: 'All', exact: true }).click();
   await rows
     .filter({ hasText: 'Prompt Like an Engineer' })
@@ -156,7 +186,7 @@ test('credential archive renders public records, filters types, and expands deta
     rows.filter({ hasText: 'Prompt Like an Engineer' }),
   ).toHaveAttribute('open', '');
   for (const width of [
-    320, 360, 375, 390, 430, 768, 820, 1024, 1280, 1440, 1920,
+    320, 360, 375, 390, 430, 768, 820, 1023, 1024, 1280, 1366, 1440, 1920,
   ]) {
     await page.setViewportSize({ width, height: 850 });
     const widths = await page.evaluate(() => ({

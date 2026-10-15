@@ -4,7 +4,7 @@ const credlyCollectionUrl =
   'https://www.credly.com/users/angellie-marcos/badges/credly';
 
 /** Public Credly badges confirmed against their individual assertion pages. */
-export const initialCredentials: HomepageCredential[] = [
+const credentialRecords: HomepageCredential[] = [
   {
     id: 'credly-7301a65b-2bd8-495e-a12e-514d8def5a66',
     title: 'Prompt Like an Engineer',
@@ -266,15 +266,15 @@ export const initialCredentials: HomepageCredential[] = [
   },
   {
     id: 'linkedin-microsoft-azure-fundamentals',
-    title: 'Microsoft Certified: Azure Fundamentals',
+    title: 'Microsoft Azure Fundamentals (AZ-900)',
     issuer: 'Microsoft',
     type: 'certification',
-    image: null,
-    verificationUrl: null,
+    image: '/credentials/microsoft-certified-fundamentals-badge.svg',
+    verificationUrl:
+      'https://learn.microsoft.com/api/credentials/share/en-us/angelliemarcos/31DB658B399D15C5?sharingId=8A574B58CC54B2D7',
     credentialId: '31DB658B399D15C5',
-    source: 'linkedin',
-    sourceUrl:
-      'https://www.linkedin.com/in/angellie-marcos/details/certifications/',
+    source: 'issuer',
+    sourceUrl: null,
     issuedAt: '2026-08',
     expiresAt: null,
     featured: true,
@@ -298,3 +298,9 @@ export const initialCredentials: HomepageCredential[] = [
     order: 17,
   },
 ];
+
+export const initialCredentials = credentialRecords.map((credential) =>
+  credential.id === 'linkedin-microsoft-azure-fundamentals'
+    ? { ...credential, order: 0 }
+    : { ...credential, order: credential.order + 1 },
+);
