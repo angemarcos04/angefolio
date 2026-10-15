@@ -1,0 +1,348 @@
+---
+const pdfUrl = '/resume/angelliemarcos-resume2026.pdf';
+const downloadName = 'Angellie-Marcos-Resume-2026.pdf';
+---
+
+<button
+  id="resume-preview-trigger"
+  class="button variant-secondary size-md resume-trigger"
+  type="button"
+  aria-haspopup="dialog"
+  aria-controls="resume-preview-dialog"
+>
+  <svg viewBox="0 0 20 20" aria-hidden="true">
+    <path d="M5 2.5h6l4 4v11H5z"></path>
+    <path d="M11 2.5v4h4M7.5 11h5M7.5 14h5"></path>
+  </svg>
+  <span>Resume</span>
+</button>
+
+<dialog
+  id="resume-preview-dialog"
+  class="resume-dialog"
+  aria-labelledby="resume-preview-title"
+  data-pagefind-ignore
+>
+  <section class="resume-window">
+    <header class="resume-titlebar">
+      <span class="resume-window-dots" aria-hidden="true">
+        <i></i><i></i><i></i>
+      </span>
+      <h2 id="resume-preview-title">angelliemarcos-resume2026.pdf</h2>
+      <button
+        class="resume-close"
+        type="button"
+        aria-label="Close resume preview"
+        autofocus>×</button
+      >
+    </header>
+
+    <div class="resume-viewer">
+      <iframe
+        class="resume-pdf"
+        data-pdf-src={pdfUrl}
+        title="Angellie Marcos résumé PDF preview"
+        loading="lazy"></iframe>
+    </div>
+
+    <footer class="resume-toolbar">
+      <span class="resume-toolbar-label">PDF Preview</span>
+      <div class="resume-toolbar-actions">
+        <a
+          class="resume-open-pdf"
+          href={pdfUrl}
+          target="_blank"
+          rel="noopener noreferrer">Open PDF ↗</a
+        >
+        <a class="resume-download" href={pdfUrl} download={downloadName}>
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M10 2.5v10m-4-4 4 4 4-4M4 14.5v3h12v-3"></path>
+          </svg>
+          <span>Download PDF</span>
+        </a>
+      </div>
+    </footer>
+  </section>
+</dialog>
+
+<script>
+  const resumeTrigger = document.querySelector<HTMLButtonElement>(
+    '#resume-preview-trigger',
+  );
+  const resumeDialog = document.querySelector<HTMLDialogElement>(
+    '#resume-preview-dialog',
+  );
+  const resumeFrame =
+    resumeDialog?.querySelector<HTMLIFrameElement>('.resume-pdf');
+  const resumeClose =
+    resumeDialog?.querySelector<HTMLButtonElement>('.resume-close');
+  let previousBodyOverflow = '';
+
+  if (resumeTrigger && resumeDialog && resumeFrame && resumeClose) {
+    resumeTrigger.addEventListener('click', () => {
+      if (resumeDialog.open) return;
+      try {
+        resumeDialog.showModal();
+        previousBodyOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        if (!resumeFrame.src) {
+          resumeFrame.src = resumeFrame.dataset.pdfSrc ?? '';
+        }
+        resumeClose.focus();
+      } catch {
+        document.body.style.overflow = previousBodyOverflow;
+        window.open(
+          resumeFrame.dataset.pdfSrc,
+          '_blank',
+          'noopener,noreferrer',
+        );
+      }
+    });
+
+    resumeClose.addEventListener('click', () => resumeDialog.close());
+    resumeDialog.addEventListener('click', (event) => {
+      if (event.target === resumeDialog) resumeDialog.close();
+    });
+    resumeDialog.addEventListener('close', () => {
+      document.body.style.overflow = previousBodyOverflow;
+      resumeTrigger.focus();
+    });
+  }
+</script>
+
+<style>
+  .resume-trigger {
+    display: inline-flex;
+    min-height: 2.55rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    background: var(--muted);
+    color: var(--foreground);
+    font: 600 0.78rem/1 var(--type-ui);
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition:
+      border-color 140ms ease,
+      background-color 140ms ease,
+      color 140ms ease;
+  }
+  .resume-trigger svg,
+  .resume-download svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.5;
+  }
+  .resume-trigger:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-text);
+  }
+  .resume-trigger:focus-visible,
+  .resume-close:focus-visible,
+  .resume-toolbar a:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+  .resume-dialog {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 1rem;
+    place-items: center;
+    overflow: hidden;
+    border: 0;
+    background: transparent;
+    color: var(--foreground);
+    overscroll-behavior: contain;
+  }
+  .resume-dialog:not([open]) {
+    display: none;
+  }
+  .resume-dialog::backdrop {
+    background: color-mix(in srgb, var(--background) 80%, transparent);
+  }
+  .resume-window {
+    display: grid;
+    width: min(60rem, calc(100vw - 2rem));
+    height: min(90dvh, 62rem);
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+    box-shadow: var(--shadow-soft);
+  }
+  .resume-titlebar {
+    display: flex;
+    min-width: 0;
+    min-height: 3rem;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0.65rem 0.4rem 0.85rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--muted);
+  }
+  .resume-window-dots {
+    display: inline-flex;
+    flex: none;
+    gap: 0.28rem;
+  }
+  .resume-window-dots i {
+    width: 0.43rem;
+    height: 0.43rem;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--accent) 30%, var(--muted));
+  }
+  .resume-window-dots i:nth-child(2) {
+    background: var(--accent);
+    opacity: 0.75;
+  }
+  .resume-window-dots i:nth-child(3) {
+    background: var(--terminal-accent);
+    opacity: 0.65;
+  }
+  .resume-titlebar h2 {
+    min-width: 0;
+    flex: 1;
+    margin: 0;
+    overflow: hidden;
+    color: var(--muted-foreground);
+    font: 500 0.72rem/1.3 var(--type-code);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .resume-close {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: none;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--muted-foreground);
+    font: 1.35rem/1 var(--type-code);
+    cursor: pointer;
+  }
+  .resume-close:hover {
+    border-color: var(--border);
+    background: var(--accent-soft);
+    color: var(--foreground);
+  }
+  .resume-viewer {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--background);
+  }
+  .resume-pdf {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: var(--background);
+  }
+  .resume-pdf p {
+    margin: 1rem;
+    color: var(--muted-foreground);
+    font: 0.9rem/1.5 var(--type-body);
+  }
+  .resume-pdf a,
+  .resume-open-pdf {
+    color: var(--accent-text);
+    font: 0.72rem/1.4 var(--font-mono);
+    text-underline-offset: 0.18em;
+  }
+  .resume-toolbar {
+    display: flex;
+    min-width: 0;
+    min-height: 3.5rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.45rem 0.8rem;
+    border-top: 1px solid var(--border);
+    background: var(--card);
+  }
+  .resume-toolbar-label {
+    color: var(--subtle-foreground);
+    font: 0.68rem/1.4 var(--font-mono);
+  }
+  .resume-toolbar-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+  .resume-open-pdf:hover {
+    color: var(--accent-hover);
+  }
+  .resume-download {
+    display: inline-flex;
+    min-height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--primary-background);
+    border-radius: var(--radius-md);
+    background: var(--primary-background);
+    color: var(--primary-foreground);
+    font: 600 0.72rem/1 var(--type-ui);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .resume-download:hover {
+    border-color: var(--accent-text);
+    color: var(--primary-foreground);
+  }
+  @media (max-width: 700px) {
+    .resume-dialog {
+      padding: env(safe-area-inset-top) env(safe-area-inset-right)
+        env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    .resume-window {
+      width: 100%;
+      height: 100%;
+      max-height: 100%;
+      border-radius: 0;
+    }
+    .resume-titlebar {
+      min-height: 3rem;
+      padding-top: max(0.35rem, env(safe-area-inset-top));
+    }
+    .resume-toolbar {
+      padding-bottom: max(0.45rem, env(safe-area-inset-bottom));
+    }
+  }
+  @media (max-width: 359px) {
+    .resume-toolbar {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .resume-toolbar-actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .resume-trigger {
+      transition: none;
+    }
+  }
+</style>

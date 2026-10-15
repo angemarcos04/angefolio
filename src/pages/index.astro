@@ -9,6 +9,7 @@ import Layout from '../components/astro/Layout.astro';
 import LabCard from '../components/astro/LabCard.astro';
 import NoteCard from '../components/astro/NoteCard.astro';
 import ProjectCard from '../components/astro/ProjectCard.astro';
+import ResumeViewer from '../components/astro/ResumeViewer.astro';
 import StackGroup from '../components/astro/StackGroup.astro';
 import HomeProgressRail from '../components/svelte/HomeProgressRail.svelte';
 import PortfolioTerminal from '../components/svelte/PortfolioTerminal.svelte';
@@ -236,6 +237,7 @@ const progressSections = homeProgressSections.filter((section) => {
                     href={'mailto:' + publicSettings.email}
                     variant="ghost">Email</Button
                   >
+                  <ResumeViewer />
                 </div>
               </div>
               <figure class="hero-portrait">
