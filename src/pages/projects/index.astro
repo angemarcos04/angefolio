@@ -18,6 +18,7 @@ const projects = (await getPublicProjectCatalog()).map((project) => {
     status: project.status,
     category: project.category ?? undefined,
     stack: project.stack,
+    links: project.links,
     github: project.github ?? undefined,
     demo: project.demo ?? undefined,
     caseStudy:
@@ -39,7 +40,7 @@ const projects = (await getPublicProjectCatalog()).map((project) => {
   <section aria-label="Project archive">
     {
       projects.length > 0 ? (
-        <CardGrid class="collection-grid">
+        <CardGrid class="collection-grid project-archive-grid">
           {projects.map((project) => (
             <ProjectCard
               href={project.href}
@@ -53,6 +54,8 @@ const projects = (await getPublicProjectCatalog()).map((project) => {
               caseStudy={project.caseStudy}
               featured={project.featured}
               cover={project.cover}
+              links={project.links}
+              context="archive"
             />
           ))}
         </CardGrid>
@@ -68,6 +71,18 @@ const projects = (await getPublicProjectCatalog()).map((project) => {
     height: 100%;
     border-radius: var(--radius-md);
     box-shadow: none;
+  }
+  :global(.project-archive-grid.collection-grid) {
+    align-items: start;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  :global(.project-archive-grid .content-card) {
+    height: auto;
+  }
+  @media (max-width: 767px) {
+    :global(.project-archive-grid.collection-grid) {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
   .empty-state {
     margin: 0;

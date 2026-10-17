@@ -5,6 +5,9 @@ import type {
 } from '../../lib/server/validation/projects';
 import MarkdownEditor from '../svelte/MarkdownEditor.svelte';
 import MediaUpload from '../svelte/MediaUpload.svelte';
+import ProjectScreenshotEditor from '../svelte/ProjectScreenshotEditor.svelte';
+import ContentPagePreview from '../svelte/ContentPagePreview.svelte';
+import AuthoringFormController from '../svelte/AuthoringFormController.svelte';
 
 interface Props {
   action: string;
@@ -27,7 +30,12 @@ const statuses: ProjectStatus[] = archived
 const fieldError = (name: keyof ProjectFormValues) => errors[name];
 ---
 
-<form class="project-form bento-surface" method="post" {action}>
+<form
+  id="project-editor"
+  class="project-form bento-surface"
+  method="post"
+  {action}
+>
   <div class="form-grid">
     <label>
       <span>Title <strong aria-hidden="true">*</strong></span>
@@ -40,7 +48,6 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
       />
       {fieldError('title') && <small>{fieldError('title')}</small>}
     </label>
-
     <label>
       <span>Slug <strong aria-hidden="true">*</strong></span>
       <input
@@ -71,143 +78,178 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
       >
       {fieldError('description') && <small>{fieldError('description')}</small>}
     </label>
+  </div>
 
-    <label>
-      <span>Status</span>
-      <select name="status" disabled={archived}>
+  <details class="authoring-section">
+    <summary>Additional details and media</summary>
+    <div class="form-grid">
+      <div class="full">
+        <ProjectScreenshotEditor
+          client:load
+          value={JSON.parse(values.screenshots ?? '[]')}
+        />
         {
-          statuses.map((status) => (
-            <option
-              value={status}
-              selected={(values.status ?? 'Planning') === status}
-            >
-              {status}
-            </option>
-          ))
+          fieldError('screenshots') && (
+            <small>{fieldError('screenshots')}</small>
+          )
         }
-      </select>
-      {archived && <input type="hidden" name="status" value="Archived" />}
-      {fieldError('status') && <small>{fieldError('status')}</small>}
-    </label>
+      </div>
 
-    <label>
-      <span>Category</span>
-      <input name="category" maxlength="80" value={values.category ?? ''} />
-      {fieldError('category') && <small>{fieldError('category')}</small>}
-    </label>
+      <label>
+        <span>Status</span>
+        <select name="status" disabled={archived}>
+          {
+            statuses.map((status) => (
+              <option
+                value={status}
+                selected={(values.status ?? 'Planning') === status}
+              >
+                {status}
+              </option>
+            ))
+          }
+        </select>
+        {archived && <input type="hidden" name="status" value="Archived" />}
+        {fieldError('status') && <small>{fieldError('status')}</small>}
+      </label>
 
-    <label>
-      <span>Project date</span>
-      <input name="projectDate" type="date" value={values.projectDate ?? ''} />
-      {fieldError('projectDate') && <small>{fieldError('projectDate')}</small>}
-    </label>
+      <label>
+        <span>Category</span>
+        <input name="category" maxlength="80" value={values.category ?? ''} />
+        {fieldError('category') && <small>{fieldError('category')}</small>}
+      </label>
 
-    <label>
-      <span>Role</span>
-      <input name="role" maxlength="200" value={values.role ?? ''} />
-      {fieldError('role') && <small>{fieldError('role')}</small>}
-    </label>
+      <label>
+        <span>Project date</span>
+        <input
+          name="projectDate"
+          type="date"
+          value={values.projectDate ?? ''}
+        />
+        {
+          fieldError('projectDate') && (
+            <small>{fieldError('projectDate')}</small>
+          )
+        }
+      </label>
 
-    <label>
-      <span>Order index</span>
-      <input
-        name="orderIndex"
-        type="number"
-        min="-10000"
-        max="10000"
-        step="1"
-        value={values.orderIndex ?? ''}
-      />
-      {fieldError('orderIndex') && <small>{fieldError('orderIndex')}</small>}
-    </label>
+      <label>
+        <span>Role</span>
+        <input name="role" maxlength="200" value={values.role ?? ''} />
+        {fieldError('role') && <small>{fieldError('role')}</small>}
+      </label>
 
-    <label class="full">
-      <span>Problem</span>
-      <textarea name="problem" maxlength="1000" rows="4"
-        >{values.problem ?? ''}</textarea
-      >
-      {fieldError('problem') && <small>{fieldError('problem')}</small>}
-    </label>
+      <label>
+        <span>Order index</span>
+        <input
+          name="orderIndex"
+          type="number"
+          min="-10000"
+          max="10000"
+          step="1"
+          value={values.orderIndex ?? ''}
+        />
+        {fieldError('orderIndex') && <small>{fieldError('orderIndex')}</small>}
+      </label>
 
-    <label class="full">
-      <span>Solution / direction</span>
-      <textarea name="solution" maxlength="1000" rows="4"
-        >{values.solution ?? ''}</textarea
-      >
-      {fieldError('solution') && <small>{fieldError('solution')}</small>}
-    </label>
+      <label class="full">
+        <span>Problem</span>
+        <textarea name="problem" maxlength="1000" rows="4"
+          >{values.problem ?? ''}</textarea
+        >
+        {fieldError('problem') && <small>{fieldError('problem')}</small>}
+      </label>
 
-    <label class="full">
-      <span>Highlights</span>
-      <textarea name="highlights" rows="4">{values.highlights ?? ''}</textarea>
-      <em>One per line; up to 12.</em>
-      {fieldError('highlights') && <small>{fieldError('highlights')}</small>}
-    </label>
+      <label class="full">
+        <span>Solution / direction</span>
+        <textarea name="solution" maxlength="1000" rows="4"
+          >{values.solution ?? ''}</textarea
+        >
+        {fieldError('solution') && <small>{fieldError('solution')}</small>}
+      </label>
 
-    <label>
-      <span>Stack</span>
-      <textarea name="stack" rows="7" placeholder={'Astro\nTypeScript\nSQLite'}
-        >{values.stack ?? ''}</textarea
-      >
-      <em>One item per line; up to 20.</em>
-      {fieldError('stack') && <small>{fieldError('stack')}</small>}
-    </label>
+      <label class="full">
+        <span>Highlights</span>
+        <textarea name="highlights" rows="4">{values.highlights ?? ''}</textarea
+        >
+        <em>One per line; up to 12.</em>
+        {fieldError('highlights') && <small>{fieldError('highlights')}</small>}
+      </label>
 
-    <label>
-      <span>Additional links</span>
-      <textarea
-        name="links"
-        rows="7"
-        placeholder={'Documentation | https://example.com/docs\nDemo | https://example.com'}
-        >{values.links ?? ''}</textarea
-      >
-      <em>One HTTP(S) link per line; up to 8.</em>
-      {fieldError('links') && <small>{fieldError('links')}</small>}
-    </label>
+      <label>
+        <span>Stack</span>
+        <textarea
+          name="stack"
+          rows="7"
+          placeholder={'Astro\nTypeScript\nSQLite'}
+          >{values.stack ?? ''}</textarea
+        >
+        <em>One item per line; up to 20.</em>
+        {fieldError('stack') && <small>{fieldError('stack')}</small>}
+      </label>
 
-    <label>
-      <span>GitHub URL</span>
-      <input
-        name="github"
-        type="url"
-        maxlength="2048"
-        value={values.github ?? ''}
-      />
-      {fieldError('github') && <small>{fieldError('github')}</small>}
-    </label>
+      <label>
+        <span>Additional links</span>
+        <textarea
+          name="links"
+          rows="7"
+          placeholder={'Documentation | https://example.com/docs\nDemo | https://example.com'}
+          >{values.links ?? ''}</textarea
+        >
+        <em>One HTTP(S) link per line; up to 8.</em>
+        {fieldError('links') && <small>{fieldError('links')}</small>}
+      </label>
 
-    <label>
-      <span>Demo URL</span>
-      <input
-        name="demo"
-        type="url"
-        maxlength="2048"
-        value={values.demo ?? ''}
-      />
-      {fieldError('demo') && <small>{fieldError('demo')}</small>}
-    </label>
+      <label>
+        <span>GitHub URL</span>
+        <input
+          name="github"
+          type="url"
+          maxlength="2048"
+          value={values.github ?? ''}
+        />
+        {fieldError('github') && <small>{fieldError('github')}</small>}
+      </label>
 
-    <label class="full">
-      <span>Cover path or URL</span>
-      <input
-        id="project-cover"
-        name="cover"
-        maxlength="2048"
-        value={values.cover ?? ''}
-      />
-      <MediaUpload client:load targetId="project-cover" />
-      {fieldError('cover') && <small>{fieldError('cover')}</small>}
-    </label>
+      <label>
+        <span>Demo URL</span>
+        <input
+          name="demo"
+          type="url"
+          maxlength="2048"
+          value={values.demo ?? ''}
+        />
+        {fieldError('demo') && <small>{fieldError('demo')}</small>}
+      </label>
 
-    <div class="full">
-      <span class="field-title">Case study</span>
-      <MarkdownEditor client:load value={values.caseStudyBody ?? ''} />
-      {
-        fieldError('caseStudyBody') && (
-          <small>{fieldError('caseStudyBody')}</small>
-        )
-      }
+      <label class="full">
+        <span>Cover path or URL</span>
+        <input
+          id="project-cover"
+          name="cover"
+          maxlength="2048"
+          value={values.cover ?? ''}
+        />
+        <MediaUpload client:load targetId="project-cover" />
+        {fieldError('cover') && <small>{fieldError('cover')}</small>}
+      </label>
     </div>
+  </details>
+
+  <div class="content-section">
+    <div class="section-heading">
+      <strong>Content</strong><span>Optional Markdown case study</span>
+    </div>
+    <MarkdownEditor
+      client:load
+      value={values.caseStudyBody ?? ''}
+      starter="project"
+    />
+    {
+      fieldError('caseStudyBody') && (
+        <small>{fieldError('caseStudyBody')}</small>
+      )
+    }
   </div>
 
   <fieldset disabled={archived}>
@@ -247,10 +289,12 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
   }
 
   <div class="form-actions">
+    <ContentPagePreview client:load formId="project-editor" kind="project" />
     <button type="submit">{submitLabel}</button>
     <a href="/user/projects">Cancel</a>
   </div>
 </form>
+<AuthoringFormController client:load formId="project-editor" />
 
 <style>
   .project-form {
@@ -266,6 +310,33 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
     margin: 0.2rem 0 0;
     color: var(--muted-foreground);
     font-size: 0.8rem;
+  }
+  .authoring-section {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .authoring-section > summary {
+    cursor: pointer;
+    color: var(--foreground);
+    font: 650 0.76rem var(--font-mono);
+  }
+  .authoring-section[open] > summary {
+    margin-bottom: 1rem;
+  }
+  .content-section {
+    margin-top: 1.25rem;
+  }
+  .section-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    font: 0.75rem var(--font-mono);
+  }
+  .section-heading span {
+    color: var(--muted-foreground);
   }
   .form-grid {
     display: grid;
@@ -367,6 +438,10 @@ const fieldError = (name: keyof ProjectFormValues) => errors[name];
     background: var(--primary-background);
     color: var(--accent-foreground);
     cursor: pointer;
+  }
+  :is(button, a, summary, input, textarea, select):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
   .form-actions a {
     color: var(--muted-foreground);

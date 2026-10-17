@@ -8,7 +8,6 @@ import Layout from '../../components/astro/Layout.astro';
 import ProjectMeta from '../../components/astro/ProjectMeta.astro';
 import StatusPill from '../../components/astro/StatusPill.astro';
 import Tag from '../../components/astro/Tag.astro';
-
 import { renderProjectMarkdownDocument } from '../../lib/server/markdown';
 import {
   getPublicProjectCatalog,
@@ -28,45 +27,73 @@ if (redirectTarget) {
     },
   });
 }
+
+// Resolve only against the catalog that already applies visibility, archive,
+// MDX replacement, and redirect-alias rules.
 const projects = await getPublicProjectCatalog();
 const index = projects.findIndex(
   (project) => project.slug === Astro.params.slug,
 );
 const project = projects[index];
-if (!project || !publicProjectUrl(project)) {
+if (!project) {
   return new Response('Project not found.', {
     status: 404,
     headers: { 'content-type': 'text/plain; charset=utf-8' },
   });
 }
 
-const detailProjects = projects.filter(publicProjectUrl);
-const detailIndex = detailProjects.findIndex(
-  (item) => item.slug === project.slug,
-);
+const detailProjects = projects;
+const detailIndex = index;
 const previousProject = detailProjects[detailIndex - 1];
 const nextProject = detailProjects[detailIndex + 1];
 const data = project;
-const Content = project.entry ? (await render(project.entry)).Content : null;
+const mdxRender =
+  project.source === 'mdx' && project.entry
+    ? await render(project.entry)
+    : null;
+const Content = mdxRender?.Content ?? null;
 const markdownDocument =
-  project.source === 'database'
+  project.source === 'database' && project.body.trim()
     ? renderProjectMarkdownDocument(project.body)
     : null;
 const renderedMarkdown = markdownDocument?.html ?? '';
-const headings = markdownDocument?.headings ?? [
-  { id: 'overview', label: 'Overview' },
-  { id: 'problem', label: 'Problem' },
-  { id: 'approach', label: 'Approach' },
-  { id: 'current-status', label: 'Current status' },
-  { id: 'what-i-am-learning', label: 'What I am learning' },
-];
+const hasArticle =
+  project.source === 'mdx'
+    ? Boolean(Content && project.body.trim())
+    : Boolean(renderedMarkdown.trim());
+const headings = mdxRender
+  ? mdxRender.headings
+      .filter((heading) => heading.depth <= 3 && heading.slug && heading.text)
+      .map((heading) => ({ id: heading.slug, label: heading.text }))
+  : (markdownDocument?.headings ?? []);
 const formattedDate = new Intl.DateTimeFormat('en', {
   year: 'numeric',
   month: 'long',
   day: 'numeric',
   timeZone: 'UTC',
 }).format(data.date);
-const projectLinks = [
+const cover = data.cover?.trim() || null;
+const screenshots = data.screenshots.filter((item) => item.src !== cover);
+const stackItems = data.stack.filter((item) => item.trim());
+
+function safeProjectHref(href: string, external: boolean): string | undefined {
+  const value = href.trim();
+  if (!value) return undefined;
+  if (!external && value.startsWith('/') && !value.startsWith('//')) {
+    return value;
+  }
+  if (!external && value.startsWith('#')) return value;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:'
+      ? value
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const candidates = [
   ...(data.demo
     ? [{ label: 'Live demo', href: data.demo, external: true }]
     : []),
@@ -74,6 +101,23 @@ const projectLinks = [
     ? [{ label: 'GitHub', href: data.github, external: true }]
     : []),
   ...data.links,
+];
+const seenLinks = new Set<string>();
+const projectLinks = candidates.flatMap((link) => {
+  const href = safeProjectHref(link.href, link.external ?? false);
+  if (!href || seenLinks.has(href)) return [];
+  seenLinks.add(href);
+  return [{ ...link, href, external: link.external ?? false }];
+});
+const hasSummary = Boolean(
+  data.problem?.trim() ||
+  data.solution?.trim() ||
+  data.highlights.some((item) => item.trim()),
+);
+const metadataItems = [
+  { label: data.dateLabel, value: formattedDate },
+  ...(data.role?.trim() ? [{ label: 'Role', value: data.role }] : []),
+  ...(stackItems.length ? [{ label: 'Stack', items: stackItems }] : []),
 ];
 ---
 
@@ -90,10 +134,10 @@ const projectLinks = [
 
   <BentoCard class="project-hero subtle-grid" accent="strong">
     {
-      data.cover && (
+      cover && (
         <img
           class="project-cover"
-          src={data.cover}
+          src={cover}
           alt={`Cover image for ${data.title}`}
           fetchpriority="high"
         />
@@ -101,18 +145,18 @@ const projectLinks = [
     }
     <div class="hero-meta">
       <StatusPill status={data.status} />
-      {data.category && <Tag tone="accent">{data.category}</Tag>}
+      {data.category?.trim() && <Tag tone="accent">{data.category}</Tag>}
       {data.featured && <Tag tone="strong">Featured</Tag>}
     </div>
     <h1 class="text-balance">{data.title}</h1>
     <p>{data.description}</p>
     {
       projectLinks.length > 0 && (
-        <div class="hero-links">
+        <div class="hero-links" aria-label="Project links">
           {projectLinks.map((link, index) => (
             <Button
               href={link.href}
-              external={link.external ?? false}
+              external={link.external}
               size="sm"
               variant={index === 0 ? 'primary' : 'secondary'}
             >
@@ -124,39 +168,71 @@ const projectLinks = [
     }
   </BentoCard>
 
-  <div class="metadata-grid" aria-label="Project metadata">
-    <ProjectMeta label="Status" value={data.status} />
-    <ProjectMeta
-      label="Category"
-      value={data.category ?? 'Independent project'}
-    />
-    <ProjectMeta label="Date" value={formattedDate} />
-    {data.role && <ProjectMeta label="Role" value={data.role} />}
-    <ProjectMeta label="Stack" items={data.stack} class="stack-meta" />
-  </div>
+  {
+    screenshots.length > 0 && (
+      <section
+        class="project-gallery bento-surface"
+        aria-labelledby="gallery-title"
+      >
+        <h2 id="gallery-title">Project screenshots</h2>
+        <div class="gallery-grid">
+          {screenshots.map((screenshot) => (
+            <figure>
+              <img
+                src={screenshot.src}
+                alt={screenshot.alt}
+                loading="lazy"
+                decoding="async"
+              />
+              {screenshot.caption?.trim() && (
+                <figcaption>{screenshot.caption}</figcaption>
+              )}
+            </figure>
+          ))}
+        </div>
+      </section>
+    )
+  }
 
   {
-    (data.problem || data.solution || data.highlights?.length) && (
-      <aside class="case-summary bento-surface" aria-label="Case study summary">
-        {data.problem && (
+    metadataItems.length > 0 && (
+      <section class="metadata-grid" aria-label="Project information">
+        {metadataItems.map((item) => (
+          <ProjectMeta
+            label={item.label}
+            value={'value' in item ? item.value : undefined}
+            items={'items' in item ? item.items : undefined}
+            class={'items' in item ? 'stack-meta' : ''}
+          />
+        ))}
+      </section>
+    )
+  }
+
+  {
+    hasSummary && (
+      <aside class="case-summary bento-surface" aria-label="Project overview">
+        {data.problem?.trim() && (
           <section>
-            <p>Problem</p>
-            <strong>{data.problem}</strong>
+            <h2>Problem</h2>
+            <p>{data.problem}</p>
           </section>
         )}
-        {data.solution && (
+        {data.solution?.trim() && (
           <section>
-            <p>Direction</p>
-            <strong>{data.solution}</strong>
+            <h2>Solution</h2>
+            <p>{data.solution}</p>
           </section>
         )}
-        {data.highlights?.length && (
+        {data.highlights.some((item) => item.trim()) && (
           <section>
-            <p>Focus areas</p>
+            <h2>Highlights</h2>
             <ul>
-              {data.highlights.map((highlight) => (
-                <li>{highlight}</li>
-              ))}
+              {data.highlights
+                .filter((item) => item.trim())
+                .map((highlight) => (
+                  <li>{highlight}</li>
+                ))}
             </ul>
           </section>
         )}
@@ -164,48 +240,60 @@ const projectLinks = [
     )
   }
 
-  <div
-    class:list={['case-study-layout', { 'without-nav': headings.length === 0 }]}
-  >
-    {
-      headings.length > 0 && (
-        <nav class="local-nav bento-surface" aria-label="Case study sections">
-          <p>On this page</p>
-          {headings.map((heading) => (
-            <a href={`#${heading.id}`}>{heading.label}</a>
-          ))}
-        </nav>
-      )
-    }
-    <article class="prose-shell bento-surface">
-      {Content ? <Content /> : <Fragment set:html={renderedMarkdown} />}
-    </article>
-  </div>
+  {
+    hasArticle && (
+      <div
+        class:list={[
+          'case-study-layout',
+          { 'without-nav': headings.length === 0 },
+        ]}
+      >
+        {headings.length > 0 && (
+          <nav class="local-nav bento-surface" aria-label="Case study sections">
+            <p>On this page</p>
+            {headings.map((heading) => (
+              <a href={`#${heading.id}`}>{heading.label}</a>
+            ))}
+          </nav>
+        )}
+        <article class="prose-shell bento-surface">
+          {Content ? <Content /> : <Fragment set:html={renderedMarkdown} />}
+        </article>
+      </div>
+    )
+  }
 
-  <nav class="project-navigation" aria-label="Project navigation">
-    <div>
-      <span>Previous project</span>
-      {
-        previousProject ? (
-          <a href={publicProjectUrl(previousProject)}>
-            ← {previousProject.title}
-          </a>
-        ) : (
-          <span>Start of list</span>
-        )
-      }
-    </div>
-    <div class="next-project">
-      <span>Next project</span>
-      {
-        nextProject ? (
-          <a href={publicProjectUrl(nextProject)}>{nextProject.title} →</a>
-        ) : (
-          <a href="/projects">All projects →</a>
-        )
-      }
-    </div>
-  </nav>
+  {
+    detailProjects.length === 1 ? (
+      <nav
+        class="project-navigation single-project"
+        aria-label="Project navigation"
+      >
+        <a href="/projects">← All projects</a>
+      </nav>
+    ) : (
+      <nav class="project-navigation" aria-label="Project navigation">
+        <div>
+          <span>Previous project</span>
+          {previousProject ? (
+            <a href={publicProjectUrl(previousProject)}>
+              ← {previousProject.title}
+            </a>
+          ) : (
+            <a href="/projects">← All projects</a>
+          )}
+        </div>
+        <div class="next-project">
+          <span>Next project</span>
+          {nextProject ? (
+            <a href={publicProjectUrl(nextProject)}>{nextProject.title} →</a>
+          ) : (
+            <a href="/projects">All projects →</a>
+          )}
+        </div>
+      </nav>
+    )
+  }
 </Layout>
 
 <style>
@@ -221,12 +309,56 @@ const projectLinks = [
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
   }
+  .project-gallery {
+    margin-top: 0.75rem;
+    padding: clamp(1rem, 3vw, 1.5rem);
+  }
+  .project-gallery h2 {
+    margin: 0 0 1rem;
+    color: var(--accent-text);
+    font: 0.72rem var(--font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+  }
+  .gallery-grid figure {
+    min-width: 0;
+    margin: 0;
+    padding: 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+  }
+  .gallery-grid img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 34rem;
+    object-fit: contain;
+  }
+  .gallery-grid figcaption {
+    margin-top: 0.55rem;
+    color: var(--muted-foreground);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 700px) {
+    .gallery-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
   :global(.project-hero) {
     padding: clamp(1.5rem, 5vw, 3rem);
   }
   .hero-meta,
   .hero-links {
     display: flex;
+    min-width: 0;
     flex-wrap: wrap;
     gap: 0.45rem;
   }
@@ -236,19 +368,22 @@ const projectLinks = [
     font-size: clamp(2.4rem, 8vw, 5rem);
     line-height: 0.98;
     letter-spacing: 0.02em;
+    overflow-wrap: anywhere;
   }
   .project-hero > p {
     max-width: 65ch;
     margin: 1rem 0 0;
     color: var(--muted-foreground);
     font-size: clamp(1rem, 2vw, 1.15rem);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
   }
   .hero-links {
-    margin-top: 1.4rem;
+    margin-top: 1.2rem;
   }
   .metadata-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
     gap: 0.75rem;
     margin-top: 0.75rem;
   }
@@ -257,35 +392,36 @@ const projectLinks = [
   }
   .case-summary {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
     gap: 0;
     margin-top: 0.75rem;
     overflow: hidden;
     box-shadow: none;
   }
   .case-summary section {
+    min-width: 0;
     padding: 1.15rem;
     border-right: 1px solid var(--border);
   }
-  .case-summary section:last-child {
-    border-right: 0;
-  }
-  .case-summary p,
-  .local-nav p {
+  .case-summary h2 {
     margin: 0 0 0.55rem;
     color: var(--accent-text);
-    font: 0.65rem var(--font-mono);
+    font: 0.65rem/1.4 var(--font-mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-  .case-summary strong,
+  .case-summary p,
   .case-summary li {
+    margin: 0;
     color: var(--muted-foreground);
     font-size: 0.84rem;
     font-weight: 500;
     line-height: 1.55;
+    overflow-wrap: anywhere;
   }
   .case-summary ul {
+    display: grid;
+    gap: 0.35rem;
     margin: 0;
     padding-left: 1.1rem;
   }
@@ -307,12 +443,26 @@ const projectLinks = [
     padding: 1rem;
     box-shadow: none;
   }
+  .local-nav p {
+    margin: 0 0 0.1rem;
+    color: var(--accent-text);
+    font: 0.65rem var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
   .local-nav a {
     color: var(--muted-foreground);
     font: 0.7rem/1.4 var(--font-mono);
+    overflow-wrap: anywhere;
   }
-  .local-nav a:hover {
+  .local-nav a:hover,
+  .local-nav a:focus-visible {
     color: var(--accent-text);
+  }
+  .local-nav a:focus-visible,
+  .project-navigation a:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
   }
   .project-navigation {
     display: grid;
@@ -324,6 +474,8 @@ const projectLinks = [
   }
   .project-navigation div {
     display: grid;
+    min-width: 0;
+    align-content: start;
     gap: 0.25rem;
   }
   .project-navigation span {
@@ -332,6 +484,7 @@ const projectLinks = [
   }
   .project-navigation a {
     font-weight: 650;
+    overflow-wrap: anywhere;
   }
   .project-navigation a:hover {
     color: var(--accent-text);
@@ -339,29 +492,25 @@ const projectLinks = [
   .next-project {
     text-align: right;
   }
+  .single-project {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @media (max-width: 1023px) {
+    .case-study-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .local-nav {
+      position: static;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    }
+  }
   @media (max-width: 767px) {
-    .metadata-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .case-summary {
-      grid-template-columns: 1fr;
-    }
     .case-summary section {
       border-right: 0;
       border-bottom: 1px solid var(--border);
     }
     .case-summary section:last-child {
       border-bottom: 0;
-    }
-    .case-study-layout {
-      grid-template-columns: 1fr;
-    }
-    .local-nav {
-      position: static;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .local-nav p {
-      grid-column: 1 / -1;
     }
   }
   @media (max-width: 480px) {

@@ -29,8 +29,18 @@ function normalizeProjectRecord(record: ProjectRecord): ProjectRecord {
         )
         .slice(0, 8)
     : [];
+  const screenshots = Array.isArray(record.screenshots)
+    ? record.screenshots
+        .filter(
+          (item) =>
+            item &&
+            typeof item.src === 'string' &&
+            typeof item.alt === 'string',
+        )
+        .slice(0, 8)
+    : [];
 
-  return { ...record, stack, links };
+  return { ...record, stack, links, screenshots };
 }
 
 function sortProjectRecords(records: ProjectRecord[]): ProjectRecord[] {

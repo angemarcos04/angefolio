@@ -1,5 +1,6 @@
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
+import { isSafeImageReference } from '../data/mediaReference';
 
 export interface ProjectHeading {
   id: string;
@@ -27,14 +28,22 @@ export function renderProjectMarkdownDocument(source: string): {
   headings: ProjectHeading[];
 } {
   const html = marked.parse(source, { async: false, gfm: true, breaks: false });
-  const safe = sanitizeHtml(html, {
-    allowedTags: sanitizeHtml.defaults.allowedTags,
+  const sanitized = sanitizeHtml(html, {
+    allowedTags: [...sanitizeHtml.defaults.allowedTags, 'img'],
     allowedAttributes: {
       a: ['href', 'title'],
       code: ['class'],
+      img: ['src', 'alt', 'title'],
     },
     allowedSchemes: ['http', 'https', 'mailto'],
     disallowedTagsMode: 'discard',
+  });
+  // Keep Markdown images limited to uploaded assets, site images, or HTTPS.
+  // sanitize-html removes event handlers and all other attributes first.
+  const safe = sanitized.replace(/<img\b[^>]*>/gi, (tag) => {
+    const source = /\bsrc="([^"]*)"/i.exec(tag)?.[1]?.replaceAll('&amp;', '&');
+    if (!source || !isSafeImageReference(source)) return '';
+    return tag.replace(/\s*\/?\s*>$/, ' loading="lazy" decoding="async">');
   });
   const headings: ProjectHeading[] = [];
   const used = new Map<string, number>();

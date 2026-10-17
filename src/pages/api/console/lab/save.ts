@@ -28,17 +28,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
       303,
     );
   const id = form.get('id') || null;
-  const failure = (code: string) =>
-    new Response(null, {
+  const failure = (code: string, field?: string) => {
+    const query = `error=${code}${field ? `&field=${encodeURIComponent(field)}` : ''}`;
+    return new Response(null, {
       status: 303,
       headers: {
         location: id
-          ? `/user/lab/${encodeURIComponent(id)}?error=${code}`
-          : '/user/lab/new?error=' + code,
+          ? `/user/lab/${encodeURIComponent(id)}?${query}`
+          : `/user/lab/new?${query}`,
       },
     });
+  };
   const validated = validateLabForm(form);
-  if (!validated.success) return failure('validation');
+  if (!validated.success)
+    return failure('validation', Object.keys(validated.errors)[0]);
   try {
     const existing = id ? await getLabRecord(id) : undefined;
     if (id && !existing)
@@ -47,7 +50,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         303,
       );
     const owner = await getLabRecordBySlug(validated.data.slug);
-    if (owner && owner.id !== id) return failure('slug');
+    if (owner && owner.id !== id) return failure('slug', 'slug');
     const mdxCollision = (await getAllLabEntries()).some(
       (entry) => entry.id.replace(/\.(md|mdx)$/, '') === validated.data.slug,
     );
@@ -75,7 +78,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       headers: { location: `/user/lab/${record.id}?notice=saved` },
     });
   } catch (error) {
-    if (error instanceof SlugRedirectConflictError) return failure('slug');
+    if (error instanceof SlugRedirectConflictError)
+      return failure('slug', 'slug');
     return failure('unavailable');
   }
 };

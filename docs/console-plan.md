@@ -103,7 +103,7 @@ The database-aware readiness endpoint and reviewed one-owner password recovery c
 
 ## Phase 14 project authoring
 
-The workspace now lives at `/user`. Projects have full metadata and a Markdown case study, with formatting controls and a private preview. The import refuses slug conflicts, backs up before writing, and keeps MDX files. Public project pages, search, and the project sitemap follow the chosen source at request time. See [project-publishing.md](./project-publishing.md).
+The workspace now lives at `/user`. Projects have full metadata and an optional Markdown case study, with formatting controls and a private preview. Visible database-only projects without a body render an overview; adding a body enables the full case study at the same canonical URL. The import refuses slug conflicts, backs up before writing, and keeps MDX files. Public project pages, search, and the project sitemap follow the chosen source at request time. Visible replacements for matching MDX still require a case-study body. See [project-publishing.md](./project-publishing.md).
 
 ## Phase 15 Notes authoring
 
@@ -159,3 +159,20 @@ The opt-in Compose `backup` profile creates a consistent, verified SQLite snapsh
 ## Phase 25 Blog publishing
 
 The Blog is a separate database-backed writing area for long-form articles. `/user/blog` supports Markdown drafting and preview, publish/unpublish, archive, saved-version restore, and safe slug redirects. Public posts appear in `/blog`, search, `/blog/rss.xml`, and `/sitemap-blog.xml`; drafts and archived posts are excluded. Notes remain the short-form learning archive and Lab remains the experiment journal. Details are in [blog-publishing.md](./blog-publishing.md).
+
+# Authoring workflow
+
+Project, Blog, Notes, and Lab editors keep essential identifying fields and the
+Markdown body visible, with optional metadata grouped in native expandable
+sections. The **Insert starter** action is explicit and asks before replacing
+nonempty Markdown. **Preview Markdown** renders only the article body;
+**Preview Page** renders current unsaved form values in a private dialog. The
+page preview requires an authenticated owner session and trusted same-origin
+request, does not persist content, and returns uncached sanitized Markdown.
+
+Editors warn before leaving with unsaved changes. Saves still use the existing
+authenticated publishing endpoints and server-side validators. With JavaScript
+enabled, validation failures stay in the editor so entered text and media
+references remain available; successful saves follow the server's existing
+redirect and notice flow. Publication checkboxes retain each collection's
+existing meaning.

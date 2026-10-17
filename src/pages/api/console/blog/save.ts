@@ -31,17 +31,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
 
   const id = form.get('id') || null;
-  const invalid = (code: string) =>
-    new Response(null, {
+  const invalid = (code: string, field?: string) => {
+    const query = `error=${code}${field ? `&field=${encodeURIComponent(field)}` : ''}`;
+    return new Response(null, {
       status: 303,
       headers: {
         location: id
-          ? `/user/blog/${encodeURIComponent(id)}?error=${code}`
-          : `/user/blog/new?error=${code}`,
+          ? `/user/blog/${encodeURIComponent(id)}?${query}`
+          : `/user/blog/new?${query}`,
       },
     });
+  };
   const result = validateBlogForm(form);
-  if (!result.success) return invalid('validation');
+  if (!result.success)
+    return invalid('validation', Object.keys(result.errors)[0]);
 
   try {
     const existing = id ? await getBlogRecord(id) : undefined;
@@ -51,12 +54,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
         303,
       );
     const owner = await getBlogRecordBySlug(result.data.slug);
-    if (owner && owner.id !== id) return invalid('slug');
+    if (owner && owner.id !== id) return invalid('slug', 'slug');
     if (
       !existing &&
       (await getContentRedirectTarget(`/blog/${result.data.slug}`))
     )
-      return invalid('slug');
+      return invalid('slug', 'slug');
 
     const currentPublic = existing
       ? (await getPublicBlogCatalog()).some((post) => post.id === existing.id)
@@ -72,7 +75,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       headers: { location: `/user/blog/${post.id}?notice=saved` },
     });
   } catch (error) {
-    if (error instanceof SlugRedirectConflictError) return invalid('slug');
+    if (error instanceof SlugRedirectConflictError)
+      return invalid('slug', 'slug');
     return invalid('unavailable');
   }
 };

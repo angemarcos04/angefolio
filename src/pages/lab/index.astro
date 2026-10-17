@@ -71,7 +71,7 @@ const tags = [
                 </div>
                 <small>{group.entries.length} entries</small>
               </header>
-              <CardGrid class="collection-grid">
+              <CardGrid class="collection-grid lab-archive-grid">
                 {group.entries.map((entry) => (
                   <LabCard
                     href={`/lab/${entry.slug}`}
@@ -83,6 +83,7 @@ const tags = [
                     category={entry.category ?? undefined}
                     tools={entry.tools}
                     featured={entry.featured}
+                    context="archive"
                   />
                 ))}
               </CardGrid>
@@ -101,6 +102,14 @@ const tags = [
     height: 100%;
     border-radius: var(--radius-md);
     box-shadow: none;
+  }
+  :global(.lab-archive-grid.collection-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @media (max-width: 767px) {
+    :global(.lab-archive-grid.collection-grid) {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
   .status-groups {
     display: grid;

@@ -1,5 +1,8 @@
 ---
 import MarkdownEditor from '../svelte/MarkdownEditor.svelte';
+import MediaUpload from '../svelte/MediaUpload.svelte';
+import ContentPagePreview from '../svelte/ContentPagePreview.svelte';
+import AuthoringFormController from '../svelte/AuthoringFormController.svelte';
 import type { BlogRecord } from '../../lib/server/blog';
 
 interface Props {
@@ -12,7 +15,7 @@ const tags = Array.isArray(post?.tags) ? post.tags.join('\n') : '';
 const date = (post?.createdAt ?? new Date()).toISOString().slice(0, 10);
 ---
 
-<form class="blog-form" method="post" action={action}>
+<form id="blog-editor" class="blog-form" method="post" action={action}>
   {post && <input type="hidden" name="id" value={post.id} />}
   <div class="fields">
     <label
@@ -41,34 +44,59 @@ const date = (post?.createdAt ?? new Date()).toISOString().slice(0, 10);
         >{post?.description ?? ''}</textarea
       ></label
     >
-    <label
-      >Category<input
-        name="category"
-        required
-        maxlength="80"
-        value={post?.category ?? ''}
-      /></label
-    >
-    <label
-      >Publication date<input
-        name="createdAt"
-        type="date"
-        required
-        value={date}
-      /></label
-    >
-    <label class="wide"
-      >Short summary<textarea name="summary" maxlength="500" rows="2"
-        >{post?.summary ?? ''}</textarea
-      ><small>Optional short opening for previews and the article page.</small
-      ></label
-    >
-    <label class="wide"
-      >Tags <small>One per line</small><textarea name="tags" rows="3"
-        >{tags}</textarea
-      ></label
-    >
   </div>
+  <details class="authoring-section">
+    <summary>Additional details and media</summary>
+    <div class="fields">
+      <label
+        >Category<input
+          name="category"
+          required
+          maxlength="80"
+          value={post?.category ?? ''}
+        /></label
+      >
+      <label
+        >Publication date<input
+          name="createdAt"
+          type="date"
+          required
+          value={date}
+        /></label
+      >
+      <label class="wide"
+        >Short summary<textarea name="summary" maxlength="500" rows="2"
+          >{post?.summary ?? ''}</textarea
+        ><small>Optional short opening for previews and the article page.</small
+        ></label
+      >
+      <label class="wide"
+        >Tags <small>One per line</small><textarea name="tags" rows="3"
+          >{tags}</textarea
+        ></label
+      >
+      <label class="wide" for="blog-cover">Cover image</label>
+      <div class="wide cover-field">
+        <input
+          id="blog-cover"
+          name="cover"
+          maxlength="2048"
+          value={post?.cover ?? ''}
+        />
+        <MediaUpload
+          client:load
+          targetId="blog-cover"
+          currentPath={post?.cover ?? ''}
+          purpose="blog cover"
+          label="Choose a cover image"
+        />
+        <small
+          >Optional. Clearing this path removes the cover reference without
+          deleting the media asset.</small
+        >
+      </div>
+    </div>
+  </details>
   <label class="body-label">Article</label>
   <MarkdownEditor
     client:load
@@ -76,8 +104,10 @@ const date = (post?.createdAt ?? new Date()).toISOString().slice(0, 10);
     fieldName="body"
     ariaLabel="Blog post in Markdown"
     maxLength={200000}
+    starter="blog"
   />
-  <div class="options">
+  <fieldset class="options">
+    <legend>Publication</legend>
     <label
       ><input
         type="checkbox"
@@ -99,18 +129,36 @@ const date = (post?.createdAt ?? new Date()).toISOString().slice(0, 10);
         checked={post?.archived ?? false}
       /> Archived</label
     >
-  </div>
+  </fieldset>
   <p class="help">
     Drafts are private. Archived posts stay in your editor but disappear from
     the public archive, search, feed, and sitemap.
   </p>
-  <button type="submit">{submitLabel}</button>
+  <div class="form-actions">
+    <ContentPagePreview client:load formId="blog-editor" kind="blog" /><button
+      type="submit">{submitLabel}</button
+    >
+  </div>
 </form>
+<AuthoringFormController client:load formId="blog-editor" />
 
 <style>
   .blog-form {
     display: grid;
     gap: 1rem;
+  }
+  .authoring-section {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .authoring-section > summary {
+    cursor: pointer;
+    color: var(--foreground);
+    font: 650 0.76rem var(--font-mono);
+  }
+  .authoring-section[open] > summary {
+    margin-bottom: 1rem;
   }
   .fields {
     display: grid;
@@ -141,6 +189,10 @@ const date = (post?.createdAt ?? new Date()).toISOString().slice(0, 10);
   .wide {
     grid-column: 1 / -1;
   }
+  .cover-field {
+    display: grid;
+    gap: 0.35rem;
+  }
   .body-label {
     margin-bottom: -0.7rem;
   }
@@ -148,6 +200,14 @@ const date = (post?.createdAt ?? new Date()).toISOString().slice(0, 10);
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
+    margin: 0;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .options legend {
+    padding-inline: 0.35rem;
+    color: var(--foreground);
   }
   .options label {
     display: flex;
@@ -166,6 +226,12 @@ const date = (post?.createdAt ?? new Date()).toISOString().slice(0, 10);
     color: var(--accent-text);
     font: 0.72rem var(--font-mono);
     cursor: pointer;
+  }
+  .form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
   }
   @media (max-width: 640px) {
     .fields {

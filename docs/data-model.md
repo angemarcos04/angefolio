@@ -67,7 +67,7 @@ Phase 11 deliberately uses one stable row rather than inventing status history. 
 
 Application validation limits titles, slugs, descriptions, summaries, stack items, links, URLs, body size, and ordering before writes. Only visible, non-archived rows reach public helpers. Archive saves the prior status, sets status to `Archived`, hides, and unfeatures. Restore returns the prior status as a hidden, unfeatured draft; older archived rows without a saved status return to `Planning`. There is no hard delete.
 
-The public catalog merges visible MDX and database records by slug. A record with `replaces_mdx` takes over its matching MDX card and detail page; hiding or archiving it suppresses both. Other MDX entries stay public. Database-only records can have request-time detail pages when their Markdown body is present. A database outage fails closed for projects because falling back to old MDX could reveal an adopted page that was later hidden. Import and rollback procedures are in [project-publishing.md](./project-publishing.md).
+The public catalog merges visible MDX and database records by slug. A record with `replaces_mdx` takes over its matching MDX card and detail page; hiding or archiving it suppresses both. Other MDX entries stay public. Every visible, non-archived database-only record has a request-time project page: an empty case-study body renders an overview, and a meaningful body renders the full case study at the same URL. Visible replacements for matching MDX retain the validator requirement for a nonempty case-study body. A database outage fails closed for projects because falling back to old MDX could reveal an adopted page that was later hidden. Import and rollback procedures are in [project-publishing.md](./project-publishing.md).
 
 ## `note_records` (Phase 15)
 
@@ -225,3 +225,5 @@ Before importing current content:
 | `created_at`  | UTC timestamp    | Time the redirect was created or updated.               |
 
 Only published database-backed content creates redirects when its slug changes. The content update, redirect changes, revision, and audit event share one transaction. Previous aliases are flattened to the latest path; source-path collisions are rejected. Public detail routes issue HTTP 308 responses, and redirect sources are excluded from public catalogs, search, feeds, and sitemaps. Revision restore uses the same ownership and collision checks.
+
+Phase 3 adds an optional Blog cover reference and an ordered JSON screenshot-reference array to projects. Screenshot entries contain `src`, required alternative text, and an optional caption; media bytes are stored once in `media_assets`. Existing revision snapshots without these fields restore as `cover = null` and `screenshots = []`.

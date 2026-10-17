@@ -114,6 +114,10 @@ export const projectRecords = sqliteTable(
       .default([])
       .notNull(),
     cover: text('cover'),
+    screenshots: text('screenshots_json', { mode: 'json' })
+      .$type<Array<{ src: string; alt: string; caption?: string }>>()
+      .default([])
+      .notNull(),
     replacesMdx: integer('replaces_mdx', { mode: 'boolean' })
       .default(false)
       .notNull(),
@@ -170,6 +174,7 @@ export const blogRecords = sqliteTable(
     summary: text('summary'),
     category: text('category').notNull(),
     tags: text('tags_json', { mode: 'json' }).$type<string[]>().notNull(),
+    cover: text('cover'),
     body: text('body').notNull(),
     published: integer('published', { mode: 'boolean' })
       .default(false)

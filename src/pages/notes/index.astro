@@ -61,6 +61,7 @@ const tags = [...new Set(notes.flatMap((note) => note.tags))].sort();
               createdAt={note.createdAt}
               updatedAt={note.updatedAt ?? undefined}
               featured={note.featured}
+              context="archive"
             />
           ))}
         </CardGrid>

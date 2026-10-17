@@ -1,0 +1,51 @@
+---
+import Tag from './Tag.astro';
+import { getVisibleItems } from '../../lib/data/cardPresentation';
+
+interface Props {
+  items: string[];
+  limit?: number;
+  class?: string;
+  tone?: 'neutral' | 'accent';
+  label?: string;
+}
+
+const {
+  items,
+  limit = items.length,
+  class: className = '',
+  tone = 'neutral',
+  label = 'items',
+} = Astro.props;
+const { visible: visibleItems, hidden: hiddenItems } = getVisibleItems(
+  items,
+  limit,
+);
+---
+
+{
+  items.length > 0 && (
+    <div class:list={['compact-tag-list', className]}>
+      {visibleItems.map((item) => (
+        <Tag {tone}>{item}</Tag>
+      ))}
+      {hiddenItems.length > 0 && (
+        <Tag class="tag-more">
+          +{hiddenItems.length}
+          <span class="sr-only">
+            , additional {label}: {hiddenItems.join(', ')}
+          </span>
+        </Tag>
+      )}
+    </div>
+  )
+}
+
+<style>
+  .compact-tag-list {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+</style>

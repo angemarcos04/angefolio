@@ -3,7 +3,7 @@ import ArchiveIntro from '../../components/astro/ArchiveIntro.astro';
 import CardGrid from '../../components/astro/CardGrid.astro';
 import CollectionHeader from '../../components/astro/CollectionHeader.astro';
 import Layout from '../../components/astro/Layout.astro';
-import NoteCard from '../../components/astro/NoteCard.astro';
+import BlogCard from '../../components/astro/BlogCard.astro';
 import Tag from '../../components/astro/Tag.astro';
 import { getPublicBlogCatalog } from '../../lib/server/blog';
 import { getPublicSiteSettings } from '../../lib/server/siteSettings';
@@ -50,17 +50,20 @@ const tags = [...new Set(posts.flatMap((post) => post.tags))].sort();
   <section aria-label="Blog archive">
     {
       posts.length ? (
-        <CardGrid class="collection-grid">
+        <CardGrid class="collection-grid blog-archive-grid">
           {posts.map((post) => (
-            <NoteCard
+            <BlogCard
               href={`/blog/${post.slug}`}
               title={post.title}
-              description={post.summary ?? post.description}
+              description={post.description}
+              summary={post.summary}
+              cover={post.cover}
               category={post.category}
               tags={post.tags}
               createdAt={post.createdAt}
               updatedAt={post.updatedAt}
               featured={post.featured}
+              context="archive"
             />
           ))}
         </CardGrid>
@@ -76,6 +79,14 @@ const tags = [...new Set(posts.flatMap((post) => post.tags))].sort();
     height: 100%;
     border-radius: var(--radius-md);
     box-shadow: none;
+  }
+  :global(.blog-archive-grid.collection-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @media (max-width: 767px) {
+    :global(.blog-archive-grid.collection-grid) {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
   .empty-state {
     margin: 0;

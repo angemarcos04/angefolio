@@ -28,17 +28,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
       303,
     );
   const id = form.get('id') || null;
-  const invalid = (code: string) =>
-    new Response(null, {
+  const invalid = (code: string, field?: string) => {
+    const query = `error=${code}${field ? `&field=${encodeURIComponent(field)}` : ''}`;
+    return new Response(null, {
       status: 303,
       headers: {
         location: id
-          ? `/user/notes/${encodeURIComponent(id)}?error=${code}`
-          : `/user/notes/new?error=${code}`,
+          ? `/user/notes/${encodeURIComponent(id)}?${query}`
+          : `/user/notes/new?${query}`,
       },
     });
+  };
   const result = validateNoteForm(form);
-  if (!result.success) return invalid('validation');
+  if (!result.success)
+    return invalid('validation', Object.keys(result.errors)[0]);
   try {
     const existing = id ? await getNoteRecord(id) : undefined;
     if (id && !existing)
@@ -47,7 +50,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         303,
       );
     const owner = await getNoteRecordBySlug(result.data.slug);
-    if (owner && owner.id !== id) return invalid('slug');
+    if (owner && owner.id !== id) return invalid('slug', 'slug');
     const mdxCollision = (await getAllNotes()).some(
       (entry) => entry.id.replace(/\.(md|mdx)$/, '') === result.data.slug,
     );
@@ -74,7 +77,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       headers: { location: `/user/notes/${saved.id}?notice=saved` },
     });
   } catch (error) {
-    if (error instanceof SlugRedirectConflictError) return invalid('slug');
+    if (error instanceof SlugRedirectConflictError)
+      return invalid('slug', 'slug');
     return invalid('unavailable');
   }
 };

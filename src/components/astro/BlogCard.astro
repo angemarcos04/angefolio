@@ -1,0 +1,168 @@
+---
+import Button from './Button.astro';
+import CompactTagList from './CompactTagList.astro';
+import Tag from './Tag.astro';
+import { formatDate } from '../../lib/date';
+
+interface Props {
+  href: string;
+  title: string;
+  description: string;
+  summary?: string | null;
+  cover?: string | null;
+  category: string;
+  tags: string[];
+  createdAt: Date | string;
+  updatedAt?: Date | string;
+  featured?: boolean;
+  context?: 'home' | 'archive';
+  class?: string;
+}
+
+const {
+  href,
+  title,
+  description,
+  summary,
+  cover = null,
+  category,
+  tags,
+  createdAt,
+  updatedAt,
+  featured = false,
+  context = 'archive',
+  class: className = '',
+} = Astro.props;
+const dateValue = new Date(createdAt);
+const updatedValue = updatedAt ? new Date(updatedAt) : null;
+const excerpt = summary?.trim() || description;
+const tagLimit = context === 'home' ? 3 : tags.length;
+---
+
+<article
+  class:list={[
+    'content-card bento-surface blog-card',
+    context === 'home' && 'home-preview',
+    className,
+  ]}
+>
+  {
+    cover && (
+      <img
+        class="blog-cover"
+        src={cover}
+        alt=""
+        loading="lazy"
+        decoding="async"
+      />
+    )
+  }
+  <div class="blog-meta">
+    <Tag tone="accent">{category}</Tag>
+    {context === 'archive' && featured && <Tag tone="strong">Featured</Tag>}
+    <time datetime={dateValue.toISOString()}>{formatDate(dateValue)}</time>
+  </div>
+  {context === 'home' ? <h3>{title}</h3> : <h2>{title}</h2>}
+  <p>{excerpt}</p>
+  <CompactTagList
+    items={tags}
+    limit={tagLimit}
+    label="tags"
+    class="blog-tags"
+  />
+  {
+    updatedValue && updatedValue.getTime() !== dateValue.getTime() && (
+      <small class="blog-updated">
+        Updated{' '}
+        <time datetime={updatedValue.toISOString()}>
+          {formatDate(updatedValue)}
+        </time>
+      </small>
+    )
+  }
+  <div class="blog-action">
+    <Button href={href} size="sm" variant="ghost"
+      >Read article <span aria-hidden="true">↗</span></Button
+    >
+  </div>
+</article>
+
+<style>
+  .blog-card {
+    display: flex;
+    min-width: 0;
+    height: 100%;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.2rem;
+    border-top: 2px solid var(--accent);
+  }
+  .blog-cover {
+    display: block;
+    width: 100%;
+    max-height: 13rem;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .blog-meta {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .blog-meta time,
+  .blog-updated {
+    margin-left: auto;
+    color: var(--muted-foreground);
+    font: 0.68rem/1.4 var(--font-mono);
+  }
+  h2,
+  h3 {
+    max-width: 32ch;
+    margin: 0;
+    font-size: 1.1rem;
+    line-height: 1.32;
+    overflow-wrap: anywhere;
+  }
+  p {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: 0.9rem;
+    line-height: 1.58;
+    overflow-wrap: anywhere;
+  }
+  .home-preview > p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+  }
+  .blog-tags {
+    margin-top: auto;
+  }
+  .blog-updated {
+    margin: 0;
+  }
+  .blog-action {
+    display: flex;
+    padding-top: 0.45rem;
+    border-top: 1px solid var(--border);
+  }
+  .blog-action :global(a:focus-visible) {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+  @media (max-width: 767px) {
+    .blog-card {
+      gap: 0.6rem;
+      padding: 1rem;
+    }
+    h2,
+    h3 {
+      font-size: 1.02rem;
+    }
+  }
+</style>

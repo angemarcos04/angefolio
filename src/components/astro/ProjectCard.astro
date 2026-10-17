@@ -1,7 +1,10 @@
 ---
 import Button from './Button.astro';
+import CompactTagList from './CompactTagList.astro';
 import StatusPill from './StatusPill.astro';
 import Tag from './Tag.astro';
+import { getProjectActions } from '../../lib/data/cardPresentation';
+
 interface Props {
   href?: string;
   title: string;
@@ -14,8 +17,11 @@ interface Props {
   category?: string;
   featured?: boolean;
   cover?: string | null;
+  links?: Array<{ label: string; href: string; external: boolean }>;
+  context?: 'home' | 'archive';
   class?: string;
 }
+
 const {
   href,
   title,
@@ -28,87 +34,141 @@ const {
   category,
   featured = false,
   cover = null,
+  links = [],
+  context = 'archive',
   class: className = '',
 } = Astro.props;
+const coverImage = typeof cover === 'string' ? cover.trim() : '';
+const actions = getProjectActions({ href, github, demo, caseStudy, links });
+const stackLimit = context === 'home' ? 4 : stack.length;
 ---
 
-<article class:list={['content-card bento-surface', className]}>
+<article
+  class:list={[
+    'content-card bento-surface project-card',
+    coverImage ? 'project-card--image' : 'project-card--text',
+    context === 'home' && 'home-preview',
+    context === 'home' && !href && 'home-preview--full-description',
+    className,
+  ]}
+>
   {
-    cover && (
+    coverImage && (
       <img
-        class="cover"
-        src={cover}
+        class="project-cover"
+        src={coverImage}
         alt={`Cover image for ${title}`}
         loading="lazy"
         decoding="async"
+        width="1280"
+        height="720"
       />
     )
   }
-  <div class="meta">
-    <StatusPill {status} />{category && <Tag tone="accent">{category}</Tag>}{
-      featured && <Tag tone="strong">Featured</Tag>
-    }
+  <div class="project-copy">
+    {context === 'home' ? <h3>{title}</h3> : <h2>{title}</h2>}
+    <p class="project-description">{description}</p>
   </div>
-  <h3>{href ? <a href={href}>{title}</a> : title}</h3><p>{description}</p>
-  <div class="tags">{stack.map((item) => <Tag>{item}</Tag>)}</div>
+  <div class="project-meta" aria-label="Project details">
+    <StatusPill {status} />
+    {category && <Tag tone="accent">{category}</Tag>}
+    {context === 'archive' && featured && <Tag tone="strong">Featured</Tag>}
+  </div>
+  <CompactTagList
+    items={stack}
+    limit={stackLimit}
+    label="technologies"
+    class="project-stack"
+  />
   {
-    (github || demo || caseStudy) && (
-      <div class="links">
-        {demo && (
-          <Button href={demo} external size="sm" variant="primary">
-            Demo
+    actions.length > 0 && (
+      <div class="project-actions">
+        {actions.map((action) => (
+          <Button
+            href={action.href}
+            external={action.external}
+            size="sm"
+            variant={action.variant}
+          >
+            {action.label}
           </Button>
-        )}
-        {github && (
-          <Button href={github} external size="sm">
-            GitHub
-          </Button>
-        )}
-        {caseStudy && (
-          <Button href={caseStudy} size="sm" variant="ghost">
-            Case study
-          </Button>
-        )}
+        ))}
       </div>
     )
   }
 </article>
+
 <style>
-  .content-card {
+  .project-card {
     display: flex;
     min-width: 0;
     flex-direction: column;
-    padding: 1.25rem;
+    gap: 0.8rem;
+    padding: clamp(1rem, 1.5vw, 1.35rem);
   }
-  .cover {
+  .project-card--text {
+    border-left: 2px solid var(--accent);
+    background: color-mix(in srgb, var(--card) 97%, var(--accent));
+  }
+  .project-cover {
+    display: block;
     width: 100%;
     aspect-ratio: 16 / 9;
     object-fit: cover;
-    margin-bottom: 1rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
+    background: var(--muted);
   }
-  .meta,
-  .tags,
-  .links {
+  .project-copy {
+    min-width: 0;
+  }
+  h2,
+  h3 {
+    margin: 0;
+    color: var(--foreground);
+    font-size: 1.05rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .project-description {
+    margin: 0.4rem 0 0;
+    color: var(--muted-foreground);
+    font-size: 0.88rem;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+  .project-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
+    gap: 0.35rem;
   }
-  h3 {
-    margin: 1rem 0 0;
-    font-size: 1.1rem;
+  .project-stack {
+    margin-top: 0.1rem;
   }
-  h3 a:hover {
-    color: var(--accent-text);
+  .project-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+    padding-top: 0.15rem;
   }
-  p {
-    margin: 0.45rem 0 1rem;
-    color: var(--muted-foreground);
-    font-size: 0.9rem;
+  .project-actions :global(.button:focus-visible) {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
   }
-  .links {
-    margin-top: auto;
-    padding-top: 1.1rem;
+  .home-preview:not(.home-preview--full-description) .project-description {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+  }
+  @media (max-width: 767px) {
+    .project-card {
+      gap: 0.7rem;
+      padding: 1rem;
+    }
+    .project-cover {
+      margin-bottom: 0.1rem;
+    }
   }
 </style>

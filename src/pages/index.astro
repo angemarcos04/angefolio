@@ -2,6 +2,7 @@
 import BentoCard from '../components/astro/BentoCard.astro';
 import AffiliationCard from '../components/astro/AffiliationCard.astro';
 import BentoGrid from '../components/astro/BentoGrid.astro';
+import BlogCard from '../components/astro/BlogCard.astro';
 import Button from '../components/astro/Button.astro';
 import CollectionHeader from '../components/astro/CollectionHeader.astro';
 import IconLink from '../components/astro/IconLink.astro';
@@ -76,6 +77,7 @@ const allProjects = projectCatalog.map((project) => {
     description: project.description,
     status: project.status,
     stack: project.stack,
+    links: project.links,
     github: project.github ?? undefined,
     demo: project.demo ?? undefined,
     caseStudy:
@@ -318,6 +320,8 @@ const progressSections = homeProgressSections.filter((section) => {
                 category={project.category}
                 featured={project.featured}
                 cover={project.cover}
+                links={project.links}
+                context="home"
               />
             ))}
           </div>
@@ -433,6 +437,7 @@ const progressSections = homeProgressSections.filter((section) => {
                 createdAt={note.createdAt}
                 updatedAt={note.updatedAt ?? undefined}
                 featured={note.featured}
+                context="home"
               />
             ))}
           </div>
@@ -452,17 +457,20 @@ const progressSections = homeProgressSections.filter((section) => {
           title={cards.blog.title}
           description={cards.blog.description || undefined}
         >
-          <div class="feature-grid">
+          <div class="blog-preview-grid">
             {featuredBlog.map((post) => (
-              <NoteCard
+              <BlogCard
                 href={`/blog/${post.slug}`}
                 title={post.title}
-                description={post.summary ?? post.description}
+                description={post.description}
+                summary={post.summary}
+                cover={post.cover}
                 category={post.category}
                 tags={post.tags}
                 createdAt={post.createdAt}
                 updatedAt={post.updatedAt}
                 featured={post.featured}
+                context="home"
               />
             ))}
           </div>
@@ -482,7 +490,7 @@ const progressSections = homeProgressSections.filter((section) => {
           title={cards.lab.title}
           description={cards.lab.description || undefined}
         >
-          <div class="feature-grid">
+          <div class="lab-preview-grid">
             {featuredLab.map((entry) => (
               <LabCard
                 href={`/lab/${entry.slug}`}
@@ -494,6 +502,7 @@ const progressSections = homeProgressSections.filter((section) => {
                 tools={entry.tools}
                 date={entry.date}
                 featured={entry.featured}
+                context="home"
               />
             ))}
           </div>
@@ -828,8 +837,9 @@ const progressSections = homeProgressSections.filter((section) => {
   }
   .project-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.8rem;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 1rem;
   }
   :global(.project-grid .content-card),
   :global(.note-grid .content-card),
@@ -988,12 +998,13 @@ const progressSections = homeProgressSections.filter((section) => {
   }
   .note-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
     gap: 0.8rem;
   }
-  .feature-grid {
+  .blog-preview-grid,
+  .lab-preview-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.8rem;
   }
   .contact-links {
@@ -1005,9 +1016,9 @@ const progressSections = homeProgressSections.filter((section) => {
   .contact-email {
     overflow-wrap: anywhere;
   }
-  @media (min-width: 1120px) {
+  @media (min-width: 768px) {
     .project-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
   @media (max-width: 767px) {
@@ -1076,9 +1087,9 @@ const progressSections = homeProgressSections.filter((section) => {
       padding: 0.55rem 0.8rem;
       font-size: 0.82rem;
     }
-    .project-grid,
     .note-grid,
-    .feature-grid {
+    .blog-preview-grid,
+    .lab-preview-grid {
       grid-template-columns: 1fr;
       gap: 0.65rem;
     }

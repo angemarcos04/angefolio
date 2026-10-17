@@ -1,3 +1,5 @@
+import { isSafeImageReference } from '../../data/mediaReference';
+
 export const projectStatuses = [
   'Planning',
   'Prototype',
@@ -12,6 +14,12 @@ export interface ProjectLink {
   label: string;
   href: string;
   external: boolean;
+}
+
+export interface ProjectScreenshot {
+  src: string;
+  alt: string;
+  caption?: string;
 }
 
 export interface ProjectRecordInput {
@@ -31,6 +39,7 @@ export interface ProjectRecordInput {
   projectDate: Date | null;
   highlights: string[];
   cover: string | null;
+  screenshots: ProjectScreenshot[];
   replacesMdx: boolean;
   featured: boolean;
   visible: boolean;
@@ -54,6 +63,7 @@ export interface ProjectFormValues {
   projectDate: string;
   highlights: string;
   cover: string;
+  screenshots: string;
   replacesMdx: boolean;
   featured: boolean;
   visible: boolean;
@@ -103,6 +113,7 @@ function readValues(form: URLSearchParams): ProjectFormValues {
     projectDate: get('projectDate'),
     highlights: get('highlights'),
     cover: get('cover'),
+    screenshots: form.get('screenshots')?.trim() ?? '[]',
     replacesMdx: form.get('replacesMdx') === 'on',
     featured: form.get('featured') === 'on',
     visible: form.get('visible') === 'on',
@@ -253,6 +264,49 @@ export function validateProjectForm(
     errors.cover = 'Use a site path or HTTP(S) URL.';
   }
   if (values.cover.length > 2048) errors.cover = 'Cover path is too long.';
+  let screenshots: ProjectScreenshot[] = [];
+  try {
+    const parsed: unknown = JSON.parse(values.screenshots);
+    if (!Array.isArray(parsed) || parsed.length > 8) throw new Error();
+    const seen = new Set<string>();
+    for (const item of parsed) {
+      if (!item || typeof item !== 'object' || Array.isArray(item))
+        throw new Error();
+      const row = item as Record<string, unknown>;
+      if (
+        Object.keys(row).some((key) => !['src', 'alt', 'caption'].includes(key))
+      )
+        throw new Error();
+      if (
+        typeof row.src !== 'string' ||
+        !isSafeImageReference(row.src) ||
+        seen.has(row.src)
+      )
+        throw new Error();
+      if (
+        typeof row.alt !== 'string' ||
+        !row.alt.trim() ||
+        row.alt.length > 300
+      )
+        throw new Error();
+      if (
+        row.caption !== undefined &&
+        (typeof row.caption !== 'string' || row.caption.length > 200)
+      )
+        throw new Error();
+      seen.add(row.src);
+      screenshots.push({
+        src: row.src,
+        alt: row.alt.trim(),
+        ...(typeof row.caption === 'string' && row.caption.trim()
+          ? { caption: row.caption.trim() }
+          : {}),
+      });
+    }
+  } catch {
+    errors.screenshots =
+      'Use up to 8 valid, unique screenshots with alternative text.';
+  }
   if (values.replacesMdx && values.visible && !values.caseStudyBody) {
     errors.caseStudyBody = 'A public replacement needs a case study.';
   }
@@ -292,6 +346,7 @@ export function validateProjectForm(
       projectDate,
       highlights,
       cover: optionalValue(values.cover),
+      screenshots,
       replacesMdx: values.replacesMdx,
       featured: values.featured,
       visible: values.visible,

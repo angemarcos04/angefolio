@@ -11,3 +11,9 @@ Notes remain in `src/content/notes/` as rollback copies. `pnpm notes:import` is 
 Database-only notes can be authored with a new slug. Public archive, detail pages, search, RSS, and `/sitemap-notes.xml` use the same catalog and only expose published notes. If the database is unavailable, the catalog fails closed because it cannot know whether an MDX note has been adopted and hidden.
 
 There is no hard delete or revision history yet. Back up the database before relying on edits in a deployed volume. The source files stay untouched and can be used to switch a note back to MDX.
+
+The shared Markdown editor can upload JPEG, PNG, or WebP images (up to 8 MB) and insert normal Markdown image syntax. Images use the authenticated `/api/console/media/upload` endpoint, are resized/converted to WebP, and are stored in SQLite. Markdown sanitization allows safe uploaded media, safe static images, and HTTPS image sources.
+The Notes editor includes an optional Markdown starter and private page preview.
+Use **Preview Markdown** for the body alone or **Preview Page** to review the
+current title, metadata, and body before saving. Draft edits are protected by a
+leave-page warning and remain in the editor after server validation errors.

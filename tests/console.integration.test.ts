@@ -292,7 +292,16 @@ test('private edits, audit history, recovery, and database backup', async () => 
       description: 'Temporary integration project.',
       status: 'Prototype',
       stack: 'Astro',
+      demo: 'https://demo.example.test/phase-13',
+      github: 'https://github.com/example/phase-13',
       caseStudyBody: 'A private draft body.',
+      screenshots: JSON.stringify([
+        {
+          src: '/og.png',
+          alt: 'Project overview screen',
+          caption: 'Home screen',
+        },
+      ]),
     };
     const invalidProject = await formRequest(
       origin,
@@ -328,7 +337,11 @@ test('private edits, audit history, recovery, and database backup', async () => 
     const updated = await formRequest(
       origin,
       `/api/console/projects/${id}/update`,
-      { ...projectFields, description: 'Edited integration project.' },
+      {
+        ...projectFields,
+        description: 'Edited integration project.',
+        caseStudyBody: '',
+      },
       cookie,
     );
     assert.equal(
@@ -364,7 +377,29 @@ test('private edits, audit history, recovery, and database backup', async () => 
     assert.match(await (await fetch(origin)).text(), /Phase 13 Test/);
     const newDetail = await fetch(`${origin}/projects/phase-13-test`);
     assert.equal(newDetail.status, 200);
-    assert.match(await newDetail.text(), /A private draft body/);
+    const overview = await newDetail.text();
+    assert.match(overview, /Edited integration project\./);
+    assert.match(overview, /Project information/);
+    assert.match(overview, /https:\/\/demo\.example\.test\/phase-13/);
+    assert.match(overview, /https:\/\/github\.com\/example\/phase-13/);
+    assert.match(overview, /Project screenshots/);
+    assert.match(overview, /alt="Project overview screen"/);
+    assert.match(overview, /Home screen/);
+    assert.doesNotMatch(overview, /A private draft body/);
+    assert.doesNotMatch(overview, /On this page/);
+    assert.doesNotMatch(overview, /class="prose-shell/);
+    const overviewSearch = await (
+      await fetch(`${origin}/api/search/projects?q=Edited integration`)
+    ).json();
+    assert(
+      overviewSearch.some(
+        (result: { url: string }) => result.url === '/projects/phase-13-test',
+      ),
+    );
+    assert.match(
+      await (await fetch(`${origin}/sitemap-projects.xml`)).text(),
+      /\/projects\/phase-13-test/,
+    );
 
     const archived = await formRequest(
       origin,
@@ -459,6 +494,21 @@ test('private edits, audit history, recovery, and database backup', async () => 
         description: 'Edited from the private workspace.',
         status: 'In Progress',
         stack: 'Laravel\nPostgreSQL',
+        category: 'Developer tools',
+        role: 'Independent developer',
+        problem: 'A repeatable workflow needs better tooling.',
+        solution: 'A small application automates the routine steps.',
+        highlights: 'Server-rendered pages\nTyped data flow',
+        screenshots: JSON.stringify([
+          {
+            src: '/og.png',
+            alt: 'Project overview screen',
+            caption: 'Home screen',
+          },
+        ]),
+        demo: 'https://demo.example.test/phase-13',
+        github: 'https://github.com/example/phase-13',
+        links: 'Documentation | https://docs.example.test/phase-13',
         caseStudyBody: '# Edited case study\n\n<script>alert(1)</script>',
         projectDate: '2026-06-12',
         visible: 'on',
@@ -475,6 +525,10 @@ test('private edits, audit history, recovery, and database backup', async () => 
     assert.match(caseStudyDetail, /Edited case study/);
     assert.match(caseStudyDetail, /id="edited-case-study"/);
     assert.match(caseStudyDetail, /href="#edited-case-study"/);
+    assert.match(caseStudyDetail, /Independent developer/);
+    assert.match(caseStudyDetail, /Project screenshots/);
+    assert.match(caseStudyDetail, /Server-rendered pages/);
+    assert.match(caseStudyDetail, /https:\/\/docs\.example\.test\/phase-13/);
     assert.doesNotMatch(caseStudyDetail, /<script>alert\(1\)<\/script>/);
     const movedCaseStudy = await formRequest(
       origin,
@@ -513,6 +567,28 @@ test('private edits, audit history, recovery, and database backup', async () => 
       await (await fetch(`${origin}/sitemap-projects.xml`)).text(),
       /\/projects\/phase-13-moved/,
     );
+    const returnedToOverview = await formRequest(
+      origin,
+      `/api/console/projects/${id}/update`,
+      {
+        slug: 'phase-13-moved',
+        title: 'Phase 13 Test',
+        description: 'Edited from the private workspace.',
+        status: 'In Progress',
+        stack: 'Laravel\nPostgreSQL',
+        caseStudyBody: '',
+        projectDate: '2026-06-12',
+        visible: 'on',
+      },
+      cookie,
+    );
+    assert.equal(
+      returnedToOverview.headers.get('location'),
+      '/user/projects?notice=updated',
+    );
+    const overviewAgain = await fetch(`${origin}/projects/phase-13-moved`);
+    assert.equal(overviewAgain.status, 200);
+    assert.doesNotMatch(await overviewAgain.text(), /Edited case study/);
     const archivedCaseStudy = await formRequest(
       origin,
       `/api/console/projects/${id}/archive`,
@@ -645,6 +721,159 @@ test('private edits, audit history, recovery, and database backup', async () => 
     assert.match(homepageEditor, /Credential ID/);
     assert.match(homepageEditor, /Test verified badge/);
     assert.match(homepageEditor, /value="0"/);
+
+    // Exercise the Notes and Lab publication lifecycle in the same isolated
+    // database/server as the other console flows. These collections did not
+    // previously have end-to-end coverage.
+    const noteDraft = await formRequest(
+      origin,
+      '/api/console/notes/save',
+      {
+        slug: 'phase-five-note',
+        title: 'Phase Five Note',
+        description: 'An isolated Notes lifecycle fixture.',
+        summary: '',
+        category: 'Testing',
+        tags: 'quality\nregression',
+        body: 'Private note body for lifecycle verification.',
+        createdAt: '2026-10-17',
+      },
+      cookie,
+    );
+    assert.equal(noteDraft.status, 303);
+    assert.match(noteDraft.headers.get('location') ?? '', /notice=saved/);
+    assert.equal((await fetch(`${origin}/notes/phase-five-note`)).status, 404);
+    assert.deepEqual(
+      await (await fetch(`${origin}/api/search/notes?q=Phase%20Five`)).json(),
+      [],
+    );
+    const noteRow = await database.execute({
+      sql: 'SELECT id FROM note_records WHERE slug = ?',
+      args: ['phase-five-note'],
+    });
+    assert.equal(noteRow.rows.length, 1);
+    const noteId = String(noteRow.rows[0].id);
+    const notePublish = await formRequest(
+      origin,
+      '/api/console/notes/save',
+      {
+        id: noteId,
+        slug: 'phase-five-note',
+        title: 'Phase Five Note',
+        description: 'An isolated Notes lifecycle fixture.',
+        summary: 'Published note summary.',
+        category: 'Testing',
+        tags: 'quality\nregression',
+        body: 'Public note body for lifecycle verification.',
+        createdAt: '2026-10-17',
+        published: 'on',
+        featured: 'on',
+      },
+      cookie,
+    );
+    assert.equal(notePublish.status, 303);
+    assert.equal((await fetch(`${origin}/notes/phase-five-note`)).status, 200);
+    assert.match(
+      await (await fetch(`${origin}/api/search/notes?q=Phase%20Five`)).text(),
+      /phase-five-note/,
+    );
+    const noteSitemap = await (
+      await fetch(`${origin}/sitemap-notes.xml`)
+    ).text();
+    assert.match(noteSitemap, /\/notes\/phase-five-note/);
+    const noteUnpublish = await formRequest(
+      origin,
+      '/api/console/notes/save',
+      {
+        id: noteId,
+        slug: 'phase-five-note',
+        title: 'Phase Five Note',
+        description: 'An isolated Notes lifecycle fixture.',
+        summary: 'Published note summary.',
+        category: 'Testing',
+        tags: 'quality\nregression',
+        body: 'Public note body for lifecycle verification.',
+        createdAt: '2026-10-17',
+      },
+      cookie,
+    );
+    assert.equal(noteUnpublish.status, 303);
+    assert.equal((await fetch(`${origin}/notes/phase-five-note`)).status, 404);
+
+    const labDraft = await formRequest(
+      origin,
+      '/api/console/lab/save',
+      {
+        slug: 'phase-five-lab',
+        title: 'Phase Five Lab',
+        description: 'An isolated Lab lifecycle fixture.',
+        status: 'Prototype',
+        category: 'Testing',
+        tags: 'quality\nregression',
+        tools: 'Node.js',
+        lessons: 'Keep public data filtered.',
+        date: '2026-10-17',
+        body: 'Private lab body for lifecycle verification.',
+      },
+      cookie,
+    );
+    assert.equal(labDraft.status, 303);
+    assert.equal((await fetch(`${origin}/lab/phase-five-lab`)).status, 404);
+    const labRow = await database.execute({
+      sql: 'SELECT id FROM lab_records WHERE slug = ?',
+      args: ['phase-five-lab'],
+    });
+    assert.equal(labRow.rows.length, 1);
+    const labId = String(labRow.rows[0].id);
+    const labPublish = await formRequest(
+      origin,
+      '/api/console/lab/save',
+      {
+        id: labId,
+        slug: 'phase-five-lab',
+        title: 'Phase Five Lab',
+        description: 'An isolated Lab lifecycle fixture.',
+        status: 'Prototype',
+        category: 'Testing',
+        tags: 'quality\nregression',
+        tools: 'Node.js',
+        lessons: 'Keep public data filtered.',
+        date: '2026-10-17',
+        body: 'Public lab body for lifecycle verification.',
+        visible: 'on',
+        featured: 'on',
+      },
+      cookie,
+    );
+    assert.equal(labPublish.status, 303);
+    assert.equal((await fetch(`${origin}/lab/phase-five-lab`)).status, 200);
+    assert.match(
+      await (await fetch(`${origin}/api/search/lab?q=Phase%20Five`)).text(),
+      /phase-five-lab/,
+    );
+    const labSitemap = await (await fetch(`${origin}/sitemap-lab.xml`)).text();
+    assert.match(labSitemap, /\/lab\/phase-five-lab/);
+    const labHide = await formRequest(
+      origin,
+      '/api/console/lab/save',
+      {
+        id: labId,
+        slug: 'phase-five-lab',
+        title: 'Phase Five Lab',
+        description: 'An isolated Lab lifecycle fixture.',
+        status: 'Prototype',
+        category: 'Testing',
+        tags: 'quality\nregression',
+        tools: 'Node.js',
+        lessons: 'Keep public data filtered.',
+        date: '2026-10-17',
+        body: 'Public lab body for lifecycle verification.',
+        featured: 'on',
+      },
+      cookie,
+    );
+    assert.equal(labHide.status, 303);
+    assert.equal((await fetch(`${origin}/lab/phase-five-lab`)).status, 404);
 
     const logout = await formRequest(origin, '/user/logout', {}, cookie);
     assert.equal(logout.status, 303);

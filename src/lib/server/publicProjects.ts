@@ -21,9 +21,11 @@ export interface PublicProject {
   demo: string | null;
   featured: boolean;
   date: Date;
+  dateLabel: 'Date' | 'Added';
   updatedAt: Date;
   highlights: string[];
   cover: string | null;
+  screenshots: Array<{ src: string; alt: string; caption?: string }>;
   body: string;
   orderIndex: number | null;
   entry?: CollectionEntry<'projects'>;
@@ -49,9 +51,11 @@ function fromMdx(entry: CollectionEntry<'projects'>): PublicProject {
     demo: entry.data.demo ?? null,
     featured: entry.data.featured,
     date: entry.data.date,
+    dateLabel: 'Date',
     updatedAt: entry.data.date,
     highlights: entry.data.highlights ?? [],
     cover: entry.data.cover ?? null,
+    screenshots: [],
     body: 'body' in entry && typeof entry.body === 'string' ? entry.body : '',
     orderIndex: entry.data.order ?? null,
     entry,
@@ -75,9 +79,11 @@ function fromDatabase(record: ProjectRecord): PublicProject {
     demo: record.demo,
     featured: record.featured,
     date: record.projectDate ?? record.createdAt,
+    dateLabel: record.projectDate ? 'Date' : 'Added',
     updatedAt: record.updatedAt,
     highlights: Array.isArray(record.highlights) ? record.highlights : [],
     cover: record.cover,
+    screenshots: Array.isArray(record.screenshots) ? record.screenshots : [],
     body: record.caseStudyBody ?? '',
     orderIndex: record.orderIndex,
   };
@@ -132,8 +138,9 @@ export async function getPublicProjectCatalog(): Promise<PublicProject[]> {
   });
 }
 
-export function publicProjectUrl(project: PublicProject): string | undefined {
-  return project.source === 'mdx' || project.body.trim()
-    ? `/projects/${project.slug}`
-    : undefined;
+export function publicProjectUrl(project: PublicProject): string {
+  // Callers use this helper with records from the authorized public catalog.
+  // Visibility, archive state, replacement selection, and redirect aliases
+  // are enforced by getPublicProjectCatalog(), not by this URL formatter.
+  return `/projects/${project.slug}`;
 }

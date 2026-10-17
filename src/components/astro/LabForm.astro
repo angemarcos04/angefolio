@@ -1,5 +1,7 @@
 ---
 import MarkdownEditor from '../svelte/MarkdownEditor.svelte';
+import ContentPagePreview from '../svelte/ContentPagePreview.svelte';
+import AuthoringFormController from '../svelte/AuthoringFormController.svelte';
 import type { LabRecord } from '../../lib/server/lab';
 import { labRisks, labStatuses } from '../../lib/server/validation/lab';
 
@@ -14,7 +16,7 @@ const asLines = (value: unknown) =>
 const date = (value?: Date | null) => value?.toISOString().slice(0, 10) ?? '';
 ---
 
-<form class="lab-form" method="post" action={action}>
+<form id="lab-editor" class="lab-form" method="post" action={action}>
   {entry && <input type="hidden" name="id" value={entry.id} />}
   <div class="fields">
     <label
@@ -43,89 +45,94 @@ const date = (value?: Date | null) => value?.toISOString().slice(0, 10) ?? '';
         >{entry?.description ?? ''}</textarea
       ></label
     >
-    <label
-      >Status<select name="status"
-        >{
-          labStatuses.map((status) => (
-            <option value={status} selected={entry?.status === status}>
-              {status}
-            </option>
-          ))
-        }</select
-      ></label
-    >
-    <label
-      >Category<input
-        name="category"
-        maxlength="80"
-        value={entry?.category ?? ''}
-      /></label
-    >
-    <label
-      >Logged date<input
-        name="date"
-        type="date"
-        required
-        value={date(entry?.date) || new Date().toISOString().slice(0, 10)}
-      /></label
-    >
-    <label
-      >Updated date<input
-        name="updatedAt"
-        type="date"
-        value={date(entry?.updatedAt)}
-      /></label
-    >
-    <label
-      >Risk<select name="risk"
-        ><option value="">Not specified</option>{
-          labRisks.map((risk) => (
-            <option value={risk} selected={entry?.risk === risk}>
-              {risk}
-            </option>
-          ))
-        }</select
-      ></label
-    >
-    <label
-      >Repository URL<input
-        name="repo"
-        type="url"
-        maxlength="2048"
-        value={entry?.repo ?? ''}
-      /></label
-    >
-    <label
-      >Demo URL<input
-        name="demo"
-        type="url"
-        maxlength="2048"
-        value={entry?.demo ?? ''}
-      /></label
-    >
-    <label class="wide"
-      >Related project path or URL<input
-        name="relatedProject"
-        maxlength="2048"
-        value={entry?.relatedProject ?? ''}
-      /></label
-    >
-    <label class="wide"
-      >Tags <small>One per line</small><textarea name="tags" rows="3"
-        >{asLines(entry?.tags)}</textarea
-      ></label
-    >
-    <label class="wide"
-      >Tools <small>One per line</small><textarea name="tools" rows="3"
-        >{asLines(entry?.tools)}</textarea
-      ></label
-    >
-    <label class="wide"
-      >Lessons <small>One per line</small><textarea name="lessons" rows="4"
-        >{asLines(entry?.lessons)}</textarea
-      ></label
-    >
   </div>
+  <details class="authoring-section">
+    <summary>Experiment details</summary>
+    <div class="fields">
+      <label
+        >Status<select name="status"
+          >{
+            labStatuses.map((status) => (
+              <option value={status} selected={entry?.status === status}>
+                {status}
+              </option>
+            ))
+          }</select
+        ></label
+      >
+      <label
+        >Category<input
+          name="category"
+          maxlength="80"
+          value={entry?.category ?? ''}
+        /></label
+      >
+      <label
+        >Logged date<input
+          name="date"
+          type="date"
+          required
+          value={date(entry?.date) || new Date().toISOString().slice(0, 10)}
+        /></label
+      >
+      <label
+        >Updated date<input
+          name="updatedAt"
+          type="date"
+          value={date(entry?.updatedAt)}
+        /></label
+      >
+      <label
+        >Risk<select name="risk"
+          ><option value="">Not specified</option>{
+            labRisks.map((risk) => (
+              <option value={risk} selected={entry?.risk === risk}>
+                {risk}
+              </option>
+            ))
+          }</select
+        ></label
+      >
+      <label
+        >Repository URL<input
+          name="repo"
+          type="url"
+          maxlength="2048"
+          value={entry?.repo ?? ''}
+        /></label
+      >
+      <label
+        >Demo URL<input
+          name="demo"
+          type="url"
+          maxlength="2048"
+          value={entry?.demo ?? ''}
+        /></label
+      >
+      <label class="wide"
+        >Related project path or URL<input
+          name="relatedProject"
+          maxlength="2048"
+          value={entry?.relatedProject ?? ''}
+        /></label
+      >
+      <label class="wide"
+        >Tags <small>One per line</small><textarea name="tags" rows="3"
+          >{asLines(entry?.tags)}</textarea
+        ></label
+      >
+      <label class="wide"
+        >Tools <small>One per line</small><textarea name="tools" rows="3"
+          >{asLines(entry?.tools)}</textarea
+        ></label
+      >
+      <label class="wide"
+        >Lessons <small>One per line</small><textarea name="lessons" rows="4"
+          >{asLines(entry?.lessons)}</textarea
+        ></label
+      >
+    </div>
+  </details>
   <label class="body-label">Experiment notes</label>
   <MarkdownEditor
     client:load
@@ -133,8 +140,10 @@ const date = (value?: Date | null) => value?.toISOString().slice(0, 10) ?? '';
     fieldName="body"
     ariaLabel="Experiment notes in Markdown"
     maxLength={200000}
+    starter="lab"
   />
-  <div class="options">
+  <fieldset class="options">
+    <legend>Publication</legend>
     <label
       ><input
         type="checkbox"
@@ -156,17 +165,35 @@ const date = (value?: Date | null) => value?.toISOString().slice(0, 10) ?? '';
         checked={entry?.replacesMdx ?? false}
       /> Use this record for the public page</label
     >
-  </div>
+  </fieldset>
   <p class="help">
     Existing MDX entries stay public until you switch the source. Hidden records
     remain private.
   </p>
-  <button type="submit">{submitLabel}</button>
+  <div class="form-actions">
+    <ContentPagePreview client:load formId="lab-editor" kind="lab" /><button
+      type="submit">{submitLabel}</button
+    >
+  </div>
 </form>
+<AuthoringFormController client:load formId="lab-editor" />
 <style>
   .lab-form {
     display: grid;
     gap: 1rem;
+  }
+  .authoring-section {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .authoring-section > summary {
+    cursor: pointer;
+    color: var(--foreground);
+    font: 650 0.76rem var(--font-mono);
+  }
+  .authoring-section[open] > summary {
+    margin-bottom: 1rem;
   }
   .fields {
     display: grid;
@@ -205,6 +232,14 @@ const date = (value?: Date | null) => value?.toISOString().slice(0, 10) ?? '';
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
+    margin: 0;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .options legend {
+    padding-inline: 0.35rem;
+    color: var(--foreground);
   }
   .options label {
     display: flex;
@@ -223,6 +258,12 @@ const date = (value?: Date | null) => value?.toISOString().slice(0, 10) ?? '';
     color: var(--accent-text);
     font: 0.72rem var(--font-mono);
     cursor: pointer;
+  }
+  .form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
   }
   @media (max-width: 640px) {
     .fields {

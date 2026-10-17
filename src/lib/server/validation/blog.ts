@@ -1,8 +1,11 @@
+import { isSafeImageReference } from '../../data/mediaReference';
+
 export interface BlogRecordInput {
   slug: string;
   title: string;
   description: string;
   summary: string | null;
+  cover: string | null;
   category: string;
   tags: string[];
   body: string;
@@ -24,6 +27,7 @@ export function validateBlogForm(
   const title = get('title');
   const description = get('description');
   const summary = get('summary');
+  const cover = get('cover');
   const category = get('category');
   const body = form.get('body') ?? '';
   const tags = get('tags')
@@ -42,6 +46,8 @@ export function validateBlogForm(
     errors.description = 'Use a description of 1 to 300 characters.';
   if (summary.length > 500)
     errors.summary = 'Summary must be 500 characters or fewer.';
+  if (cover && !isSafeImageReference(cover))
+    errors.cover = 'Use an uploaded image, site image, or HTTPS image URL.';
   if (!category || category.length > 80)
     errors.category = 'Use a category of 1 to 80 characters.';
   if (tags.length > 20 || tags.some((tag) => tag.length > 40))
@@ -66,6 +72,7 @@ export function validateBlogForm(
       title,
       description,
       summary: summary || null,
+      cover: cover || null,
       category,
       tags,
       body,

@@ -1,10 +1,22 @@
 <script lang="ts">
-  export let targetId = 'project-cover';
-  export let label = 'Upload a project image';
+  import { uploadImage } from '../../lib/client/uploadImage';
+
+  interface Props {
+    targetId?: string;
+    label?: string;
+    currentPath?: string;
+    purpose?: string;
+  }
+  let {
+    targetId = 'project-cover',
+    label = 'Upload an image',
+    currentPath = '',
+    purpose = 'image',
+  }: Props = $props();
   let fileInput: HTMLInputElement;
-  let busy = false;
-  let message = '';
-  let path = '';
+  let busy = $state(false);
+  let message = $state('');
+  let path = $state(currentPath);
 
   async function upload() {
     const file = fileInput.files?.[0];
@@ -15,30 +27,35 @@
     busy = true;
     message = '';
     try {
-      const form = new FormData();
-      form.set('image', file);
-      const result = await fetch('/api/console/media/upload', {
-        method: 'POST',
-        body: form,
-        credentials: 'same-origin',
-      });
-      const payload = await result.json();
-      if (!result.ok || typeof payload.path !== 'string') {
-        message = payload.error ?? 'Image upload failed.';
-        return;
-      }
-      path = payload.path;
-      const coverField = document.getElementById(targetId);
-      if (coverField instanceof HTMLInputElement) {
-        coverField.value = path;
-        coverField.dispatchEvent(new Event('input', { bubbles: true }));
+      const uploadedPath = await uploadImage(file);
+      path = uploadedPath;
+      const target = document.getElementById(targetId);
+      if (target instanceof HTMLInputElement) {
+        target.value = uploadedPath;
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+        target.dispatchEvent(new Event('change', { bubbles: true }));
       }
       message = 'Image uploaded and selected.';
-    } catch {
-      message = 'Image upload failed. Try again.';
+    } catch (error) {
+      message =
+        error instanceof Error
+          ? error.message
+          : 'Image upload failed. Try again.';
     } finally {
       busy = false;
+      fileInput.value = '';
     }
+  }
+
+  function clear() {
+    path = '';
+    const target = document.getElementById(targetId);
+    if (target instanceof HTMLInputElement) {
+      target.value = '';
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+      target.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    message = 'Image reference cleared. The uploaded asset is retained.';
   }
 </script>
 
@@ -49,13 +66,17 @@
       bind:this={fileInput}
       type="file"
       accept="image/jpeg,image/png,image/webp"
+      disabled={busy}
     />
   </label>
-  <button type="button" onclick={upload} disabled={busy}>
-    {busy ? 'Uploading…' : 'Upload and use image'}
-  </button>
+  <button type="button" onclick={upload} disabled={busy}
+    >{busy ? 'Uploading…' : 'Upload and use image'}</button
+  >
+  {#if path}<button type="button" onclick={clear} disabled={busy}
+      >Clear image reference</button
+    >{/if}
   {#if message}<p role="status">{message}</p>{/if}
-  {#if path}<img src={path} alt="Uploaded project cover preview" />{/if}
+  {#if path}<img src={path} alt={`Selected ${purpose} preview`} />{/if}
 </div>
 
 <style>
@@ -77,6 +98,7 @@
   }
   button {
     justify-self: start;
+    min-height: 2.5rem;
     padding: 0.55rem 0.7rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -99,5 +121,9 @@
     max-height: 12rem;
     object-fit: contain;
     border: 1px solid var(--border);
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
   }
 </style>

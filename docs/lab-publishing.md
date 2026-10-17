@@ -11,3 +11,10 @@ Existing entries stay in `src/content/lab/` as rollback copies. `pnpm lab:import
 Public archive grouping, details, search, and `/sitemap-lab.xml` read the same visible catalog. Public pages fail closed if the database cannot be read because an adopted entry might otherwise reappear after being hidden. Lab entries do not have an RSS feed.
 
 There is no hard delete or revision history yet. Source files remain available for rollback; switch a matching record back to MDX in the editor when needed.
+
+The shared Markdown editor can upload JPEG, PNG, or WebP images (up to 8 MB) and insert normal Markdown image syntax. Images use the authenticated media pipeline, are processed to WebP, and remain in SQLite; public Markdown rendering sanitizes image sources and attributes.
+The Lab editor includes an optional experiment-note starter and private page
+preview. **Preview Markdown** shows only the notes body; **Preview Page** shows
+the current unsaved entry presentation. Saving still uses the existing server
+validation and visibility controls, and unsaved work triggers a leave-page
+warning.

@@ -1,6 +1,8 @@
 ---
+import CompactTagList from './CompactTagList.astro';
 import Tag from './Tag.astro';
 import { formatDate } from '../../lib/notes';
+
 interface Props {
   title: string;
   description: string;
@@ -10,8 +12,10 @@ interface Props {
   updatedAt?: Date | string;
   href?: string;
   featured?: boolean;
+  context?: 'home' | 'archive';
   class?: string;
 }
+
 const {
   title,
   description,
@@ -21,61 +25,120 @@ const {
   updatedAt,
   href,
   featured = false,
+  context = 'archive',
   class: className = '',
 } = Astro.props;
+const dateValue = new Date(createdAt);
+const updatedValue = updatedAt ? new Date(updatedAt) : null;
+const tagLimit = context === 'home' ? 3 : tags.length;
 ---
 
-<article class:list={['content-card bento-surface', className]}>
-  <div class="meta">
-    <Tag tone="accent">{category}</Tag>{
-      featured && <Tag tone="strong">Featured</Tag>
-    }
+<article
+  class:list={[
+    'content-card bento-surface note-card',
+    context === 'home' && 'home-preview',
+    className,
+  ]}
+>
+  <div class="note-meta">
+    <Tag tone="accent">{category}</Tag>
+    {context === 'archive' && featured && <Tag tone="strong">Featured</Tag>}
   </div>
-  <h3>{href ? <a href={href}>{title}</a> : title}</h3><p>{description}</p>
-  <div class="tags">{tags.map((tag) => <Tag>{tag}</Tag>)}</div>
-  <small>
-    <time datetime={new Date(createdAt).toISOString()}>
-      {formatDate(createdAt)}
-    </time>
+  {
+    context === 'home' ? (
+      <h3>{href ? <a href={href}>{title}</a> : title}</h3>
+    ) : (
+      <h2>{href ? <a href={href}>{title}</a> : title}</h2>
+    )
+  }
+  <p>{description}</p>
+  <CompactTagList
+    items={tags}
+    limit={tagLimit}
+    label="tags"
+    class="note-tags"
+  />
+  <small class="note-date">
+    <time datetime={dateValue.toISOString()}>{formatDate(dateValue)}</time>
     {
-      updatedAt && (
-        <>
-          {' · Updated '}
-          <time datetime={new Date(updatedAt).toISOString()}>
-            {formatDate(updatedAt)}
+      updatedValue && updatedValue.getTime() !== dateValue.getTime() && (
+        <span>
+          Updated{' '}
+          <time datetime={updatedValue.toISOString()}>
+            {formatDate(updatedValue)}
           </time>
-        </>
+        </span>
       )
     }
   </small>
 </article>
+
 <style>
-  .content-card {
+  .note-card {
+    display: flex;
     min-width: 0;
-    padding: 1.25rem;
+    height: 100%;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding: 1.15rem;
   }
-  .meta,
-  .tags {
+  .note-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  h2,
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  h2 a,
+  h3 a {
+    text-decoration: none;
+    text-underline-offset: 0.2em;
+  }
+  h2 a:hover,
+  h2 a:focus-visible,
+  h3 a:hover,
+  h3 a:focus-visible {
+    color: var(--accent-text);
+    text-decoration: underline;
+  }
+  h2 a:focus-visible,
+  h3 a:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+  p {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+  .home-preview > p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+  .note-tags {
+    margin-top: auto;
+  }
+  .note-date {
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
-  }
-  h3 {
-    margin: 1rem 0 0;
-    font-size: 1.1rem;
-  }
-  h3 a:hover {
-    color: var(--accent-text);
-  }
-  p {
-    margin: 0.45rem 0 1rem;
+    padding-top: 0.25rem;
     color: var(--muted-foreground);
-    font-size: 0.9rem;
+    font: 0.68rem/1.4 var(--font-mono);
   }
-  small {
-    display: block;
-    margin-top: 1rem;
-    color: var(--muted-foreground);
-    font: 0.65rem var(--font-mono);
+  @media (max-width: 767px) {
+    .note-card {
+      gap: 0.55rem;
+      padding: 1rem;
+    }
   }
 </style>

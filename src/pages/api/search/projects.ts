@@ -24,7 +24,7 @@ export const GET: APIRoute = async ({ url }) => {
     )
     .slice(0, 10)
     .map((project) => ({
-      url: publicProjectUrl(project) ?? '/projects',
+      url: publicProjectUrl(project),
       title: project.title,
       excerpt: project.description,
     }));

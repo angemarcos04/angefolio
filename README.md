@@ -208,9 +208,9 @@ The routes share the layout, navigation, cards, status pills, and tags. Projects
 
 ## Phase 5 project case studies
 
-Visible MDX project entries render prerendered detail pages at `/projects/[slug]`. The filename remains the route slug, so `src/content/projects/example-project.mdx` is served as `/projects/example-project`. Phase 12 moved only the `/projects` index to request-time rendering; database-only records appear as cards without a detail link.
+Visible MDX project entries and visible, non-archived database-only projects use the same canonical detail route at `/projects/[slug]`. A database project without a Markdown body renders a structured overview; adding a body switches that same URL to the full case-study presentation. Phase 12 moved the `/projects` index to request-time rendering, so both cards and detail pages reflect the authorized public catalog.
 
-MDX cards on `/projects` and the homepage link to these pages. A database card links only when it shares a slug with a visible MDX entry. Detail pages render the MDX body with project status, category, date, role, stack, optional links, summary fields, and previous/next navigation.
+Project cards on `/projects` and the homepage link to their canonical detail pages. Detail pages render available status, category, date, role, stack, links, and summary fields; projects with actual Markdown or MDX content also render the long-form article and section navigation derived from its headings. Visibility, archive state, MDX source selection, redirect aliases, and previous/next navigation continue to use the public catalog.
 
 ### Add a project
 
@@ -578,3 +578,7 @@ Run `node --test tests/offsite-backup.test.mjs` to exercise the off-host backup 
 
 See [console-plan.md](docs/console-plan.md) and [operations.md](docs/operations.md) for host configuration and restore steps.
 See [blog-publishing.md](docs/blog-publishing.md) for the Blog editor and publishing behavior.
+
+- **Phase 26:** Optional Blog covers, project screenshot galleries, and sanitized Markdown image insertion through SQLite-backed media uploads (complete)
+
+Phase 26 adds an additive schema migration for Blog cover references and project screenshot metadata. Apply migrations only through the documented backup-and-deploy workflow; the feature does not run production migrations automatically. See the Blog and project publishing guides for editor workflows.

@@ -13,6 +13,7 @@ import {
 import { auditEvent } from './audit';
 import { getDatabase, migrateDatabase } from './db/client';
 import type { HomepageConfig } from '../data/homepage';
+import { isSafeImageReference } from '../data/mediaReference';
 import { recordSlugRedirect } from './redirects';
 
 export const revisionEntityTypes = [
@@ -105,6 +106,44 @@ function strings(value: unknown): string[] | null {
   return Array.isArray(value) && value.every((item) => typeof item === 'string')
     ? value
     : null;
+}
+
+function projectScreenshots(
+  value: unknown,
+): Array<{ src: string; alt: string; caption?: string }> | null {
+  if (!Array.isArray(value) || value.length > 8) return null;
+  const seen = new Set<string>();
+  const result: Array<{ src: string; alt: string; caption?: string }> = [];
+  for (const item of value) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
+    const row = item as Record<string, unknown>;
+    if (
+      Object.keys(row).some((key) => !['src', 'alt', 'caption'].includes(key))
+    )
+      return null;
+    if (
+      typeof row.src !== 'string' ||
+      !isSafeImageReference(row.src) ||
+      seen.has(row.src)
+    )
+      return null;
+    if (typeof row.alt !== 'string' || !row.alt.trim() || row.alt.length > 300)
+      return null;
+    if (
+      row.caption !== undefined &&
+      (typeof row.caption !== 'string' || row.caption.length > 200)
+    )
+      return null;
+    seen.add(row.src);
+    result.push({
+      src: row.src,
+      alt: row.alt,
+      ...(typeof row.caption === 'string' && row.caption
+        ? { caption: row.caption }
+        : {}),
+    });
+  }
+  return result;
 }
 
 export async function restoreContentRevision(
@@ -225,6 +264,10 @@ export async function restoreContentRevision(
     } else if (entityType === 'project') {
       const stack = strings(snapshot.stack);
       const highlights = strings(snapshot.highlights);
+      const screenshots =
+        snapshot.screenshots === undefined
+          ? []
+          : projectScreenshots(snapshot.screenshots);
       const links = snapshot.links;
       const createdAt = asDate(snapshot.createdAt);
       const projectDate =
@@ -237,6 +280,7 @@ export async function restoreContentRevision(
         !existing ||
         !stack ||
         !highlights ||
+        !screenshots ||
         !Array.isArray(links) ||
         !createdAt ||
         (snapshot.projectDate !== null && !projectDate) ||
@@ -298,6 +342,7 @@ export async function restoreContentRevision(
           projectDate,
           highlights,
           cover: typeof snapshot.cover === 'string' ? snapshot.cover : null,
+          screenshots,
           replacesMdx: Boolean(snapshot.replacesMdx),
           featured: Boolean(snapshot.featured),
           visible: Boolean(snapshot.visible),
@@ -416,6 +461,11 @@ export async function restoreContentRevision(
           description: String(snapshot.description),
           summary:
             typeof snapshot.summary === 'string' ? snapshot.summary : null,
+          cover:
+            typeof snapshot.cover === 'string' &&
+            isSafeImageReference(snapshot.cover)
+              ? snapshot.cover
+              : null,
           category: String(snapshot.category),
           tags,
           body: String(snapshot.body),

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn, execFile } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -104,11 +104,48 @@ test('blog drafts remain private and publishing updates the public indexes', asy
     const editor = await fetch(`${origin}/user/blog`, { headers: { cookie } });
     assert.equal(editor.status, 200);
 
+    const unauthenticatedUpload = await fetch(
+      `${origin}/api/console/media/upload`,
+      {
+        method: 'POST',
+        headers: { origin },
+        body: new FormData(),
+      },
+    );
+    assert.equal(unauthenticatedUpload.status, 401);
+    const untrustedUpload = await fetch(`${origin}/api/console/media/upload`, {
+      method: 'POST',
+      headers: { origin: 'https://untrusted.example', cookie },
+      body: new FormData(),
+    });
+    assert.equal(untrustedUpload.status, 403);
+
+    const uploadForm = new FormData();
+    uploadForm.set(
+      'image',
+      new Blob([await readFile(join(cwd, 'public/og.png'))], {
+        type: 'image/png',
+      }),
+      'cover.png',
+    );
+    const uploaded = await fetch(`${origin}/api/console/media/upload`, {
+      method: 'POST',
+      headers: { origin, cookie },
+      body: uploadForm,
+    });
+    assert.equal(uploaded.status, 200);
+    const uploadedPath = ((await uploaded.json()) as { path: string }).path;
+    assert.match(uploadedPath, /^\/media\/[a-f0-9-]+\.webp$/);
+    const media = await fetch(`${origin}${uploadedPath}`);
+    assert.equal(media.status, 200);
+    assert.equal(media.headers.get('content-type'), 'image/webp');
+
     const fields = {
       slug: 'a-first-article',
       title: 'A First Article',
       description: 'A test article for the Blog section.',
       summary: 'A short summary.',
+      cover: uploadedPath,
       category: 'Writing',
       tags: 'testing\nblog',
       createdAt: new Date().toISOString().slice(0, 10),
@@ -143,7 +180,7 @@ test('blog drafts remain private and publishing updates the public indexes', asy
         id: postId,
         published: 'on',
         featured: 'on',
-        body: '# Published\n\n**Public text.** <script>alert(1)</script>',
+        body: `# Published\n\n**Public text.** <script>alert(1)</script>\n\n![Uploaded screenshot](${uploadedPath})`,
       },
       cookie,
     );
@@ -155,6 +192,8 @@ test('blog drafts remain private and publishing updates the public indexes', asy
     assert.equal(article.status, 200);
     const articleHtml = await article.text();
     assert.match(articleHtml, /Public text/);
+    assert.match(articleHtml, new RegExp(uploadedPath.replaceAll('/', '\\/')));
+    assert.match(articleHtml, /alt="Uploaded screenshot"/);
     assert.doesNotMatch(articleHtml, /<script>alert\(1\)<\/script>/);
     assert.match(
       await (await fetch(`${origin}/blog`)).text(),
