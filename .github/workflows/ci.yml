@@ -36,11 +36,17 @@ jobs:
       - name: Test portfolio terminal
         run: pnpm test:terminal
 
+      - name: Test focused regressions and migrations
+        run: pnpm test:unit
+
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Test browser interactions
         run: pnpm test:browser
+
+      - name: Test authenticated authoring workflows
+        run: pnpm test:browser:authoring
 
       - name: Check formatting
         run: pnpm format:check
@@ -51,8 +57,14 @@ jobs:
       - name: Test private publishing boundaries
         run: pnpm test:console
 
+      - name: Test legacy content importers
+        run: pnpm test:importers
+
       - name: Test blog publishing boundaries
         run: pnpm test:blog
+
+      - name: Test backup and recovery tooling
+        run: pnpm test:backup
 
       - name: Build production container
         run: docker build -t angefolio:test .

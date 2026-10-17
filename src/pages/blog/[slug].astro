@@ -4,6 +4,7 @@ import CollectionHeader from '../../components/astro/CollectionHeader.astro';
 import IconLink from '../../components/astro/IconLink.astro';
 import Layout from '../../components/astro/Layout.astro';
 import Tag from '../../components/astro/Tag.astro';
+import { formatPageTitle } from '../../lib/data/pageTitle';
 import { formatDate, getNoteReadingTime } from '../../lib/notes';
 import { renderProjectMarkdown } from '../../lib/server/markdown';
 import { getPublicBlogCatalog } from '../../lib/server/blog';
@@ -37,9 +38,10 @@ const older = posts[index + 1];
 ---
 
 <Layout
-  title={`${post.title} — ${settings.name}`}
+  title={formatPageTitle(post.title, settings.name)}
   description={post.description}
   type="article"
+  siteSettings={settings}
 >
   <CollectionHeader active="blog" />
   <div class="back-link"><IconLink href="/blog" label="Back to Blog" /></div>

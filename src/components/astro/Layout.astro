@@ -2,6 +2,7 @@
 import '../../styles/global.css';
 import { site } from '../../lib/data/site';
 import { getPublicSiteSettings } from '../../lib/server/siteSettings';
+import type { PublicSiteSettings } from '../../lib/server/siteSettings';
 import Footer from './Footer.astro';
 import SEO from './SEO.astro';
 
@@ -14,9 +15,11 @@ interface Props {
   noindex?: boolean;
   searchable?: boolean;
   class?: string;
+  siteSettings?: PublicSiteSettings;
 }
 
-const publicSettings = await getPublicSiteSettings();
+const { siteSettings, ...props } = Astro.props;
+const publicSettings = siteSettings ?? (await getPublicSiteSettings());
 const {
   title = `${publicSettings.name} — ${publicSettings.siteName}`,
   description = publicSettings.seoDescription,
@@ -26,7 +29,7 @@ const {
   noindex = false,
   searchable = true,
   class: className = '',
-} = Astro.props;
+} = props;
 ---
 
 <!doctype html>

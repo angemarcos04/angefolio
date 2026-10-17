@@ -1,45 +1,54 @@
 import type { APIRoute } from 'astro';
+import {
+  normalizeContentPreview,
+  previewBodyLimit,
+  type PreviewKind,
+} from '../../../lib/data/contentPreview';
 import { renderProjectMarkdown } from '../../../lib/server/markdown';
 import {
   hasTrustedOrigin,
   readUrlEncodedForm,
 } from '../../../lib/server/security';
 
-const limits: Record<string, number> = {
-  project: 30000,
-  blog: 200000,
-  note: 200000,
-  lab: 200000,
+const kinds = new Set<PreviewKind>(['project', 'blog', 'note', 'lab']);
+
+const privateHeaders = {
+  'cache-control': 'no-store',
+  vary: 'cookie',
 };
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user)
     return new Response('Authentication required.', {
       status: 401,
-      headers: { 'cache-control': 'no-store' },
+      headers: privateHeaders,
     });
   if (!hasTrustedOrigin(request))
     return new Response('Invalid origin.', {
       status: 403,
-      headers: { 'cache-control': 'no-store' },
+      headers: privateHeaders,
     });
   const form = await readUrlEncodedForm(request, 768 * 1024);
   const kind = form?.get('kind') ?? '';
   const body = form?.get('body');
   if (
     !form ||
-    !Object.hasOwn(limits, kind) ||
+    !kinds.has(kind as PreviewKind) ||
     body === null ||
     body === undefined ||
-    body.length > limits[kind]
+    body.length > previewBodyLimit(kind as PreviewKind)
   ) {
     return new Response('Invalid preview.', {
       status: 400,
-      headers: { 'cache-control': 'no-store' },
+      headers: privateHeaders,
     });
   }
+  const previewKind = kind as PreviewKind;
   return Response.json(
-    { bodyHtml: renderProjectMarkdown(body) },
-    { headers: { 'cache-control': 'no-store', vary: 'cookie' } },
+    {
+      preview: normalizeContentPreview(previewKind, form),
+      bodyHtml: renderProjectMarkdown(body),
+    },
+    { headers: privateHeaders },
   );
 };

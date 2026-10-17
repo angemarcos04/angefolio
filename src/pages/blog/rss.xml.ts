@@ -13,7 +13,7 @@ export async function GET(context: APIContext) {
   ]);
   return rss({
     title: `${settings.siteName} blog`,
-    description: 'Long-form articles and writing by Angellie Marcos.',
+    description: `Long-form articles and writing by ${settings.name}.`,
     site: context.site ?? site.url,
     items: posts.map((post) => ({
       title: post.title,

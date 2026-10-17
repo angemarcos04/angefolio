@@ -144,6 +144,8 @@ Published database-backed Projects, Notes, and Lab entries can change slugs safe
 
 `/user/settings` edits the public site name, author name, default SEO description, GitHub profile, and email link. Updates appear in shared page metadata, the homepage contact links, footer, Search page title, and RSS title on server-rendered routes. Prerendered 404 metadata remains a build-time snapshot. Saves are same-origin and authenticated, validated against explicit field rules, and write an audit entry and revision in one transaction. The 50 most recent settings revisions can be restored. The canonical domain, social image, authentication configuration, and database credentials remain deployment or source configuration.
 
+Public archive and detail titles for Projects, Notes, and Lab use the configured author name, consistent with Blog, Search, and Credentials. The site name is used for shared social branding and RSS link labels; the author name remains the page-title suffix and public author metadata. Empty or whitespace-only legacy settings fall back to the source defaults. Biography, résumé filename and content, credentials, and authored content remain independently maintained rather than derived from these identity settings.
+
 ## Phase 22 database readiness
 
 `/health/ready` returns 200 only when SQLite answers a probe and its latest applied Drizzle migration matches the migration journal shipped with the running build. It returns a generic 503 otherwise and never runs migrations or includes database details in its response. The Docker health check now uses this endpoint instead of the public homepage.

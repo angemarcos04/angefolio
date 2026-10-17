@@ -5,6 +5,7 @@ import CollectionHeader from '../../components/astro/CollectionHeader.astro';
 import Layout from '../../components/astro/Layout.astro';
 import BlogCard from '../../components/astro/BlogCard.astro';
 import Tag from '../../components/astro/Tag.astro';
+import { formatPageTitle } from '../../lib/data/pageTitle';
 import { getPublicBlogCatalog } from '../../lib/server/blog';
 import { getPublicSiteSettings } from '../../lib/server/siteSettings';
 
@@ -17,7 +18,7 @@ const categories = [...new Set(posts.map((post) => post.category))].sort();
 const tags = [...new Set(posts.flatMap((post) => post.tags))].sort();
 ---
 
-<Layout title={`Blog — ${settings.name}`}>
+<Layout title={formatPageTitle('Blog', settings.name)} siteSettings={settings}>
   <CollectionHeader active="blog" />
   <ArchiveIntro
     id="blog-title"

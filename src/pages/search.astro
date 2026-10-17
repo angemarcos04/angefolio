@@ -3,6 +3,7 @@ import ArchiveIntro from '../components/astro/ArchiveIntro.astro';
 import CollectionHeader from '../components/astro/CollectionHeader.astro';
 import Layout from '../components/astro/Layout.astro';
 import SearchBox from '../components/svelte/SearchBox.svelte';
+import { formatPageTitle } from '../lib/data/pageTitle';
 import { getPublicSiteSettings } from '../lib/server/siteSettings';
 
 export const prerender = false;
@@ -10,7 +11,10 @@ export const prerender = false;
 const settings = await getPublicSiteSettings();
 ---
 
-<Layout title={`Search — ${settings.name}`}>
+<Layout
+  title={formatPageTitle('Search', settings.name)}
+  siteSettings={settings}
+>
   <CollectionHeader active="search" />
   <ArchiveIntro
     id="search-title"

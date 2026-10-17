@@ -6,7 +6,7 @@ The private Lab editor is at `/user/lab`. It manages each experiment's status, c
 
 ## Source selection
 
-Existing entries stay in `src/content/lab/` as rollback copies. `pnpm lab:import` is a dry run; apply with `--apply --backup <new-file>` to make a verified SQLite backup before writing records. Imported records leave `replaces_mdx` off, so MDX stays public until you select “Use this record for the public page.” Hidden adopted entries suppress the old MDX page too.
+Existing entries can stay in `src/content/lab/` as rollback copies. `pnpm lab:import` is a dry run; if this optional directory is absent, it reports zero source entries. Apply with `--apply --backup <new-file>` requires at least one valid `.md` or `.mdx` file, refuses missing or empty directories before backup/database writes, and makes a verified SQLite backup before writing records. Other filesystem and source-validation errors remain failures. Imported records leave `replaces_mdx` off, so MDX stays public until you select “Use this record for the public page.” Hidden adopted entries suppress the old MDX page too. Dry runs do not import or modify content records.
 
 Public archive grouping, details, search, and `/sitemap-lab.xml` read the same visible catalog. Public pages fail closed if the database cannot be read because an adopted entry might otherwise reappear after being hidden. Lab entries do not have an RSS feed.
 

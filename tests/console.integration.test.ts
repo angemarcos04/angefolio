@@ -273,6 +273,19 @@ test('private edits, audit history, recovery, and database backup', async () => 
     const searchPage = await (await fetch(`${origin}/search`)).text();
     assert.match(searchPage, /<title>Search — Test Owner<\/title>/);
     assert.match(searchPage, /<a href="\/blog"[^>]*>Blog<\/a>/);
+    for (const [path, title] of [
+      ['/projects', 'Projects — Test Owner'],
+      ['/notes', 'Notes — Test Owner'],
+      ['/lab', 'Lab — Test Owner'],
+      ['/blog', 'Blog — Test Owner'],
+      ['/credentials', 'Credentials — Test Owner'],
+    ]) {
+      const page = await (await fetch(`${origin}${path}`)).text();
+      assert.match(page, new RegExp(`<title>${title}<\\/title>`));
+      assert.match(page, new RegExp(`property="og:title" content="${title}"`));
+    }
+    const blogFeed = await (await fetch(`${origin}/blog/rss.xml`)).text();
+    assert.match(blogFeed, /Long-form articles and writing by Test Owner\./);
 
     const savedNow = await formRequest(
       origin,
@@ -378,6 +391,11 @@ test('private edits, audit history, recovery, and database backup', async () => 
     const newDetail = await fetch(`${origin}/projects/phase-13-test`);
     assert.equal(newDetail.status, 200);
     const overview = await newDetail.text();
+    assert.match(overview, /<title>Phase 13 Test — Test Owner<\/title>/);
+    assert.match(
+      overview,
+      /property="og:title" content="Phase 13 Test — Test Owner"/,
+    );
     assert.match(overview, /Edited integration project\./);
     assert.match(overview, /Project information/);
     assert.match(overview, /https:\/\/demo\.example\.test\/phase-13/);
@@ -774,6 +792,10 @@ test('private edits, audit history, recovery, and database backup', async () => 
     assert.equal(notePublish.status, 303);
     assert.equal((await fetch(`${origin}/notes/phase-five-note`)).status, 200);
     assert.match(
+      await (await fetch(`${origin}/notes/phase-five-note`)).text(),
+      /<title>Phase Five Note — Test Owner<\/title>/,
+    );
+    assert.match(
       await (await fetch(`${origin}/api/search/notes?q=Phase%20Five`)).text(),
       /phase-five-note/,
     );
@@ -847,6 +869,10 @@ test('private edits, audit history, recovery, and database backup', async () => 
     );
     assert.equal(labPublish.status, 303);
     assert.equal((await fetch(`${origin}/lab/phase-five-lab`)).status, 200);
+    assert.match(
+      await (await fetch(`${origin}/lab/phase-five-lab`)).text(),
+      /<title>Phase Five Lab — Test Owner<\/title>/,
+    );
     assert.match(
       await (await fetch(`${origin}/api/search/lab?q=Phase%20Five`)).text(),
       /phase-five-lab/,

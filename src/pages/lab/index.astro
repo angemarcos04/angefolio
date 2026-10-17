@@ -5,12 +5,17 @@ import CollectionHeader from '../../components/astro/CollectionHeader.astro';
 import LabCard from '../../components/astro/LabCard.astro';
 import Layout from '../../components/astro/Layout.astro';
 import Tag from '../../components/astro/Tag.astro';
+import { formatPageTitle } from '../../lib/data/pageTitle';
 import { getPublicLabCatalog } from '../../lib/server/lab';
+import { getPublicSiteSettings } from '../../lib/server/siteSettings';
 import { LAB_STATUS_ORDER } from '../../lib/lab';
 
 export const prerender = false;
 
-const entries = await getPublicLabCatalog();
+const [entries, settings] = await Promise.all([
+  getPublicLabCatalog(),
+  getPublicSiteSettings(),
+]);
 const groups = LAB_STATUS_ORDER.map((status) => ({
   status,
   entries: entries.filter((entry) => entry.status === status),
@@ -25,7 +30,7 @@ const tags = [
 ].sort();
 ---
 
-<Layout title="Lab — Angellie Marcos">
+<Layout title={formatPageTitle('Lab', settings.name)} siteSettings={settings}>
   <CollectionHeader active="lab" />
   <ArchiveIntro
     id="lab-title"

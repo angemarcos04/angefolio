@@ -8,10 +8,12 @@ import Layout from '../../components/astro/Layout.astro';
 import ProjectMeta from '../../components/astro/ProjectMeta.astro';
 import StatusPill from '../../components/astro/StatusPill.astro';
 import Tag from '../../components/astro/Tag.astro';
+import { formatPageTitle } from '../../lib/data/pageTitle';
 import { formatDate } from '../../lib/date';
 import { renderProjectMarkdown } from '../../lib/server/markdown';
 import { getPublicLabCatalog } from '../../lib/server/lab';
 import { getContentRedirectTarget } from '../../lib/server/redirects';
+import { getPublicSiteSettings } from '../../lib/server/siteSettings';
 
 export const prerender = false;
 const redirectTarget = await getContentRedirectTarget(
@@ -26,7 +28,10 @@ if (redirectTarget) {
     },
   });
 }
-const entries = await getPublicLabCatalog();
+const [entries, settings] = await Promise.all([
+  getPublicLabCatalog(),
+  getPublicSiteSettings(),
+]);
 const index = entries.findIndex((item) => item.slug === Astro.params.slug);
 const entry = entries[index];
 if (!entry) return new Response('Lab entry not found.', { status: 404 });
@@ -56,9 +61,10 @@ const links = [
 ---
 
 <Layout
-  title={`${data.title} — Angellie Marcos`}
+  title={formatPageTitle(data.title, settings.name)}
   description={data.description}
   type="article"
+  siteSettings={settings}
 >
   <CollectionHeader active="lab" />
 

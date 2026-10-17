@@ -5,15 +5,20 @@ import CollectionHeader from '../../components/astro/CollectionHeader.astro';
 import Layout from '../../components/astro/Layout.astro';
 import NoteCard from '../../components/astro/NoteCard.astro';
 import Tag from '../../components/astro/Tag.astro';
+import { formatPageTitle } from '../../lib/data/pageTitle';
 import { getPublicNoteCatalog } from '../../lib/server/notes';
+import { getPublicSiteSettings } from '../../lib/server/siteSettings';
 
 export const prerender = false;
-const notes = await getPublicNoteCatalog();
+const [notes, settings] = await Promise.all([
+  getPublicNoteCatalog(),
+  getPublicSiteSettings(),
+]);
 const categories = [...new Set(notes.map((note) => note.category))].sort();
 const tags = [...new Set(notes.flatMap((note) => note.tags))].sort();
 ---
 
-<Layout title="Notes — Angellie Marcos">
+<Layout title={formatPageTitle('Notes', settings.name)} siteSettings={settings}>
   <CollectionHeader active="notes" />
   <ArchiveIntro
     id="notes-title"

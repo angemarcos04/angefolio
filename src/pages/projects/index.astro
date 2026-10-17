@@ -4,12 +4,18 @@ import CardGrid from '../../components/astro/CardGrid.astro';
 import CollectionHeader from '../../components/astro/CollectionHeader.astro';
 import Layout from '../../components/astro/Layout.astro';
 import ProjectCard from '../../components/astro/ProjectCard.astro';
+import { formatPageTitle } from '../../lib/data/pageTitle';
 import {
   getPublicProjectCatalog,
   publicProjectUrl,
 } from '../../lib/server/publicProjects';
+import { getPublicSiteSettings } from '../../lib/server/siteSettings';
 
-const projects = (await getPublicProjectCatalog()).map((project) => {
+const [catalog, settings] = await Promise.all([
+  getPublicProjectCatalog(),
+  getPublicSiteSettings(),
+]);
+const projects = catalog.map((project) => {
   const detailUrl = publicProjectUrl(project);
   return {
     href: detailUrl,
@@ -29,7 +35,10 @@ const projects = (await getPublicProjectCatalog()).map((project) => {
 });
 ---
 
-<Layout title="Projects — Angellie Marcos">
+<Layout
+  title={formatPageTitle('Projects', settings.name)}
+  siteSettings={settings}
+>
   <CollectionHeader active="projects" />
   <ArchiveIntro
     id="projects-title"

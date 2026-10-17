@@ -40,13 +40,13 @@ const socialImage = image ? new URL(image, baseUrl) : undefined;
 <link
   rel="alternate"
   type="application/rss+xml"
-  title="angefolio notes"
+  title={`${siteName} notes`}
   href={new URL(site.rss, baseUrl)}
 />
 <link
   rel="alternate"
   type="application/rss+xml"
-  title="angefolio blog"
+  title={`${siteName} blog`}
   href={new URL('/blog/rss.xml', baseUrl)}
 />
 <meta property="og:type" content={type} />
@@ -61,10 +61,7 @@ const socialImage = image ? new URL(image, baseUrl) : undefined;
 {socialImage ? <meta property="og:image:height" content="903" /> : null}
 {
   socialImage ? (
-    <meta
-      property="og:image:alt"
-      content="angefolio — Angellie Marcos, IT student, full-stack developer, and Linux user"
-    />
+    <meta property="og:image:alt" content={`${siteName} — ${author}`} />
   ) : null
 }
 <meta
@@ -76,9 +73,6 @@ const socialImage = image ? new URL(image, baseUrl) : undefined;
 {socialImage ? <meta name="twitter:image" content={socialImage} /> : null}
 {
   socialImage ? (
-    <meta
-      name="twitter:image:alt"
-      content="angefolio — Angellie Marcos, IT student, full-stack developer, and Linux user"
-    />
+    <meta name="twitter:image:alt" content={`${siteName} — ${author}`} />
   ) : null
 }

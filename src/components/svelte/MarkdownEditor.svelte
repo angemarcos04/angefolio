@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { uploadImage } from '../../lib/client/uploadImage';
   import {
     markdownStarters,
@@ -33,20 +34,30 @@
   let imageStart = 0;
   let imageEnd = 0;
 
+  async function applyValue(
+    next: string,
+    selectionStart: number,
+    selectionEnd: number,
+  ) {
+    if (next === value) return;
+    value = next;
+    await tick();
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    editor.focus();
+    editor.setSelectionRange(selectionStart, selectionEnd);
+  }
+
   function insert(before: string, after = '', placeholder = 'text') {
     const start = editor.selectionStart;
     const end = editor.selectionEnd;
     const selection = value.slice(start, end) || placeholder;
     const next = `${value.slice(0, start)}${before}${selection}${after}${value.slice(end)}`;
     if (next.length > maxLength) return;
-    value = next;
-    requestAnimationFrame(() => {
-      editor.focus();
-      editor.setSelectionRange(
-        start + before.length,
-        start + before.length + selection.length,
-      );
-    });
+    void applyValue(
+      next,
+      start + before.length,
+      start + before.length + selection.length,
+    );
   }
 
   function linePrefix(prefix: string) {
@@ -54,25 +65,18 @@
     const lineStart = value.lastIndexOf('\n', start - 1) + 1;
     const next = `${value.slice(0, lineStart)}${prefix}${value.slice(lineStart)}`;
     if (next.length > maxLength) return;
-    value = next;
-    requestAnimationFrame(() => {
-      editor.focus();
-      editor.setSelectionRange(start + prefix.length, start + prefix.length);
-    });
+    void applyValue(next, start + prefix.length, start + prefix.length);
   }
 
-  function insertStarter() {
+  async function insertStarter() {
     if (!starter) return;
     if (
       value.trim() &&
       !window.confirm('Replace the current Markdown with this starter?')
     )
       return;
-    value = markdownStarters[starter].slice(0, maxLength);
-    requestAnimationFrame(() => {
-      editor.focus();
-      editor.setSelectionRange(value.length, value.length);
-    });
+    const next = markdownStarters[starter].slice(0, maxLength);
+    await applyValue(next, next.length, next.length);
   }
 
   function handleShortcut(event: KeyboardEvent) {
@@ -114,7 +118,7 @@
     }
   }
 
-  function insertImage() {
+  async function insertImage() {
     if (!imagePath || (!decorative && !imageAlt.trim())) {
       imageError = 'Enter alternative text or mark the image as decorative.';
       return;
@@ -126,14 +130,10 @@
       imageError = `This image reference exceeds the ${maxLength.toLocaleString()} character limit.`;
       return;
     }
-    value = next;
+    const cursor = imageStart + markdown.length;
+    await applyValue(next, cursor, cursor);
     imagePath = '';
     imageAlt = '';
-    requestAnimationFrame(() => {
-      editor.focus();
-      const cursor = imageStart + markdown.length;
-      editor.setSelectionRange(cursor, cursor);
-    });
   }
 
   async function showPreview() {

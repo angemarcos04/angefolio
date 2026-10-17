@@ -8,12 +8,14 @@ import Layout from '../../components/astro/Layout.astro';
 import ProjectMeta from '../../components/astro/ProjectMeta.astro';
 import StatusPill from '../../components/astro/StatusPill.astro';
 import Tag from '../../components/astro/Tag.astro';
+import { formatPageTitle } from '../../lib/data/pageTitle';
 import { renderProjectMarkdownDocument } from '../../lib/server/markdown';
 import {
   getPublicProjectCatalog,
   publicProjectUrl,
 } from '../../lib/server/publicProjects';
 import { getContentRedirectTarget } from '../../lib/server/redirects';
+import { getPublicSiteSettings } from '../../lib/server/siteSettings';
 
 const redirectTarget = await getContentRedirectTarget(
   `/projects/${Astro.params.slug}`,
@@ -30,7 +32,10 @@ if (redirectTarget) {
 
 // Resolve only against the catalog that already applies visibility, archive,
 // MDX replacement, and redirect-alias rules.
-const projects = await getPublicProjectCatalog();
+const [projects, settings] = await Promise.all([
+  getPublicProjectCatalog(),
+  getPublicSiteSettings(),
+]);
 const index = projects.findIndex(
   (project) => project.slug === Astro.params.slug,
 );
@@ -122,9 +127,10 @@ const metadataItems = [
 ---
 
 <Layout
-  title={`${data.title} — Angellie Marcos`}
+  title={formatPageTitle(data.title, settings.name)}
   description={data.description}
   type="article"
+  siteSettings={settings}
 >
   <CollectionHeader active="projects" />
 

@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { execFileSync } from 'node:child_process';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import {
@@ -15,6 +15,7 @@ import {
 } from '../src/lib/server/db/schema';
 import { auditEvent } from '../src/lib/server/audit';
 import { revisionValues } from '../src/lib/server/revisions';
+import { discoverMarkdownSources } from './markdown-source';
 import {
   validateProjectForm,
   type ProjectRecordInput,
@@ -37,9 +38,26 @@ if (
 }
 
 const sourceDirectory = resolve('src/content/projects');
-const filenames = (await readdir(sourceDirectory))
-  .filter((name) => /\.mdx?$/.test(name))
-  .sort();
+const source = await discoverMarkdownSources(sourceDirectory);
+const filenames = source.filenames;
+if (!source.exists) {
+  console.log(
+    'Legacy project source directory not found: src/content/projects.',
+  );
+}
+if (source.exists && filenames.length === 0) {
+  console.log('No .md or .mdx project source files found.');
+}
+if (apply && !source.exists) {
+  throw new Error(
+    'Cannot apply project import: the legacy source directory is missing.',
+  );
+}
+if (apply && filenames.length === 0) {
+  throw new Error(
+    'Cannot apply project import: no .md or .mdx source files were found.',
+  );
+}
 const candidates: ProjectRecordInput[] = [];
 const supportedFields = new Set([
   'title',
@@ -66,7 +84,14 @@ for (const filename of filenames) {
   const raw = await readFile(join(sourceDirectory, filename), 'utf8');
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   if (!match) throw new Error(`${filename}: missing frontmatter.`);
-  const frontmatter = parse(match[1]) as Record<string, unknown>;
+  let frontmatter: Record<string, unknown>;
+  try {
+    frontmatter = parse(match[1]) as Record<string, unknown>;
+  } catch (error) {
+    throw new Error(
+      `${filename}: invalid frontmatter. ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
   const body = match[2].trim();
   const unsupported = Object.keys(frontmatter).filter(
     (field) => !supportedFields.has(field),

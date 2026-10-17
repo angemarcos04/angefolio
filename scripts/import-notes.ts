@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { execFileSync } from 'node:child_process';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import {
@@ -17,6 +17,7 @@ import { auditEvent } from '../src/lib/server/audit';
 import { revisionValues } from '../src/lib/server/revisions';
 import { validateNoteForm } from '../src/lib/server/validation/notes';
 import type { NoteRecordInput } from '../src/lib/server/validation/notes';
+import { discoverMarkdownSources } from './markdown-source';
 
 const args = process.argv.slice(2);
 const apply = args.includes('--apply');
@@ -26,6 +27,23 @@ if (apply && !backupPath)
   throw new Error('Apply requires --backup <new-file>.');
 
 const directory = resolve('src/content/notes');
+const source = await discoverMarkdownSources(directory);
+if (!source.exists) {
+  console.log('Legacy Notes source directory not found: src/content/notes.');
+}
+if (source.exists && source.filenames.length === 0) {
+  console.log('No .md or .mdx Notes source files found.');
+}
+if (apply && !source.exists) {
+  throw new Error(
+    'Cannot apply Notes import: the legacy source directory is missing.',
+  );
+}
+if (apply && source.filenames.length === 0) {
+  throw new Error(
+    'Cannot apply Notes import: no .md or .mdx source files were found.',
+  );
+}
 const candidates: NoteRecordInput[] = [];
 const supportedFields = new Set([
   'title',
@@ -38,13 +56,18 @@ const supportedFields = new Set([
   'createdAt',
   'updatedAt',
 ]);
-for (const filename of (await readdir(directory))
-  .filter((name) => /\.mdx?$/.test(name))
-  .sort()) {
+for (const filename of source.filenames) {
   const raw = await readFile(join(directory, filename), 'utf8');
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   if (!match) throw new Error(`${filename}: missing frontmatter.`);
-  const data = parse(match[1]) as Record<string, unknown>;
+  let data: Record<string, unknown>;
+  try {
+    data = parse(match[1]) as Record<string, unknown>;
+  } catch (error) {
+    throw new Error(
+      `${filename}: invalid frontmatter. ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
   const unsupported = Object.keys(data).filter(
     (field) => !supportedFields.has(field),
   );

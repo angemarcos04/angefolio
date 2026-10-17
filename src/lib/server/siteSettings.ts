@@ -23,16 +23,24 @@ export const defaultSiteSettings: PublicSiteSettings = {
   email: siteDefaults.email,
 };
 
-function validSettings(value: unknown): value is PublicSiteSettings {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+export function normalizePublicSiteSettings(
+  value: unknown,
+): PublicSiteSettings {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return defaultSiteSettings;
+  }
+
   const candidate = value as Record<string, unknown>;
-  return (
-    typeof candidate.siteName === 'string' &&
-    typeof candidate.name === 'string' &&
-    typeof candidate.seoDescription === 'string' &&
-    typeof candidate.github === 'string' &&
-    typeof candidate.email === 'string'
-  );
+  const setting = (key: keyof PublicSiteSettings) =>
+    typeof candidate[key] === 'string' ? candidate[key].trim() : '';
+  return {
+    siteName: setting('siteName') || defaultSiteSettings.siteName,
+    name: setting('name') || defaultSiteSettings.name,
+    seoDescription:
+      setting('seoDescription') || defaultSiteSettings.seoDescription,
+    github: setting('github') || defaultSiteSettings.github,
+    email: setting('email') || defaultSiteSettings.email,
+  };
 }
 
 export async function getPublicSiteSettings(): Promise<PublicSiteSettings> {
@@ -42,9 +50,7 @@ export async function getPublicSiteSettings(): Promise<PublicSiteSettings> {
       .select()
       .from(siteSettings)
       .where(eq(siteSettings.id, primarySiteSettingsId));
-    return validSettings(record?.settings)
-      ? record.settings
-      : defaultSiteSettings;
+    return normalizePublicSiteSettings(record?.settings);
   } catch {
     return defaultSiteSettings;
   }

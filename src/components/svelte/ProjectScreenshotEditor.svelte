@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { uploadImage } from '../../lib/client/uploadImage';
   interface Screenshot {
     src: string;
@@ -14,7 +15,14 @@
   let busy = $state(false);
   let message = $state('');
   let input: HTMLInputElement;
+  let serialized: HTMLInputElement;
   let json = $derived(JSON.stringify(entries));
+
+  async function commit(next: Screenshot[]) {
+    entries = next;
+    await tick();
+    serialized.dispatchEvent(new Event('input', { bubbles: true }));
+  }
 
   async function addFiles() {
     const file = input.files?.[0];
@@ -28,7 +36,7 @@
     message = '';
     try {
       const src = await uploadImage(file);
-      entries = [...entries, { src, alt: '' }];
+      await commit([...entries, { src, alt: '' }]);
       message = 'Screenshot uploaded. Add alternative text before saving.';
     } catch (error) {
       message =
@@ -38,18 +46,22 @@
       input.value = '';
     }
   }
-  function move(index: number, delta: number) {
+  async function move(index: number, delta: number) {
     const target = index + delta;
     if (target < 0 || target >= entries.length) return;
     const next = [...entries];
     [next[index], next[target]] = [next[target], next[index]];
-    entries = next;
+    await commit(next);
+  }
+
+  async function remove(index: number) {
+    await commit(entries.filter((_, entryIndex) => entryIndex !== index));
   }
 </script>
 
 <section class="screenshots" aria-labelledby="screenshots-title">
   <h3 id="screenshots-title">Project Screenshots</h3>
-  <input type="hidden" name={fieldName} value={json} />
+  <input bind:this={serialized} type="hidden" name={fieldName} value={json} />
   <label class="upload-label"
     >Add screenshot
     <input
@@ -91,11 +103,7 @@
           onclick={() => move(index, 1)}
           disabled={index === entries.length - 1}>Move down</button
         >
-        <button
-          type="button"
-          onclick={() => (entries = entries.filter((_, i) => i !== index))}
-          >Remove</button
-        >
+        <button type="button" onclick={() => remove(index)}>Remove</button>
       </div>
     </article>
   {/each}

@@ -216,6 +216,7 @@ const progressSections = homeProgressSections.filter((section) => {
 <Layout
   title={`${publicSettings.name} — ${publicSettings.siteName}`}
   description={publicSettings.seoDescription}
+  siteSettings={publicSettings}
 >
   <HomeProgressRail client:load sections={progressSections} />
   <CollectionHeader active="home" />
