@@ -148,7 +148,7 @@ test('project preview normalizes unsaved metadata, actions, and screenshots like
   assert.deepEqual(preview.stack, ['Astro', 'TypeScript']);
   assert.deepEqual(
     preview.links.map(({ label }) => label),
-    ['Live demo', 'Documentation'],
+    ['Live demo', 'GitHub', 'Documentation'],
   );
   assert.deepEqual(preview.screenshots, [
     {
@@ -157,6 +157,31 @@ test('project preview normalizes unsaved metadata, actions, and screenshots like
       caption: 'Overview',
     },
   ]);
+});
+
+test('screenshot caption preview preserves over-limit text and warns consistently', () => {
+  const source = '/media/123e4567-e89b-42d3-a456-426614174000.webp';
+  const screenshot = (caption: string) =>
+    JSON.stringify([{ src: source, alt: 'Application dashboard', caption }]);
+  const validCaption = 'x'.repeat(200);
+  const valid = normalizeContentPreview(
+    'project',
+    new URLSearchParams({ screenshots: screenshot(validCaption) }),
+  );
+  assert.equal(valid.screenshots[0]?.caption, validCaption);
+  assert.deepEqual(valid.warnings, []);
+
+  const overLimitCaption = 'x'.repeat(201);
+  const form = new URLSearchParams({
+    screenshots: screenshot(overLimitCaption),
+  });
+  const invalid = normalizeContentPreview('project', form);
+  assert.equal(invalid.screenshots[0]?.caption, overLimitCaption);
+  assert.match(invalid.warnings.join(' '), /200-character save limit/);
+  assert.equal(
+    JSON.parse(form.get('screenshots')!)[0].caption,
+    overLimitCaption,
+  );
 });
 
 test('blog, note, and lab previews normalize editorial metadata and omit unsafe links/images', () => {
@@ -221,6 +246,7 @@ test('malformed screenshot values and unsafe cover references are omitted withou
   );
   assert.equal(malformed.cover, '');
   assert.deepEqual(malformed.screenshots, []);
+  assert.match(malformed.warnings.join(' '), /Screenshot data is malformed/);
 
   const unsafeItems = normalizeContentPreview(
     'project',
@@ -235,6 +261,53 @@ test('malformed screenshot values and unsafe cover references are omitted withou
     }),
   );
   assert.equal(unsafeItems.screenshots.length, 1);
+  assert.match(unsafeItems.warnings.join(' '), /invalid screenshot entry/);
+});
+
+test('bounded preview metadata warns without rewriting form values', () => {
+  const longStackEntry = 'x'.repeat(41);
+  const tooManyLinks = Array.from(
+    { length: 9 },
+    (_, index) => `Doc ${index} | https://example.test/${index}`,
+  ).join('\n');
+  const form = new URLSearchParams({
+    stack: `${longStackEntry}\n${Array.from({ length: 20 }, (_, i) => `item-${i}`).join('\n')}`,
+    highlights: 'h'.repeat(161),
+    links: tooManyLinks,
+  });
+  const preview = normalizeContentPreview('project', form);
+  assert.ok(preview.stack.length <= 20);
+  assert.ok(preview.highlights.length <= 12);
+  assert.match(preview.warnings.join(' '), /stack/);
+  assert.match(preview.warnings.join(' '), /highlights/);
+  assert.match(preview.warnings.join(' '), /links/);
+  assert.equal(form.get('stack')?.includes(longStackEntry), true);
+  assert.equal(form.get('highlights'), 'h'.repeat(161));
+});
+
+test('preview date labels use strict UTC calendar dates without inventing replacements', () => {
+  const leapDay = normalizeContentPreview(
+    'note',
+    new URLSearchParams({ createdAt: '2024-02-29' }),
+  );
+  assert.equal(leapDay.date, 'February 29, 2024');
+
+  const invalidLeapDay = normalizeContentPreview(
+    'note',
+    new URLSearchParams({ createdAt: '2025-02-29' }),
+  );
+  assert.equal(invalidLeapDay.date, '');
+  assert.match(
+    invalidLeapDay.warnings.join(' '),
+    /createdAt is not a valid calendar date/,
+  );
+
+  const missingProjectDate = normalizeContentPreview(
+    'project',
+    new URLSearchParams(),
+  );
+  assert.equal(missingProjectDate.date, '');
+  assert.deepEqual(missingProjectDate.warnings, []);
 });
 
 test('preview does not present unsupported project or experiment enum values as published metadata', () => {

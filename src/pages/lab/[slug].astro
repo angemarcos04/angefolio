@@ -12,26 +12,54 @@ import { formatPageTitle } from '../../lib/data/pageTitle';
 import { formatDate } from '../../lib/date';
 import { renderProjectMarkdown } from '../../lib/server/markdown';
 import { getPublicLabCatalog } from '../../lib/server/lab';
-import { getContentRedirectTarget } from '../../lib/server/redirects';
+import {
+  getContentRedirect,
+  publicRedirectTarget,
+} from '../../lib/server/redirects';
 import { getPublicSiteSettings } from '../../lib/server/siteSettings';
 
 export const prerender = false;
-const redirectTarget = await getContentRedirectTarget(
-  `/lab/${Astro.params.slug}`,
-);
-if (redirectTarget) {
-  return new Response(null, {
-    status: 308,
-    headers: {
-      location: redirectTarget,
-      'cache-control': 'public, max-age=3600',
-    },
-  });
-}
-const [entries, settings] = await Promise.all([
+const requestedPath = `/lab/${Astro.params.slug}`;
+const [redirect, entries, settings] = await Promise.all([
+  getContentRedirect(requestedPath),
   getPublicLabCatalog(),
   getPublicSiteSettings(),
 ]);
+if (redirect.status === 'unavailable') {
+  return new Response('Content temporarily unavailable.', {
+    status: 503,
+    headers: {
+      'content-type': 'text/plain; charset=utf-8',
+      'cache-control': 'no-store',
+    },
+  });
+}
+if (redirect.status === 'found') {
+  const target = entries
+    .map((entry) =>
+      publicRedirectTarget(
+        redirect.record,
+        'lab',
+        entry.id,
+        entry.slug,
+        requestedPath,
+      ),
+    )
+    .find((value): value is string => value !== null);
+  if (!target) {
+    return new Response('Lab entry not found.', {
+      status: 404,
+      headers: {
+        'content-type': 'text/plain; charset=utf-8',
+        'cache-control': 'no-store',
+      },
+    });
+  }
+  return new Response(null, {
+    status: 302,
+    headers: { location: target, 'cache-control': 'no-store' },
+  });
+}
 const index = entries.findIndex((item) => item.slug === Astro.params.slug);
 const entry = entries[index];
 if (!entry) return new Response('Lab entry not found.', { status: 404 });

@@ -11,15 +11,20 @@ import {
 import { validateProjectForm } from '../../../../../lib/server/validation/projects';
 import { getPublicProjectCatalog } from '../../../../../lib/server/publicProjects';
 import { getAllProjects, getProjectSlug } from '../../../../../lib/content';
-import { SlugRedirectConflictError } from '../../../../../lib/server/redirects';
+import { isMdxSlugClaimConflict } from '../../../../../lib/data/mdxSlug';
+import {
+  getRedirectSlugOwnership,
+  isSlugUniqueConstraintError,
+  SlugRedirectConflictError,
+} from '../../../../../lib/server/redirects';
 
 const maximumProjectFormBytes = 512 * 1024;
 
-function redirect(id: string, code: string): Response {
+function redirect(id: string, code: string, field?: string): Response {
   return new Response(null, {
     status: 303,
     headers: {
-      location: `/user/projects/${encodeURIComponent(id)}?error=${code}`,
+      location: `/user/projects/${encodeURIComponent(id)}?error=${code}${field ? `&field=${encodeURIComponent(field)}` : ''}`,
     },
   });
 }
@@ -68,18 +73,26 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
     if (!result.success) return validationRedirect(id, result.errors);
 
     const slugOwner = await getConsoleProjectBySlug(result.data.slug);
-    if (slugOwner && slugOwner.id !== id) return redirect(id, 'slug');
+    if (slugOwner && slugOwner.id !== id) return redirect(id, 'slug', 'slug');
 
-    const mdxCollision = (await getAllProjects()).some(
-      (entry) => getProjectSlug(entry) === result.data.slug,
+    const mdxCollision = isMdxSlugClaimConflict(
+      (await getAllProjects()).map(getProjectSlug),
+      result.data.slug,
+      {
+        replacesMdx: result.data.replacesMdx,
+        currentSlug: existing.slug,
+      },
     );
-    if (
-      mdxCollision &&
-      result.data.slug !== existing.slug &&
-      !result.data.replacesMdx
-    ) {
-      return redirect(id, 'slug');
+    if (mdxCollision) {
+      return redirect(id, 'slug', 'slug');
     }
+    const redirectOwnership = await getRedirectSlugOwnership(
+      'project',
+      result.data.slug,
+      id,
+    );
+    if (redirectOwnership === 'unavailable') return redirect(id, 'unavailable');
+    if (redirectOwnership === 'reserved') return redirect(id, 'slug', 'slug');
     const currentPublic = (await getPublicProjectCatalog()).some(
       (project) =>
         project.slug === existing.slug && project.source === 'database',
@@ -96,7 +109,12 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
       headers: { location: '/user/projects?notice=updated' },
     });
   } catch (error) {
-    if (error instanceof SlugRedirectConflictError) return redirect(id, 'slug');
+    if (
+      error instanceof SlugRedirectConflictError ||
+      isSlugUniqueConstraintError(error, 'project')
+    ) {
+      return redirect(id, 'slug', 'slug');
+    }
     return redirect(id, 'unavailable');
   }
 };

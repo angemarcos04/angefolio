@@ -10,6 +10,8 @@ Notes can remain in `src/content/notes/` as rollback copies. `pnpm notes:import`
 
 Database-only notes can be authored with a new slug. Public archive, detail pages, search, RSS, and `/sitemap-notes.xml` use the same catalog and only expose published notes. If the database is unavailable, the catalog fails closed because it cannot know whether an MDX note has been adopted and hidden.
 
+Historical slug aliases redirect with a noncached 302 only when the alias still belongs to a Note selected by the public catalog. Unpublished Notes and inactive database replacements return a noncached 404 through their old aliases; alias records remain so republication can restore them.
+
 There is no hard delete or revision history yet. Back up the database before relying on edits in a deployed volume. The source files stay untouched and can be used to switch a note back to MDX.
 
 The shared Markdown editor can upload JPEG, PNG, or WebP images (up to 8 MB) and insert normal Markdown image syntax. Images use the authenticated `/api/console/media/upload` endpoint, are resized/converted to WebP, and are stored in SQLite. Markdown sanitization allows safe uploaded media, safe static images, and HTTPS image sources.

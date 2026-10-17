@@ -176,6 +176,50 @@ test.describe('authoring form reliability', () => {
     await expect(page.locator('.screenshots .entry')).toHaveCount(1);
   });
 
+  test('over-limit screenshot captions warn in preview without changing the form value', async ({
+    page,
+  }) => {
+    await openEditor(page, 'projects');
+    await fillRequiredFields(page, 'projects', `caption-${Date.now()}`);
+    await page.locator('.authoring-section > summary').click();
+    await page.locator('.screenshots input[type="file"]').setInputFiles(image);
+    await page
+      .locator('.screenshots input[placeholder^="Describe"]')
+      .fill('Dashboard');
+    const caption = 'c'.repeat(201);
+    const captionInput = page.getByLabel('Caption (optional)');
+    await captionInput.evaluate((element, value) => {
+      const input = element as HTMLInputElement;
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }, caption);
+    const serialized = page.locator('input[name="screenshots"]');
+    await expect(serialized).toHaveValue(/caption/);
+    const formValue = await serialized.inputValue();
+    await expect(page.locator('#authoring-status')).toHaveText(
+      'Unsaved changes',
+    );
+
+    await page.getByRole('button', { name: 'Preview Page' }).click();
+    const preview = page.locator('dialog.page-preview');
+    await expect(preview.getByRole('status')).toContainText(
+      'exceeds the 200-character save limit',
+    );
+    await expect(preview.locator('figcaption')).toHaveText(caption);
+    await preview.getByRole('button', { name: 'Close page preview' }).click();
+    await expect(serialized).toHaveValue(formValue);
+    expect(JSON.parse(await serialized.inputValue())[0].caption).toBe(caption);
+    await expect(page.locator('#authoring-status')).toHaveText(
+      'Unsaved changes',
+    );
+    await page.getByRole('button', { name: 'Create project' }).click();
+    await expect(page.locator('#authoring-status')).toContainText(
+      'Review the screenshots field. Your edits are still here.',
+    );
+    await expect(captionInput).toHaveValue(caption);
+    await expect(serialized).toHaveValue(formValue);
+  });
+
   test('cover assignment updates the submitted field and dirty state', async ({
     page,
   }) => {
@@ -190,6 +234,100 @@ test.describe('authoring form reliability', () => {
     await page.getByRole('button', { name: 'Clear image reference' }).click();
     await expect(page.locator('#blog-cover')).toHaveValue('');
     await expect(page.locator('#authoring-status')).toHaveText('');
+  });
+
+  test('Project cover upload passes validation, previews, and renders after save', async ({
+    page,
+  }) => {
+    const unique = `${Date.now()}`;
+    await openEditor(page, 'projects');
+    await fillRequiredFields(page, 'projects', unique);
+    await page.locator('.authoring-section > summary').click();
+    await page
+      .locator('#project-editor label.full input[type="file"]')
+      .setInputFiles(image);
+    await page
+      .locator('#project-editor .media-upload button', {
+        hasText: 'Upload and use image',
+      })
+      .click();
+    const cover = page.locator('#project-cover');
+    await expect(cover).toHaveValue(/^\/media\/[0-9a-f-]+\.webp$/i);
+    await expect(page.locator('#authoring-status')).toHaveText(
+      'Unsaved changes',
+    );
+
+    await page.getByRole('button', { name: 'Preview Page' }).click();
+    const preview = page.locator('dialog.page-preview');
+    await expect(preview.locator('img.project-cover')).toHaveAttribute(
+      'src',
+      /^\/media\//,
+    );
+    await preview.getByRole('button', { name: 'Close page preview' }).click();
+    await expect(cover).toHaveValue(/^\/media\//);
+
+    await page.locator('[name="visible"]').check();
+    await page.getByRole('button', { name: 'Create project' }).click();
+    await expect(page).toHaveURL(/\/user\/projects\?notice=created/);
+    const publicPage = await page.goto(`/projects/r2-projects-${unique}`);
+    expect(publicPage?.status()).toBe(200);
+    await expect(page.locator('body')).toContainText(`R2 projects ${unique}`);
+    const publicHtml = await page.locator('html').innerHTML();
+    const imagePath = publicHtml.match(
+      /<img[^>]+src="(\/media\/[0-9a-f-]+\.webp)"/i,
+    )?.[1];
+    expect(imagePath).toBeTruthy();
+    expect(
+      (await page.request.get(new URL(imagePath!, page.url()).href)).ok(),
+    ).toBeTruthy();
+  });
+
+  test('invalid Project cover is rejected while retaining the edited value', async ({
+    page,
+  }) => {
+    const unique = `${Date.now()}`;
+    await openEditor(page, 'projects');
+    await fillRequiredFields(page, 'projects', `invalid-cover-${unique}`);
+    await page.locator('.authoring-section > summary').click();
+    await page.locator('#project-cover').fill('/user/private.png');
+    await page.getByRole('button', { name: 'Create project' }).click();
+    await expect(page.locator('#authoring-status')).toContainText(
+      'cover image field. Your edits are still here.',
+    );
+    await expect(page.locator('#project-cover')).toHaveValue(
+      '/user/private.png',
+    );
+    await expect(page.locator('#authoring-status')).toContainText('still here');
+  });
+
+  test('HTTPS Project cover is accepted by preview, save, and public rendering', async ({
+    page,
+  }) => {
+    const unique = `${Date.now()}`;
+    const externalCover = 'https://images.example.test/project-cover.webp';
+    await openEditor(page, 'projects');
+    await fillRequiredFields(page, 'projects', `https-cover-${unique}`);
+    await page.locator('.authoring-section > summary').click();
+    await page.locator('#project-cover').fill(externalCover);
+
+    await page.getByRole('button', { name: 'Preview Page' }).click();
+    const preview = page.locator('dialog.page-preview');
+    await expect(preview.locator('img.project-cover')).toHaveAttribute(
+      'src',
+      externalCover,
+    );
+    await preview.getByRole('button', { name: 'Close page preview' }).click();
+
+    await page.locator('[name="visible"]').check();
+    await page.getByRole('button', { name: 'Create project' }).click();
+    await expect(page).toHaveURL(/\/user\/projects\?notice=created/);
+    const publicPage = await page.goto(
+      `/projects/r2-projects-https-cover-${unique}`,
+    );
+    expect(publicPage?.status()).toBe(200);
+    expect(await page.locator('html').innerHTML()).toContain(
+      `src="${externalCover}"`,
+    );
   });
 
   test('native validation opens a collapsed section and focuses its invalid field', async ({

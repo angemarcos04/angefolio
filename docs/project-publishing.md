@@ -26,7 +26,7 @@ After import, compare the `/projects/[slug]` pages, `/projects`, the homepage, `
 
 ## Editing and rollback
 
-The project editor offers bold, italic, heading, list, and link controls over portable Markdown source, plus a private preview. It does not execute MDX or arbitrary HTML. Public replacement requires a nonempty body. Changing an adopted public slug creates a redirect to the new URL; see [console-plan.md](./console-plan.md#phase-20-slug-redirects).
+The project editor offers bold, italic, heading, list, and link controls over portable Markdown source, plus a private preview. It does not execute MDX or arbitrary HTML. Public replacement requires a nonempty body. Changing a public database-backed slug creates a historical alias. The alias redirects with a noncached 302 only while its owning project remains in the public catalog; hidden or archived aliases return a noncached 404. See [console-plan.md](./console-plan.md#phase-20-slug-redirects).
 
 To roll back one project, uncheck **Use this record instead of matching MDX content** and save. The MDX page becomes public again. To recover the entire database, follow [operations.md](./operations.md) using the backup made before import. If the database is unavailable, project queries return no entries because old MDX could otherwise reveal work that was hidden after cutover. Notes and Lab remain independent static content.
 

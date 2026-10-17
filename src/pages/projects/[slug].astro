@@ -14,28 +14,56 @@ import {
   getPublicProjectCatalog,
   publicProjectUrl,
 } from '../../lib/server/publicProjects';
-import { getContentRedirectTarget } from '../../lib/server/redirects';
+import {
+  getContentRedirect,
+  publicRedirectTarget,
+} from '../../lib/server/redirects';
 import { getPublicSiteSettings } from '../../lib/server/siteSettings';
 
-const redirectTarget = await getContentRedirectTarget(
-  `/projects/${Astro.params.slug}`,
-);
-if (redirectTarget) {
-  return new Response(null, {
-    status: 308,
-    headers: {
-      location: redirectTarget,
-      'cache-control': 'public, max-age=3600',
-    },
-  });
-}
+const requestedPath = `/projects/${Astro.params.slug}`;
 
 // Resolve only against the catalog that already applies visibility, archive,
 // MDX replacement, and redirect-alias rules.
-const [projects, settings] = await Promise.all([
+const [redirect, projects, settings] = await Promise.all([
+  getContentRedirect(requestedPath),
   getPublicProjectCatalog(),
   getPublicSiteSettings(),
 ]);
+if (redirect.status === 'unavailable') {
+  return new Response('Content temporarily unavailable.', {
+    status: 503,
+    headers: {
+      'content-type': 'text/plain; charset=utf-8',
+      'cache-control': 'no-store',
+    },
+  });
+}
+if (redirect.status === 'found') {
+  const target = projects
+    .map((project) =>
+      publicRedirectTarget(
+        redirect.record,
+        'project',
+        project.id,
+        project.slug,
+        requestedPath,
+      ),
+    )
+    .find((value): value is string => value !== null);
+  if (!target) {
+    return new Response('Project not found.', {
+      status: 404,
+      headers: {
+        'content-type': 'text/plain; charset=utf-8',
+        'cache-control': 'no-store',
+      },
+    });
+  }
+  return new Response(null, {
+    status: 302,
+    headers: { location: target, 'cache-control': 'no-store' },
+  });
+}
 const index = projects.findIndex(
   (project) => project.slug === Astro.params.slug,
 );

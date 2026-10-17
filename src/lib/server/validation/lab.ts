@@ -1,3 +1,5 @@
+import { isSafeHttpUrl } from '../../data/contentConstraints';
+
 export const labStatuses = [
   'Idea',
   'Prototype',
@@ -30,12 +32,7 @@ export interface LabRecordInput {
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const httpUrl = (value: string) => {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch {
-    return false;
-  }
+  return isSafeHttpUrl(value);
 };
 
 function parseDate(value: string): Date | null {

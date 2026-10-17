@@ -9,26 +9,54 @@ import { formatPageTitle } from '../../lib/data/pageTitle';
 import { formatDate, getNoteReadingTime } from '../../lib/notes';
 import { renderProjectMarkdown } from '../../lib/server/markdown';
 import { getPublicNoteCatalog } from '../../lib/server/notes';
-import { getContentRedirectTarget } from '../../lib/server/redirects';
+import {
+  getContentRedirect,
+  publicRedirectTarget,
+} from '../../lib/server/redirects';
 import { getPublicSiteSettings } from '../../lib/server/siteSettings';
 
 export const prerender = false;
-const redirectTarget = await getContentRedirectTarget(
-  `/notes/${Astro.params.slug}`,
-);
-if (redirectTarget) {
-  return new Response(null, {
-    status: 308,
-    headers: {
-      location: redirectTarget,
-      'cache-control': 'public, max-age=3600',
-    },
-  });
-}
-const [notes, settings] = await Promise.all([
+const requestedPath = `/notes/${Astro.params.slug}`;
+const [redirect, notes, settings] = await Promise.all([
+  getContentRedirect(requestedPath),
   getPublicNoteCatalog(),
   getPublicSiteSettings(),
 ]);
+if (redirect.status === 'unavailable') {
+  return new Response('Content temporarily unavailable.', {
+    status: 503,
+    headers: {
+      'content-type': 'text/plain; charset=utf-8',
+      'cache-control': 'no-store',
+    },
+  });
+}
+if (redirect.status === 'found') {
+  const target = notes
+    .map((note) =>
+      publicRedirectTarget(
+        redirect.record,
+        'note',
+        note.id,
+        note.slug,
+        requestedPath,
+      ),
+    )
+    .find((value): value is string => value !== null);
+  if (!target) {
+    return new Response('Note not found.', {
+      status: 404,
+      headers: {
+        'content-type': 'text/plain; charset=utf-8',
+        'cache-control': 'no-store',
+      },
+    });
+  }
+  return new Response(null, {
+    status: 302,
+    headers: { location: target, 'cache-control': 'no-store' },
+  });
+}
 const index = notes.findIndex((note) => note.slug === Astro.params.slug);
 const note = notes[index];
 if (!note) return new Response('Note not found.', { status: 404 });

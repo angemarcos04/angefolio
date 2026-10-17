@@ -1,5 +1,6 @@
 import type { CollectionEntry } from 'astro:content';
 import { getProjectSlug, getVisibleProjects } from '../content';
+import { isSafeImageReference } from '../data/mediaReference';
 import { getDatabase, migrateDatabase } from './db/client';
 import { projectRecords } from './db/schema';
 import type { ProjectRecord } from './projects';
@@ -7,6 +8,8 @@ import { getRedirectSourcePaths } from './redirects';
 
 export interface PublicProject {
   source: 'mdx' | 'database';
+  /** Present for database records; kept server-side for redirect ownership. */
+  id?: string;
   slug: string;
   title: string;
   description: string;
@@ -54,7 +57,10 @@ function fromMdx(entry: CollectionEntry<'projects'>): PublicProject {
     dateLabel: 'Date',
     updatedAt: entry.data.date,
     highlights: entry.data.highlights ?? [],
-    cover: entry.data.cover ?? null,
+    cover:
+      entry.data.cover && isSafeImageReference(entry.data.cover)
+        ? entry.data.cover
+        : null,
     screenshots: [],
     body: 'body' in entry && typeof entry.body === 'string' ? entry.body : '',
     orderIndex: entry.data.order ?? null,
@@ -65,6 +71,7 @@ function fromMdx(entry: CollectionEntry<'projects'>): PublicProject {
 function fromDatabase(record: ProjectRecord): PublicProject {
   return {
     source: 'database',
+    id: record.id,
     slug: record.slug,
     title: record.title,
     description: record.description,
@@ -82,7 +89,10 @@ function fromDatabase(record: ProjectRecord): PublicProject {
     dateLabel: record.projectDate ? 'Date' : 'Added',
     updatedAt: record.updatedAt,
     highlights: Array.isArray(record.highlights) ? record.highlights : [],
-    cover: record.cover,
+    // Older records may predate the shared cover policy. Keep their stored
+    // value intact, but never pass an unsafe reference into public markup.
+    cover:
+      record.cover && isSafeImageReference(record.cover) ? record.cover : null,
     screenshots: Array.isArray(record.screenshots) ? record.screenshots : [],
     body: record.caseStudyBody ?? '',
     orderIndex: record.orderIndex,

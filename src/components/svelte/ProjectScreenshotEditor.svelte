@@ -1,5 +1,10 @@
 <script lang="ts">
   import { tick } from 'svelte';
+  import {
+    PROJECT_SCREENSHOT_ALT_MAX_LENGTH,
+    PROJECT_SCREENSHOT_CAPTION_MAX_LENGTH,
+    PROJECT_SCREENSHOT_COUNT_MAX,
+  } from '../../lib/data/contentConstraints';
   import { uploadImage } from '../../lib/client/uploadImage';
   interface Screenshot {
     src: string;
@@ -27,7 +32,7 @@
   async function addFiles() {
     const file = input.files?.[0];
     if (!file) return;
-    if (entries.length >= 8) {
+    if (entries.length >= PROJECT_SCREENSHOT_COUNT_MAX) {
       message = 'A project can have up to 8 screenshots.';
       input.value = '';
       return;
@@ -68,7 +73,7 @@
       bind:this={input}
       type="file"
       accept="image/jpeg,image/png,image/webp"
-      disabled={busy || entries.length >= 8}
+      disabled={busy || entries.length >= PROJECT_SCREENSHOT_COUNT_MAX}
       onchange={addFiles}
     />
   </label>
@@ -80,7 +85,7 @@
         <label
           >Alternative text<input
             bind:value={entry.alt}
-            maxlength="300"
+            maxlength={PROJECT_SCREENSHOT_ALT_MAX_LENGTH}
             required
             placeholder="Describe what the screenshot shows"
           /></label
@@ -88,7 +93,7 @@
         <label
           >Caption (optional)<input
             bind:value={entry.caption}
-            maxlength="200"
+            maxlength={PROJECT_SCREENSHOT_CAPTION_MAX_LENGTH}
           /></label
         >
       </div>
@@ -108,8 +113,8 @@
     </article>
   {/each}
   <small
-    >Up to 8 screenshots. Removing a reference does not delete its uploaded
-    image.</small
+    >Up to {PROJECT_SCREENSHOT_COUNT_MAX} screenshots. Removing a reference does not
+    delete its uploaded image.</small
   >
 </section>
 

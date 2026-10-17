@@ -310,12 +310,33 @@ test('private edits, audit history, recovery, and database backup', async () => 
       caseStudyBody: 'A private draft body.',
       screenshots: JSON.stringify([
         {
-          src: '/og.png',
+          src: '/images/project-screenshot.webp',
           alt: 'Project overview screen',
           caption: 'Home screen',
         },
       ]),
+      cover: '/og.png',
     };
+    const invalidCoverProject = await formRequest(
+      origin,
+      '/api/console/projects/create',
+      {
+        ...projectFields,
+        slug: 'invalid-cover-test',
+        cover: '/user/private.png',
+      },
+      cookie,
+    );
+    assert.match(
+      invalidCoverProject.headers.get('location') ?? '',
+      /error=validation/,
+    );
+    const rejectedCoverCreate = await database.execute({
+      sql: 'SELECT id FROM project_records WHERE slug = ?',
+      args: ['invalid-cover-test'],
+    });
+    assert.equal(rejectedCoverCreate.rows.length, 0);
+
     const invalidProject = await formRequest(
       origin,
       '/api/console/projects/create',
@@ -342,6 +363,44 @@ test('private edits, audit history, recovery, and database backup', async () => 
     });
     const id = String(project.rows[0].id);
     assert.equal(project.rows[0].visible, 0);
+    const rejectedCoverUpdate = await formRequest(
+      origin,
+      `/api/console/projects/${id}/update`,
+      {
+        ...projectFields,
+        description: 'Must not be partially saved.',
+        cover: 'http://images.example.test/unsafe.png',
+      },
+      cookie,
+    );
+    assert.match(
+      rejectedCoverUpdate.headers.get('location') ?? '',
+      /error=validation/,
+    );
+    const unchangedProject = await database.execute({
+      sql: 'SELECT description, cover FROM project_records WHERE id = ?',
+      args: [id],
+    });
+    assert.equal(
+      unchangedProject.rows[0].description,
+      projectFields.description,
+    );
+    assert.equal(unchangedProject.rows[0].cover, projectFields.cover);
+    const clearedCover = await formRequest(
+      origin,
+      `/api/console/projects/${id}/update`,
+      { ...projectFields, cover: '' },
+      cookie,
+    );
+    assert.equal(
+      clearedCover.headers.get('location'),
+      '/user/projects?notice=updated',
+    );
+    const clearedCoverRecord = await database.execute({
+      sql: 'SELECT cover FROM project_records WHERE id = ?',
+      args: [id],
+    });
+    assert.equal(clearedCoverRecord.rows[0].cover, null);
     assert.doesNotMatch(
       await (await fetch(`${origin}/projects`)).text(),
       /Phase 13 Test/,
@@ -390,6 +449,18 @@ test('private edits, audit history, recovery, and database backup', async () => 
     assert.match(await (await fetch(origin)).text(), /Phase 13 Test/);
     const newDetail = await fetch(`${origin}/projects/phase-13-test`);
     assert.equal(newDetail.status, 200);
+    await database.execute({
+      sql: 'UPDATE project_records SET cover = ? WHERE id = ?',
+      args: ['/user/private.png', id],
+    });
+    const legacyCoverArchive = await (await fetch(`${origin}/projects`)).text();
+    const legacyCoverDetail = await (await fetch(newDetail.url)).text();
+    assert.doesNotMatch(legacyCoverArchive, /src="\/user\/private\.png"/);
+    assert.doesNotMatch(legacyCoverDetail, /src="\/user\/private\.png"/);
+    await database.execute({
+      sql: 'UPDATE project_records SET cover = ? WHERE id = ?',
+      args: [projectFields.cover, id],
+    });
     const overview = await newDetail.text();
     assert.match(overview, /<title>Phase 13 Test — Test Owner<\/title>/);
     assert.match(
@@ -471,6 +542,7 @@ test('private edits, audit history, recovery, and database backup', async () => 
         'now.update',
         'project.create',
         'project.update',
+        'project.update',
         'project.featured',
         'project.visibility',
         'project.archive',
@@ -492,7 +564,7 @@ test('private edits, audit history, recovery, and database backup', async () => 
       const result = await recovered.execute(
         'SELECT count(*) AS total FROM audit_log',
       );
-      assert.equal(result.rows[0].total, 9);
+      assert.equal(result.rows[0].total, 10);
     } finally {
       recovered.close();
     }
@@ -568,7 +640,8 @@ test('private edits, audit history, recovery, and database backup', async () => 
     const oldCaseStudyUrl = await fetch(`${origin}/projects/phase-13-test`, {
       redirect: 'manual',
     });
-    assert.equal(oldCaseStudyUrl.status, 308);
+    assert.equal(oldCaseStudyUrl.status, 302);
+    assert.equal(oldCaseStudyUrl.headers.get('cache-control'), 'no-store');
     assert.equal(
       oldCaseStudyUrl.headers.get('location'),
       '/projects/phase-13-moved',

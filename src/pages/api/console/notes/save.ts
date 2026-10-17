@@ -11,7 +11,15 @@ import {
 import { validateNoteForm } from '../../../../lib/server/validation/notes';
 import { getPublicNoteCatalog } from '../../../../lib/server/notes';
 import { getAllNotes } from '../../../../lib/content';
-import { SlugRedirectConflictError } from '../../../../lib/server/redirects';
+import {
+  isMdxSlugClaimConflict,
+  mdxSlugFromId,
+} from '../../../../lib/data/mdxSlug';
+import {
+  getRedirectSlugOwnership,
+  isSlugUniqueConstraintError,
+  SlugRedirectConflictError,
+} from '../../../../lib/server/redirects';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user)
@@ -51,16 +59,22 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     const owner = await getNoteRecordBySlug(result.data.slug);
     if (owner && owner.id !== id) return invalid('slug', 'slug');
-    const mdxCollision = (await getAllNotes()).some(
-      (entry) => entry.id.replace(/\.(md|mdx)$/, '') === result.data.slug,
+    const mdxCollision = isMdxSlugClaimConflict(
+      (await getAllNotes()).map((entry) => mdxSlugFromId(entry.id)),
+      result.data.slug,
+      {
+        replacesMdx: result.data.replacesMdx,
+        currentSlug: existing?.slug,
+      },
     );
-    if (
-      existing &&
-      existing.slug !== result.data.slug &&
-      mdxCollision &&
-      !result.data.replacesMdx
-    )
-      return invalid('slug');
+    if (mdxCollision) return invalid('slug', 'slug');
+    const redirectOwnership = await getRedirectSlugOwnership(
+      'note',
+      result.data.slug,
+      existing?.id,
+    );
+    if (redirectOwnership === 'unavailable') return invalid('unavailable');
+    if (redirectOwnership === 'reserved') return invalid('slug', 'slug');
     const currentPublic = existing
       ? (await getPublicNoteCatalog()).some(
           (note) => note.slug === existing.slug && note.source === 'database',
@@ -77,7 +91,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
       headers: { location: `/user/notes/${saved.id}?notice=saved` },
     });
   } catch (error) {
-    if (error instanceof SlugRedirectConflictError)
+    if (
+      error instanceof SlugRedirectConflictError ||
+      isSlugUniqueConstraintError(error, 'note')
+    )
       return invalid('slug', 'slug');
     return invalid('unavailable');
   }

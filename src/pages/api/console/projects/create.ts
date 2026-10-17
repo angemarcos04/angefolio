@@ -1,8 +1,15 @@
 import type { APIRoute } from 'astro';
+import { getAllProjects, getProjectSlug } from '../../../../lib/content';
+import { isMdxSlugClaimConflict } from '../../../../lib/data/mdxSlug';
 import {
   createProjectRecord,
   getConsoleProjectBySlug,
 } from '../../../../lib/server/projects';
+import {
+  getRedirectSlugOwnership,
+  isSlugUniqueConstraintError,
+  SlugRedirectConflictError,
+} from '../../../../lib/server/redirects';
 import {
   hasTrustedOrigin,
   readUrlEncodedForm,
@@ -11,10 +18,12 @@ import { validateProjectForm } from '../../../../lib/server/validation/projects'
 
 const maximumProjectFormBytes = 512 * 1024;
 
-function redirect(code: string): Response {
+function redirect(code: string, field?: string): Response {
   return new Response(null, {
     status: 303,
-    headers: { location: `/user/projects/new?error=${code}` },
+    headers: {
+      location: `/user/projects/new?error=${code}${field ? `&field=${encodeURIComponent(field)}` : ''}`,
+    },
   });
 }
 
@@ -45,13 +54,32 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   try {
     if (await getConsoleProjectBySlug(result.data.slug))
-      return redirect('slug');
+      return redirect('slug', 'slug');
+    const mdxSlugs = (await getAllProjects()).map(getProjectSlug);
+    if (
+      isMdxSlugClaimConflict(mdxSlugs, result.data.slug, {
+        replacesMdx: result.data.replacesMdx,
+      })
+    )
+      return redirect('slug', 'slug');
+    const redirectOwnership = await getRedirectSlugOwnership(
+      'project',
+      result.data.slug,
+    );
+    if (redirectOwnership === 'unavailable') return redirect('unavailable');
+    if (redirectOwnership === 'reserved') return redirect('slug', 'slug');
     await createProjectRecord(result.data, locals.user.id);
     return new Response(null, {
       status: 303,
       headers: { location: '/user/projects?notice=created' },
     });
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof SlugRedirectConflictError ||
+      isSlugUniqueConstraintError(error, 'project')
+    ) {
+      return redirect('slug', 'slug');
+    }
     return redirect('unavailable');
   }
 };

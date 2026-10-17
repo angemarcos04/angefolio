@@ -1,4 +1,10 @@
 import { isSafeImageReference } from './mediaReference';
+import {
+  isSafeHttpUrl,
+  PROJECT_SCREENSHOT_ALT_MAX_LENGTH,
+  PROJECT_SCREENSHOT_CAPTION_MAX_LENGTH,
+  PROJECT_SCREENSHOT_COUNT_MAX,
+} from './contentConstraints';
 import { labRisks, labStatuses } from '../server/validation/lab';
 import { projectStatuses } from '../server/validation/projects';
 
@@ -39,6 +45,7 @@ export interface ContentPreviewData {
   risk: string;
   links: PreviewLink[];
   screenshots: PreviewScreenshot[];
+  warnings: string[];
 }
 
 const caps = {
@@ -57,7 +64,6 @@ const caps = {
   tools: 20,
   lessons: 20,
   links: 8,
-  screenshots: 8,
 } as const;
 
 function value(form: URLSearchParams, key: string, max: number): string {
@@ -88,16 +94,7 @@ function uniqueLines(
 }
 
 function safeHttp(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return (
-      (url.protocol === 'https:' || url.protocol === 'http:') &&
-      !url.username &&
-      !url.password
-    );
-  } catch {
-    return false;
-  }
+  return value.length <= 2048 && isSafeHttpUrl(value);
 }
 
 function dateLabel(value: string): string {
@@ -115,8 +112,8 @@ function dateLabel(value: string): string {
 
 function projectLinks(form: URLSearchParams): PreviewLink[] {
   const candidates: PreviewLink[] = [];
-  const demo = value(form, 'demo', 2048);
-  const github = value(form, 'github', 2048);
+  const demo = (form.get('demo') ?? '').trim();
+  const github = (form.get('github') ?? '').trim();
   if (demo && safeHttp(demo))
     candidates.push({ label: 'Live demo', href: demo, external: true });
   if (github && safeHttp(github))
@@ -125,26 +122,18 @@ function projectLinks(form: URLSearchParams): PreviewLink[] {
     const separator = row.indexOf('|');
     if (separator < 1) continue;
     const label = row.slice(0, separator).trim().slice(0, 80);
-    const href = row
-      .slice(separator + 1)
-      .trim()
-      .slice(0, 2048);
+    const href = row.slice(separator + 1).trim();
     if (label && safeHttp(href))
       candidates.push({ label, href, external: true });
   }
-  const seen = new Set<string>();
-  return candidates.filter((link) => {
-    if (seen.has(link.href)) return false;
-    seen.add(link.href);
-    return true;
-  });
+  return candidates;
 }
 
 function labLinks(form: URLSearchParams): PreviewLink[] {
   const links: PreviewLink[] = [];
-  const demo = value(form, 'demo', 2048);
-  const repo = value(form, 'repo', 2048);
-  const related = value(form, 'relatedProject', 2048);
+  const demo = (form.get('demo') ?? '').trim();
+  const repo = (form.get('repo') ?? '').trim();
+  const related = (form.get('relatedProject') ?? '').trim();
   if (demo && safeHttp(demo))
     links.push({ label: 'Open demo', href: demo, external: true });
   if (repo && safeHttp(repo))
@@ -154,39 +143,72 @@ function labLinks(form: URLSearchParams): PreviewLink[] {
   } else if (related && safeHttp(related)) {
     links.push({ label: 'Related project', href: related, external: true });
   }
-  const seen = new Set<string>();
-  return links.filter(
-    (link) => !seen.has(link.href) && Boolean(seen.add(link.href)),
-  );
+  return links;
 }
 
-function screenshots(form: URLSearchParams): PreviewScreenshot[] {
+function screenshots(
+  form: URLSearchParams,
+  warnings: string[],
+): PreviewScreenshot[] {
   let parsed: unknown;
   try {
     parsed = JSON.parse(form.get('screenshots') ?? '[]');
   } catch {
+    warnings.push(
+      'Screenshot data is malformed and cannot be shown. Your form value is unchanged.',
+    );
     return [];
   }
-  if (!Array.isArray(parsed)) return [];
+  if (!Array.isArray(parsed)) {
+    warnings.push(
+      'Screenshot data must be a list to save. Your form value is unchanged.',
+    );
+    return [];
+  }
+  if (parsed.length > PROJECT_SCREENSHOT_COUNT_MAX) {
+    warnings.push(
+      `Only the first ${PROJECT_SCREENSHOT_COUNT_MAX} screenshots are shown; save accepts up to ${PROJECT_SCREENSHOT_COUNT_MAX}. Your form value is unchanged.`,
+    );
+  }
   const seen = new Set<string>();
   return parsed
-    .slice(0, caps.screenshots)
+    .slice(0, PROJECT_SCREENSHOT_COUNT_MAX)
     .flatMap((item): PreviewScreenshot[] => {
-      if (!item || typeof item !== 'object' || Array.isArray(item)) return [];
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        warnings.push(
+          'An invalid screenshot entry is omitted from this preview; correct its image and alternative text before saving.',
+        );
+        return [];
+      }
       const source = (item as Record<string, unknown>).src;
       const alt = (item as Record<string, unknown>).alt;
       const caption = (item as Record<string, unknown>).caption;
+      const extraKeys = Object.keys(item).some(
+        (key) => !['src', 'alt', 'caption'].includes(key),
+      );
       if (
+        typeof caption === 'string' &&
+        caption.length > PROJECT_SCREENSHOT_CAPTION_MAX_LENGTH
+      ) {
+        warnings.push(
+          `A screenshot caption exceeds the ${PROJECT_SCREENSHOT_CAPTION_MAX_LENGTH}-character save limit. The preview shows the current caption and leaves your form value unchanged.`,
+        );
+      }
+      if (
+        extraKeys ||
         typeof source !== 'string' ||
         !isSafeImageReference(source) ||
         typeof alt !== 'string' ||
         !alt.trim() ||
-        alt.length > 300 ||
-        (caption !== undefined &&
-          (typeof caption !== 'string' || caption.length > 300)) ||
+        alt.length > PROJECT_SCREENSHOT_ALT_MAX_LENGTH ||
+        (caption !== undefined && typeof caption !== 'string') ||
         seen.has(source)
-      )
+      ) {
+        warnings.push(
+          'An invalid screenshot entry is omitted from this preview; check its image, alternative text, caption, and duplicates.',
+        );
         return [];
+      }
       seen.add(source);
       return [
         {
@@ -200,18 +222,134 @@ function screenshots(form: URLSearchParams): PreviewScreenshot[] {
     });
 }
 
+function previewWarnings(kind: PreviewKind, form: URLSearchParams): string[] {
+  const warnings = new Set<string>();
+  const add = (field: string, issue = 'exceeds the save limit') =>
+    warnings.add(
+      `${field} ${issue}. The preview is bounded and your form value is unchanged.`,
+    );
+  const raw = (field: string) => form.get(field) ?? '';
+  const trimmed = (field: string) => raw(field).trim();
+  const checkLength = (field: string, maximum: number) => {
+    if (trimmed(field).length > maximum) add(field);
+  };
+  const list = (field: string) =>
+    trimmed(field)
+      .split(/\r?\n/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  const checkList = (
+    field: string,
+    count: number,
+    itemLength: number,
+    deduplicate = false,
+  ) => {
+    const items = list(field);
+    const effective = deduplicate ? [...new Set(items)] : items;
+    if (effective.length > count) add(field, `has more than ${count} entries`);
+    if (effective.some((item) => item.length > itemLength))
+      add(field, `contains an entry longer than ${itemLength} characters`);
+  };
+
+  checkLength('title', caps.title);
+  checkLength('description', caps.description);
+  checkLength('category', caps.category);
+  checkLength('summary', caps.summary);
+  if (kind === 'project') {
+    checkLength('role', caps.role);
+    checkLength('problem', caps.problem);
+    checkLength('solution', caps.solution);
+    checkLength('github', 2048);
+    checkLength('demo', 2048);
+    checkLength('cover', caps.cover);
+    for (const field of ['github', 'demo'] as const) {
+      if (trimmed(field) && !safeHttp(trimmed(field)))
+        add(field, 'must be a safe HTTP(S) URL');
+    }
+    checkList('stack', caps.stack, 40);
+    checkList('highlights', caps.highlights, 160);
+    const links = list('links');
+    if (links.length > caps.links)
+      add('links', `has more than ${caps.links} entries`);
+    if (
+      links.some((row) => {
+        const separator = row.indexOf('|');
+        if (separator < 1) return true;
+        const label = row.slice(0, separator).trim();
+        const href = row.slice(separator + 1).trim();
+        return label.length > 80 || href.length > 2048 || !safeHttp(href);
+      })
+    )
+      add('links', 'contains an invalid label or destination');
+    const body = raw('caseStudyBody');
+    if (body.length > 30000)
+      add('case-study body', 'exceeds 30,000 characters');
+    if (
+      form.get('replacesMdx') === 'on' &&
+      form.get('visible') === 'on' &&
+      !body.trim()
+    )
+      add('case-study body', 'is required for a visible MDX replacement');
+  } else if (kind === 'blog' || kind === 'note') {
+    checkList('tags', caps.tags, 40);
+    if (raw('body').length > caps.body)
+      add('body', 'exceeds 200,000 characters');
+    if (form.get('published') === 'on' && !raw('body').trim())
+      add('body', 'is required before publishing');
+    checkLength('cover', caps.cover);
+  } else {
+    checkList('tags', caps.tags, 40, true);
+    checkList('tools', caps.tools, 60, true);
+    checkList('lessons', caps.lessons, 500, true);
+    checkLength('repo', 2048);
+    checkLength('demo', 2048);
+    checkLength('relatedProject', 2048);
+    for (const field of ['repo', 'demo'] as const) {
+      if (trimmed(field) && !safeHttp(trimmed(field)))
+        add(field, 'must be a safe HTTP(S) URL');
+    }
+    const relatedProject = trimmed('relatedProject');
+    if (
+      relatedProject &&
+      !/^\/projects\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(relatedProject) &&
+      !safeHttp(relatedProject)
+    )
+      add('relatedProject', 'must be a project path or safe HTTP(S) URL');
+    if (raw('body').length > caps.body)
+      add('body', 'exceeds 200,000 characters');
+    if (form.get('visible') === 'on' && !raw('body').trim())
+      add('body', 'is required for a visible entry');
+  }
+
+  for (const [field, required] of [
+    [
+      kind === 'project'
+        ? 'projectDate'
+        : kind === 'lab'
+          ? 'date'
+          : 'createdAt',
+      kind !== 'project',
+    ],
+    ['updatedAt', false],
+  ] as const) {
+    const dateText = trimmed(field);
+    if (dateText && !dateLabel(dateText))
+      add(field, 'is not a valid calendar date');
+    else if (required && !dateText) add(field, 'is required before saving');
+  }
+  return [...warnings];
+}
+
 /** Normalize incomplete owner form state into the bounded display model used by private previews. */
 export function normalizeContentPreview(
   kind: PreviewKind,
   form: URLSearchParams,
 ): ContentPreviewData {
-  const rawDate =
-    kind === 'project'
-      ? value(form, 'projectDate', 10)
-      : kind === 'lab'
-        ? value(form, 'date', 10)
-        : value(form, 'createdAt', 10);
-  const relatedDate = value(form, 'updatedAt', 10);
+  const warnings = previewWarnings(kind, form);
+  const dateField =
+    kind === 'project' ? 'projectDate' : kind === 'lab' ? 'date' : 'createdAt';
+  const rawDate = (form.get(dateField) ?? '').trim();
+  const relatedDate = (form.get('updatedAt') ?? '').trim();
   const seenStack = new Set<string>();
   const stack = lines(form, 'stack', 100)
     .map((item) => item.slice(0, 40))
@@ -236,10 +374,14 @@ export function normalizeContentPreview(
   const lessons = rawLessons
     .slice(0, caps.lessons)
     .map((item) => item.slice(0, 500));
-  const coverValue = value(form, 'cover', caps.cover);
+  const coverValue = (form.get('cover') ?? '').trim();
   const cover =
     coverValue && isSafeImageReference(coverValue) ? coverValue : '';
-  const statusValue = value(form, 'status', 40);
+  if (coverValue && !cover)
+    warnings.push(
+      'Cover reference is not a supported safe image and is omitted from the preview.',
+    );
+  const statusValue = (form.get('status') ?? '').trim();
   const status =
     (kind === 'project' &&
       projectStatuses.includes(
@@ -249,7 +391,18 @@ export function normalizeContentPreview(
       labStatuses.includes(statusValue as (typeof labStatuses)[number]))
       ? statusValue
       : '';
-  const riskValue = value(form, 'risk', 20);
+  const riskValue = (form.get('risk') ?? '').trim();
+  if (statusValue && !status)
+    warnings.push(
+      'Status is not an available value and is omitted from the preview.',
+    );
+  const risk = labRisks.includes(riskValue as (typeof labRisks)[number])
+    ? riskValue
+    : '';
+  if (riskValue && !risk)
+    warnings.push(
+      'Risk is not an available value and is omitted from the preview.',
+    );
   return {
     kind,
     title: value(form, 'title', caps.title) || 'Untitled',
@@ -270,16 +423,15 @@ export function normalizeContentPreview(
     tags,
     tools,
     lessons,
-    risk: labRisks.includes(riskValue as (typeof labRisks)[number])
-      ? riskValue
-      : '',
+    risk,
     links:
       kind === 'project'
         ? projectLinks(form)
         : kind === 'lab'
           ? labLinks(form)
           : [],
-    screenshots: kind === 'project' ? screenshots(form) : [],
+    screenshots: kind === 'project' ? screenshots(form, warnings) : [],
+    warnings,
   };
 }
 

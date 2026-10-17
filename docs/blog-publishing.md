@@ -12,7 +12,7 @@ Blog is a database-backed writing area for longer articles, tutorials, and refle
 
 ## Private editor
 
-Use `/user/blog` to create and manage posts. The editor supports Markdown with a private preview, title, URL slug, description, optional short summary, category, tags, optional cover image, publication date, featured state, and publication state. Covers use the authenticated image uploader and remain optional. Markdown supports uploaded inline images with descriptive alt text. Published slug changes create permanent redirects. Up to 50 saved versions are available to restore.
+Use `/user/blog` to create and manage posts. The editor supports Markdown with a private preview, title, URL slug, description, optional short summary, category, tags, optional cover image, publication date, featured state, and publication state. Covers use the authenticated image uploader and remain optional. Markdown supports uploaded inline images with descriptive alt text. Historical slug aliases return a noncached 302 only while the owning post is published and unarchived; otherwise the alias returns a noncached 404. Alias records remain available if the post is republished. Up to 50 saved versions are available to restore.
 
 Unpublished posts stay private. Archiving keeps a post in the editor and its revision history but removes it from the archive, detail route, search, RSS, and sitemap. There is no hard delete. Saves require an authenticated owner session, a same-origin request, and validated fields.
 

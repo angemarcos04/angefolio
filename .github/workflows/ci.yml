@@ -54,6 +54,12 @@ jobs:
       - name: Build SSR server and public search index
         run: pnpm build
 
+      - name: Test public redirect privacy
+        run: pnpm test:redirects
+
+      - name: Test CMS slug ownership
+        run: pnpm test:slug-collisions
+
       - name: Test private publishing boundaries
         run: pnpm test:console
 

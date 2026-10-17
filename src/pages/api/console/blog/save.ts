@@ -6,7 +6,8 @@ import {
   saveBlogPost,
 } from '../../../../lib/server/blog';
 import {
-  getContentRedirectTarget,
+  getRedirectSlugOwnership,
+  isSlugUniqueConstraintError,
   SlugRedirectConflictError,
 } from '../../../../lib/server/redirects';
 import {
@@ -55,11 +56,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     const owner = await getBlogRecordBySlug(result.data.slug);
     if (owner && owner.id !== id) return invalid('slug', 'slug');
-    if (
-      !existing &&
-      (await getContentRedirectTarget(`/blog/${result.data.slug}`))
-    )
-      return invalid('slug', 'slug');
+    const redirectOwnership = await getRedirectSlugOwnership(
+      'blog',
+      result.data.slug,
+      existing?.id,
+    );
+    if (redirectOwnership === 'unavailable') return invalid('unavailable');
+    if (redirectOwnership === 'reserved') return invalid('slug', 'slug');
 
     const currentPublic = existing
       ? (await getPublicBlogCatalog()).some((post) => post.id === existing.id)
@@ -75,7 +78,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
       headers: { location: `/user/blog/${post.id}?notice=saved` },
     });
   } catch (error) {
-    if (error instanceof SlugRedirectConflictError)
+    if (
+      error instanceof SlugRedirectConflictError ||
+      isSlugUniqueConstraintError(error, 'blog')
+    )
       return invalid('slug', 'slug');
     return invalid('unavailable');
   }

@@ -10,6 +10,8 @@ Existing entries can stay in `src/content/lab/` as rollback copies. `pnpm lab:im
 
 Public archive grouping, details, search, and `/sitemap-lab.xml` read the same visible catalog. Public pages fail closed if the database cannot be read because an adopted entry might otherwise reappear after being hidden. Lab entries do not have an RSS feed.
 
+Historical slug aliases redirect with a noncached 302 only while the owning Lab entry is selected by the public catalog. Hidden entries and inactive database replacements return a noncached 404 through their old aliases; their redirect records remain available if visibility is restored.
+
 There is no hard delete or revision history yet. Source files remain available for rollback; switch a matching record back to MDX in the editor when needed.
 
 The shared Markdown editor can upload JPEG, PNG, or WebP images (up to 8 MB) and insert normal Markdown image syntax. Images use the authenticated media pipeline, are processed to WebP, and remain in SQLite; public Markdown rendering sanitizes image sources and attributes.

@@ -111,6 +111,20 @@
   </header>
   {#if preview}
     <div class="preview-page-content">
+      {#if preview.warnings.length}
+        <aside
+          class="preview-warnings"
+          role="status"
+          aria-label="Preview warnings"
+        >
+          <strong>Preview only — these values may not save</strong>
+          <ul>
+            {#each preview.warnings as warning}
+              <li>{warning}</li>
+            {/each}
+          </ul>
+        </aside>
+      {/if}
       {#if kind === 'project'}
         <article class="project-hero bento-surface subtle-grid">
           {#if preview.cover && isSafeImageReference(preview.cover)}
@@ -369,6 +383,24 @@
   .preview-error {
     color: var(--danger-text);
     font-size: 0.8rem;
+  }
+  .preview-warnings {
+    margin-bottom: 0.75rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--danger-text);
+    border-radius: var(--radius-sm);
+    background: var(--muted);
+    color: var(--foreground);
+    font-size: 0.78rem;
+  }
+  .preview-warnings strong {
+    color: var(--danger-text);
+  }
+  .preview-warnings ul {
+    display: grid;
+    gap: 0.3rem;
+    margin: 0.45rem 0 0;
+    padding-left: 1.1rem;
   }
   .page-preview {
     width: min(1100px, calc(100vw - 2rem));

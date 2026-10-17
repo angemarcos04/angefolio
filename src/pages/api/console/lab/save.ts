@@ -11,7 +11,15 @@ import {
 import { validateLabForm } from '../../../../lib/server/validation/lab';
 import { getPublicLabCatalog } from '../../../../lib/server/lab';
 import { getAllLabEntries } from '../../../../lib/content';
-import { SlugRedirectConflictError } from '../../../../lib/server/redirects';
+import {
+  isMdxSlugClaimConflict,
+  mdxSlugFromId,
+} from '../../../../lib/data/mdxSlug';
+import {
+  getRedirectSlugOwnership,
+  isSlugUniqueConstraintError,
+  SlugRedirectConflictError,
+} from '../../../../lib/server/redirects';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user)
@@ -51,16 +59,22 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     const owner = await getLabRecordBySlug(validated.data.slug);
     if (owner && owner.id !== id) return failure('slug', 'slug');
-    const mdxCollision = (await getAllLabEntries()).some(
-      (entry) => entry.id.replace(/\.(md|mdx)$/, '') === validated.data.slug,
+    const mdxCollision = isMdxSlugClaimConflict(
+      (await getAllLabEntries()).map((entry) => mdxSlugFromId(entry.id)),
+      validated.data.slug,
+      {
+        replacesMdx: validated.data.replacesMdx,
+        currentSlug: existing?.slug,
+      },
     );
-    if (
-      existing &&
-      existing.slug !== validated.data.slug &&
-      mdxCollision &&
-      !validated.data.replacesMdx
-    )
-      return failure('slug');
+    if (mdxCollision) return failure('slug', 'slug');
+    const redirectOwnership = await getRedirectSlugOwnership(
+      'lab',
+      validated.data.slug,
+      existing?.id,
+    );
+    if (redirectOwnership === 'unavailable') return failure('unavailable');
+    if (redirectOwnership === 'reserved') return failure('slug', 'slug');
     const currentPublic = existing
       ? (await getPublicLabCatalog()).some(
           (entry) =>
@@ -78,7 +92,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
       headers: { location: `/user/lab/${record.id}?notice=saved` },
     });
   } catch (error) {
-    if (error instanceof SlugRedirectConflictError)
+    if (
+      error instanceof SlugRedirectConflictError ||
+      isSlugUniqueConstraintError(error, 'lab')
+    )
       return failure('slug', 'slug');
     return failure('unavailable');
   }

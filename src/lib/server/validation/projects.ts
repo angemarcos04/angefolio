@@ -1,4 +1,10 @@
 import { isSafeImageReference } from '../../data/mediaReference';
+import {
+  isSafeHttpUrl,
+  PROJECT_SCREENSHOT_CAPTION_MAX_LENGTH,
+  PROJECT_SCREENSHOT_COUNT_MAX,
+  PROJECT_SCREENSHOT_ALT_MAX_LENGTH,
+} from '../../data/contentConstraints';
 
 export const projectStatuses = [
   'Planning',
@@ -85,12 +91,7 @@ function optionalValue(value: string): string | null {
 }
 
 function isHttpUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch {
-    return false;
-  }
+  return isSafeHttpUrl(value);
 }
 
 function readValues(form: URLSearchParams): ProjectFormValues {
@@ -256,18 +257,14 @@ export function validateProjectForm(
     }
   }
 
-  if (
-    values.cover &&
-    !(values.cover.startsWith('/') && !values.cover.startsWith('//')) &&
-    !isHttpUrl(values.cover)
-  ) {
-    errors.cover = 'Use a site path or HTTP(S) URL.';
+  if (values.cover && !isSafeImageReference(values.cover)) {
+    errors.cover = 'Use an uploaded image, site image, or HTTPS image URL.';
   }
-  if (values.cover.length > 2048) errors.cover = 'Cover path is too long.';
   let screenshots: ProjectScreenshot[] = [];
   try {
     const parsed: unknown = JSON.parse(values.screenshots);
-    if (!Array.isArray(parsed) || parsed.length > 8) throw new Error();
+    if (!Array.isArray(parsed) || parsed.length > PROJECT_SCREENSHOT_COUNT_MAX)
+      throw new Error();
     const seen = new Set<string>();
     for (const item of parsed) {
       if (!item || typeof item !== 'object' || Array.isArray(item))
@@ -286,12 +283,13 @@ export function validateProjectForm(
       if (
         typeof row.alt !== 'string' ||
         !row.alt.trim() ||
-        row.alt.length > 300
+        row.alt.length > PROJECT_SCREENSHOT_ALT_MAX_LENGTH
       )
         throw new Error();
       if (
         row.caption !== undefined &&
-        (typeof row.caption !== 'string' || row.caption.length > 200)
+        (typeof row.caption !== 'string' ||
+          row.caption.length > PROJECT_SCREENSHOT_CAPTION_MAX_LENGTH)
       )
         throw new Error();
       seen.add(row.src);

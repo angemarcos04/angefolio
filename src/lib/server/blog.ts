@@ -3,7 +3,11 @@ import { auditEvent } from './audit';
 import { getDatabase, migrateDatabase } from './db/client';
 import { auditLog, blogRecords, contentRevisions } from './db/schema';
 import { pruneContentRevisions, revisionValues } from './revisions';
-import { recordSlugRedirect, getRedirectSourcePaths } from './redirects';
+import {
+  assertContentSlugAvailable,
+  recordSlugRedirect,
+  getRedirectSourcePaths,
+} from './redirects';
 import type { BlogRecordInput } from './validation/blog';
 
 export type BlogRecord = typeof blogRecords.$inferSelect;
@@ -67,6 +71,7 @@ export async function saveBlogPost(
     const existing = id
       ? await tx.query.blogRecords.findFirst({ where: eq(blogRecords.id, id) })
       : undefined;
+    await assertContentSlugAvailable(tx, 'blog', input.slug, existing?.id);
     if (redirectSlugChange && existing && existing.slug !== input.slug) {
       await recordSlugRedirect(
         tx,

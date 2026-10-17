@@ -5,7 +5,7 @@ import { getDatabase, migrateDatabase } from './db/client';
 import { auditLog, contentRevisions, labRecords } from './db/schema';
 import { pruneContentRevisions, revisionValues } from './revisions';
 import { getAllLabEntries } from '../content';
-import { recordSlugRedirect } from './redirects';
+import { assertContentSlugAvailable, recordSlugRedirect } from './redirects';
 import type { LabRecordInput } from './validation/lab';
 import { getRedirectSourcePaths } from './redirects';
 
@@ -13,6 +13,8 @@ export type LabRecord = typeof labRecords.$inferSelect;
 
 export interface PublicLabEntry {
   source: 'mdx' | 'database';
+  /** Present for database records; used to verify historical alias ownership. */
+  id?: string;
   slug: string;
   title: string;
   description: string;
@@ -61,6 +63,7 @@ function fromMdx(entry: CollectionEntry<'lab'>): PublicLabEntry {
 function fromRecord(record: LabRecord): PublicLabEntry {
   return {
     source: 'database',
+    id: record.id,
     slug: record.slug,
     title: record.title,
     description: record.description,
@@ -149,6 +152,7 @@ export async function saveLabRecord(
     const existing = id
       ? await tx.query.labRecords.findFirst({ where: eq(labRecords.id, id) })
       : undefined;
+    await assertContentSlugAvailable(tx, 'lab', input.slug, existing?.id);
     if (redirectSlugChange && existing && existing.slug !== input.slug) {
       await recordSlugRedirect(
         tx,

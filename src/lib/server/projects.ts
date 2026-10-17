@@ -3,7 +3,7 @@ import { auditEvent } from './audit';
 import { getDatabase, migrateDatabase } from './db/client';
 import { auditLog, contentRevisions, projectRecords } from './db/schema';
 import { pruneContentRevisions, revisionValues } from './revisions';
-import { recordSlugRedirect } from './redirects';
+import { assertContentSlugAvailable, recordSlugRedirect } from './redirects';
 import {
   projectStatuses,
   type ProjectRecordInput,
@@ -87,6 +87,7 @@ export async function createProjectRecord(
   await migrateDatabase();
   const now = new Date();
   return getDatabase().transaction(async (transaction) => {
+    await assertContentSlugAvailable(transaction, 'project', input.slug);
     const [record] = await transaction
       .insert(projectRecords)
       .values({
@@ -124,6 +125,7 @@ export async function updateProjectRecord(
       .from(projectRecords)
       .where(eq(projectRecords.id, id));
     if (!existing) return undefined;
+    await assertContentSlugAvailable(transaction, 'project', input.slug, id);
     if (redirectSlugChange && existing.slug !== input.slug) {
       await recordSlugRedirect(
         transaction,
