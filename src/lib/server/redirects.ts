@@ -120,15 +120,40 @@ interface RawTransaction {
   run(query: SQL): Promise<unknown>;
 }
 
+/** Keep aliases already owned by an entity pointed at its current canonical
+ * path. This deliberately does not create an alias for the previous slug, so
+ * private-only slugs do not become public URL history. */
+export async function repointExistingContentAliases(
+  transaction: unknown,
+  type: RedirectEntityType,
+  entityId: string,
+  toSlug: string,
+): Promise<void> {
+  const toPath = contentPath(type, toSlug);
+  await (transaction as RawTransaction).run(sql`
+    UPDATE content_redirects
+    SET to_path = ${toPath}
+    WHERE entity_type = ${type}
+      AND entity_id = ${entityId}
+      AND from_path <> ${toPath}
+  `);
+}
+
 async function redirectOwner(
   transaction: RawTransaction,
   path: string,
-): Promise<string | null> {
+): Promise<{ entityType: string; entityId: string } | null> {
   const result = (await transaction.run(sql`
-    SELECT entity_id FROM content_redirects WHERE from_path = ${path} LIMIT 1
+    SELECT entity_type, entity_id
+    FROM content_redirects
+    WHERE from_path = ${path}
+    LIMIT 1
   `)) as { rows?: Array<Record<string, unknown>> };
-  const owner = result.rows?.[0]?.entity_id;
-  return typeof owner === 'string' ? owner : null;
+  const row = result.rows?.[0];
+  return typeof row?.entity_type === 'string' &&
+    typeof row.entity_id === 'string'
+    ? { entityType: row.entity_type, entityId: row.entity_id }
+    : null;
 }
 
 export async function recordSlugRedirect(
@@ -145,22 +170,27 @@ export async function recordSlugRedirect(
   const tx = transaction as RawTransaction;
 
   const reclaimedOwner = await redirectOwner(tx, toPath);
-  if (reclaimedOwner && reclaimedOwner !== entityId) {
+  if (
+    reclaimedOwner &&
+    (reclaimedOwner.entityType !== type || reclaimedOwner.entityId !== entityId)
+  ) {
     throw new SlugRedirectConflictError();
   }
-  if (reclaimedOwner === entityId) {
+  if (reclaimedOwner) {
     await tx.run(
-      sql`DELETE FROM content_redirects WHERE from_path = ${toPath}`,
+      sql`DELETE FROM content_redirects
+        WHERE from_path = ${toPath}
+          AND entity_type = ${type}
+          AND entity_id = ${entityId}`,
     );
   }
 
   const sourceOwner = await redirectOwner(tx, fromPath);
   if (sourceOwner) throw new SlugRedirectConflictError();
 
-  // Keep every earlier alias pointed directly at the newest canonical URL.
-  await tx.run(sql`
-    UPDATE content_redirects SET to_path = ${toPath} WHERE to_path = ${fromPath}
-  `);
+  // Keep only this entity's earlier aliases pointed directly at its newest
+  // canonical URL. The scoped helper never creates an alias for fromSlug.
+  await repointExistingContentAliases(tx, type, entityId, toSlug);
   await tx.run(sql`
     INSERT INTO content_redirects (from_path, to_path, entity_type, entity_id, created_at)
     VALUES (${fromPath}, ${toPath}, ${type}, ${entityId}, ${Math.floor(Date.now() / 1000)})

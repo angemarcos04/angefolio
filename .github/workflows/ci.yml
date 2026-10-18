@@ -60,6 +60,12 @@ jobs:
       - name: Test CMS slug ownership
         run: pnpm test:slug-collisions
 
+      - name: Test revision restoration atomicity
+        run: pnpm test:revision-atomicity
+
+      - name: Test revision restoration slug ownership
+        run: pnpm test:revision-slug-ownership
+
       - name: Test private publishing boundaries
         run: pnpm test:console
 

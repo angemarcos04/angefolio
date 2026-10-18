@@ -5,7 +5,11 @@ import { getDatabase, migrateDatabase } from './db/client';
 import { auditLog, contentRevisions, noteRecords } from './db/schema';
 import { pruneContentRevisions, revisionValues } from './revisions';
 import { getAllNotes } from '../content';
-import { assertContentSlugAvailable, recordSlugRedirect } from './redirects';
+import {
+  assertContentSlugAvailable,
+  recordSlugRedirect,
+  repointExistingContentAliases,
+} from './redirects';
 import type { NoteRecordInput } from './validation/notes';
 import { getRedirectSourcePaths } from './redirects';
 
@@ -149,6 +153,8 @@ export async function saveNote(
         existing.slug,
         input.slug,
       );
+    } else if (existing && existing.slug !== input.slug) {
+      await repointExistingContentAliases(tx, 'note', existing.id, input.slug);
     }
     const [record] = existing
       ? await tx

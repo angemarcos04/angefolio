@@ -7,6 +7,7 @@ import {
 } from './contentConstraints';
 import { labRisks, labStatuses } from '../server/validation/lab';
 import { projectStatuses } from '../server/validation/projects';
+import { normalizeProjectDisplayLinks } from './projectLinks';
 
 export type PreviewKind = 'project' | 'blog' | 'note' | 'lab';
 
@@ -126,7 +127,7 @@ function projectLinks(form: URLSearchParams): PreviewLink[] {
     if (label && safeHttp(href))
       candidates.push({ label, href, external: true });
   }
-  return candidates;
+  return normalizeProjectDisplayLinks(candidates);
 }
 
 function labLinks(form: URLSearchParams): PreviewLink[] {

@@ -6,6 +6,7 @@ import { pruneContentRevisions, revisionValues } from './revisions';
 import {
   assertContentSlugAvailable,
   recordSlugRedirect,
+  repointExistingContentAliases,
   getRedirectSourcePaths,
 } from './redirects';
 import type { BlogRecordInput } from './validation/blog';
@@ -81,6 +82,8 @@ export async function saveBlogPost(
         existing.slug,
         input.slug,
       );
+    } else if (existing && existing.slug !== input.slug) {
+      await repointExistingContentAliases(tx, 'blog', existing.id, input.slug);
     }
     const [record] = existing
       ? await tx

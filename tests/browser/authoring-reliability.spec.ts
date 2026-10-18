@@ -500,6 +500,73 @@ test.describe('authoring form reliability', () => {
     );
   });
 
+  test('Project preview deduplicates action destinations without changing form values', async ({
+    page,
+  }) => {
+    const unique = `project-links-${Date.now()}`;
+    await openEditor(page, 'projects');
+    await fillRequiredFields(page, 'projects', unique);
+    const form = page.locator('form[id$="-editor"]');
+    await form.locator('details.authoring-section').evaluate((section) => {
+      (section as HTMLDetailsElement).open = true;
+    });
+    await form.locator('[name="demo"]').fill('https://example.com/app');
+    await form.locator('[name="github"]').fill('https://example.com/app');
+    await form
+      .locator('[name="links"]')
+      .fill(
+        'Documentation | https://example.com/docs\nManual | https://example.com/docs',
+      );
+    const originalValues = await Promise.all(
+      ['demo', 'github', 'links'].map((name) =>
+        form.locator(`[name="${name}"]`).inputValue(),
+      ),
+    );
+
+    await page.getByRole('button', { name: 'Preview Page' }).click();
+    const dialog = page.locator('dialog.page-preview');
+    const actions = dialog.locator('.hero-links a');
+    await expect(actions).toHaveCount(2);
+    await expect(actions.nth(0)).toContainText('Live demo');
+    await expect(actions.nth(0)).toHaveAttribute(
+      'href',
+      'https://example.com/app',
+    );
+    await expect(actions.nth(1)).toContainText('Documentation');
+    await expect(actions.nth(1)).toHaveAttribute(
+      'href',
+      'https://example.com/docs',
+    );
+
+    await page.getByRole('button', { name: 'Close page preview' }).click();
+    const currentValues = await Promise.all(
+      ['demo', 'github', 'links'].map((name) =>
+        form.locator(`[name="${name}"]`).inputValue(),
+      ),
+    );
+    expect(currentValues).toEqual(originalValues);
+    await expect(page.locator('#authoring-status')).toHaveText(
+      'Unsaved changes',
+    );
+
+    await form.locator('[name="visible"]').check();
+    await page.getByRole('button', { name: 'Create project' }).click();
+    await expect(page).toHaveURL(/\/user\/projects\?notice=created/);
+    await page.goto(`/projects/r2-projects-${unique}`);
+    const publicActions = page.locator('.hero-links a');
+    await expect(publicActions).toHaveCount(2);
+    await expect(publicActions.nth(0)).toContainText('Live demo');
+    await expect(publicActions.nth(0)).toHaveAttribute(
+      'href',
+      'https://example.com/app',
+    );
+    await expect(publicActions.nth(1)).toContainText('Documentation');
+    await expect(publicActions.nth(1)).toHaveAttribute(
+      'href',
+      'https://example.com/docs',
+    );
+  });
+
   test('private page previews reflect the current unsaved presentation data for every collection', async ({
     page,
   }) => {
@@ -524,9 +591,12 @@ test.describe('authoring form reliability', () => {
         await form.locator('[name="stack"]').fill('Astro\nTypeScript');
         await form.locator('[name="problem"]').fill('Preview problem');
         await form.locator('[name="demo"]').fill('https://example.com/demo');
+        await form.locator('[name="github"]').fill('https://example.com/demo');
         await form
           .locator('[name="links"]')
-          .fill('Documentation | https://example.com/docs');
+          .fill(
+            'Documentation | https://example.com/docs\nManual | https://example.com/docs',
+          );
       } else if (collection === 'blog' || collection === 'notes') {
         await form.locator('details.authoring-section').evaluate((section) => {
           (section as HTMLDetailsElement).open = true;
@@ -568,13 +638,32 @@ test.describe('authoring form reliability', () => {
         );
       }
       if (collection === 'projects') {
+        const demoValue = await form.locator('[name="demo"]').inputValue();
+        const githubValue = await form.locator('[name="github"]').inputValue();
+        const linksValue = await form.locator('[name="links"]').inputValue();
         await expect(
           dialog.getByRole('link', { name: /Live demo/ }),
         ).toHaveAttribute('href', 'https://example.com/demo');
         await expect(
           dialog.getByRole('link', { name: 'Documentation' }),
         ).toHaveAttribute('href', 'https://example.com/docs');
+        await expect(dialog.locator('.hero-links a')).toHaveCount(2);
+        await expect(dialog.locator('.hero-links a').nth(0)).toContainText(
+          'Live demo',
+        );
+        await expect(dialog.locator('.hero-links a').nth(1)).toContainText(
+          'Documentation',
+        );
         await expect(dialog.getByText('Preview problem')).toBeVisible();
+        await page.getByRole('button', { name: 'Close page preview' }).click();
+        await expect(form.locator('[name="demo"]')).toHaveValue(demoValue);
+        await expect(form.locator('[name="github"]')).toHaveValue(githubValue);
+        await expect(form.locator('[name="links"]')).toHaveValue(linksValue);
+        await expect(page.locator('#authoring-status')).toHaveText(
+          'Unsaved changes',
+        );
+        await page.getByRole('button', { name: 'Preview Page' }).click();
+        await expect(dialog).toBeVisible();
       } else if (collection === 'blog' || collection === 'notes') {
         await expect(dialog.getByText('Preview summary')).toBeVisible();
         await expect(

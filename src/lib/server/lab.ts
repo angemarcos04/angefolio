@@ -5,7 +5,11 @@ import { getDatabase, migrateDatabase } from './db/client';
 import { auditLog, contentRevisions, labRecords } from './db/schema';
 import { pruneContentRevisions, revisionValues } from './revisions';
 import { getAllLabEntries } from '../content';
-import { assertContentSlugAvailable, recordSlugRedirect } from './redirects';
+import {
+  assertContentSlugAvailable,
+  recordSlugRedirect,
+  repointExistingContentAliases,
+} from './redirects';
 import type { LabRecordInput } from './validation/lab';
 import { getRedirectSourcePaths } from './redirects';
 
@@ -162,6 +166,8 @@ export async function saveLabRecord(
         existing.slug,
         input.slug,
       );
+    } else if (existing && existing.slug !== input.slug) {
+      await repointExistingContentAliases(tx, 'lab', existing.id, input.slug);
     }
     const [record] = existing
       ? await tx

@@ -223,6 +223,68 @@ test('historical aliases follow public owners across all content collections', a
       302,
       '/projects/f1-project-renamed',
     );
+    await postForm(
+      origin,
+      `/api/console/projects/${projectId}/toggle-visible`,
+      { intent: 'toggle-visible' },
+      cookie,
+    );
+    const projectPrivateRename = await postForm(
+      origin,
+      `/api/console/projects/${projectId}/update`,
+      { ...projectFields, slug: 'f1-project-private', visible: '' },
+      cookie,
+    );
+    assert.equal(projectPrivateRename.status, 303);
+    const projectAliasAfterPrivateRename = await database.execute({
+      sql: 'SELECT from_path, to_path, entity_id FROM content_redirects WHERE from_path = ?',
+      args: ['/projects/f1-project-original'],
+    });
+    assert.deepEqual(projectAliasAfterPrivateRename.rows, [
+      {
+        from_path: '/projects/f1-project-original',
+        to_path: '/projects/f1-project-private',
+        entity_id: projectId,
+      },
+    ]);
+    assert.equal(
+      (
+        await database.execute({
+          sql: 'SELECT COUNT(*) AS count FROM content_redirects WHERE from_path = ?',
+          args: ['/projects/f1-project-renamed'],
+        })
+      ).rows[0]?.count,
+      0,
+    );
+    await assertAlias(origin, '/projects/f1-project-original', 404);
+    const projectPrivateRenameAgain = await postForm(
+      origin,
+      `/api/console/projects/${projectId}/update`,
+      { ...projectFields, slug: 'f1-project-private-again', visible: '' },
+      cookie,
+    );
+    assert.equal(projectPrivateRenameAgain.status, 303);
+    assert.equal(
+      (
+        await database.execute({
+          sql: 'SELECT to_path FROM content_redirects WHERE from_path = ?',
+          args: ['/projects/f1-project-original'],
+        })
+      ).rows[0]?.to_path,
+      '/projects/f1-project-private-again',
+    );
+    await postForm(
+      origin,
+      `/api/console/projects/${projectId}/toggle-visible`,
+      { intent: 'toggle-visible' },
+      cookie,
+    );
+    await assertAlias(
+      origin,
+      '/projects/f1-project-original',
+      302,
+      '/projects/f1-project-private-again',
+    );
 
     const blogFields = {
       slug: 'f1-blog-original',
@@ -270,13 +332,70 @@ test('historical aliases follow public owners across all content collections', a
     assert.equal(hiddenBlogRow.rows[0]?.archived, 0);
     await assertAlias(origin, '/blog/f1-blog-original', 404);
     await assertAlias(origin, '/blog/f1-blog-renamed', 404, undefined, false);
+    const blogPrivateRename = await postForm(
+      origin,
+      '/api/console/blog/save',
+      {
+        ...blogFields,
+        id: blogId,
+        slug: 'f1-blog-private',
+        published: '',
+      },
+      cookie,
+    );
+    assert.equal(blogPrivateRename.status, 303);
+    assert.deepEqual(
+      (
+        await database.execute({
+          sql: 'SELECT from_path, to_path, entity_id FROM content_redirects WHERE from_path = ?',
+          args: ['/blog/f1-blog-original'],
+        })
+      ).rows,
+      [
+        {
+          from_path: '/blog/f1-blog-original',
+          to_path: '/blog/f1-blog-private',
+          entity_id: blogId,
+        },
+      ],
+    );
+    assert.equal(
+      (
+        await database.execute({
+          sql: 'SELECT COUNT(*) AS count FROM content_redirects WHERE from_path = ?',
+          args: ['/blog/f1-blog-renamed'],
+        })
+      ).rows[0]?.count,
+      0,
+    );
+    await postForm(
+      origin,
+      '/api/console/blog/save',
+      {
+        ...blogFields,
+        id: blogId,
+        slug: 'f1-blog-private-again',
+        published: '',
+      },
+      cookie,
+    );
+    assert.equal(
+      (
+        await database.execute({
+          sql: 'SELECT to_path FROM content_redirects WHERE from_path = ?',
+          args: ['/blog/f1-blog-original'],
+        })
+      ).rows[0]?.to_path,
+      '/blog/f1-blog-private-again',
+    );
+    await assertAlias(origin, '/blog/f1-blog-original', 404);
     const blogRepublished = await postForm(
       origin,
       '/api/console/blog/save',
       {
         ...blogFields,
         id: blogId,
-        slug: 'f1-blog-renamed',
+        slug: 'f1-blog-private-again',
         published: 'on',
       },
       cookie,
@@ -286,16 +405,19 @@ test('historical aliases follow public owners across all content collections', a
       origin,
       '/blog/f1-blog-original',
       302,
-      '/blog/f1-blog-renamed',
+      '/blog/f1-blog-private-again',
     );
-    assert.equal((await fetch(`${origin}/blog/f1-blog-renamed`)).status, 200);
+    assert.equal(
+      (await fetch(`${origin}/blog/f1-blog-private-again`)).status,
+      200,
+    );
     const blogArchived = await postForm(
       origin,
       '/api/console/blog/save',
       {
         ...blogFields,
         id: blogId,
-        slug: 'f1-blog-renamed',
+        slug: 'f1-blog-private-again',
         published: 'on',
         archived: 'on',
       },
@@ -309,7 +431,7 @@ test('historical aliases follow public owners across all content collections', a
       {
         ...blogFields,
         id: blogId,
-        slug: 'f1-blog-renamed',
+        slug: 'f1-blog-private-again',
         published: 'on',
         archived: '',
       },
@@ -334,25 +456,31 @@ test('historical aliases follow public owners across all content collections', a
       302,
       '/blog/f1-blog-latest',
     );
-    await assertAlias(
-      origin,
-      '/blog/f1-blog-renamed',
-      302,
-      '/blog/f1-blog-latest',
-    );
+    // The intermediate slug was not captured as a redirect when the record
+    // was private; it must not be promoted to a new public alias later.
+    await assertAlias(origin, '/blog/f1-blog-renamed', 404, undefined, false);
     const blogSearch = await (
       await fetch(`${origin}/api/search/blog?q=F1%20Blog`)
     ).text();
     assert.match(blogSearch, /f1-blog-latest/);
-    assert.doesNotMatch(blogSearch, /f1-blog-original|f1-blog-renamed/);
+    assert.doesNotMatch(
+      blogSearch,
+      /f1-blog-original|f1-blog-renamed|f1-blog-private-again/,
+    );
     const blogSitemap = await (
       await fetch(`${origin}/sitemap-blog.xml`)
     ).text();
     assert.match(blogSitemap, /\/blog\/f1-blog-latest/);
-    assert.doesNotMatch(blogSitemap, /f1-blog-original|f1-blog-renamed/);
+    assert.doesNotMatch(
+      blogSitemap,
+      /f1-blog-original|f1-blog-renamed|f1-blog-private-again/,
+    );
     const blogRss = await (await fetch(`${origin}/blog/rss.xml`)).text();
     assert.match(blogRss, /\/blog\/f1-blog-latest/);
-    assert.doesNotMatch(blogRss, /f1-blog-original|f1-blog-renamed/);
+    assert.doesNotMatch(
+      blogRss,
+      /f1-blog-original|f1-blog-renamed|f1-blog-private-again/,
+    );
 
     const noteFields = {
       slug: 'f1-note-original',
@@ -389,13 +517,39 @@ test('historical aliases follow public owners across all content collections', a
     );
     assert.equal(noteHidden.status, 303);
     await assertAlias(origin, '/notes/f1-note-original', 404);
+    const notePrivateRename = await postForm(
+      origin,
+      '/api/console/notes/save',
+      { ...noteFields, id: noteId, slug: 'f1-note-private', published: '' },
+      cookie,
+    );
+    assert.equal(notePrivateRename.status, 303);
+    assert.equal(
+      (
+        await database.execute({
+          sql: 'SELECT to_path FROM content_redirects WHERE from_path = ?',
+          args: ['/notes/f1-note-original'],
+        })
+      ).rows[0]?.to_path,
+      '/notes/f1-note-private',
+    );
+    assert.equal(
+      (
+        await database.execute({
+          sql: 'SELECT COUNT(*) AS count FROM content_redirects WHERE from_path = ?',
+          args: ['/notes/f1-note-renamed'],
+        })
+      ).rows[0]?.count,
+      0,
+    );
+    await assertAlias(origin, '/notes/f1-note-original', 404);
     const noteRepublished = await postForm(
       origin,
       '/api/console/notes/save',
       {
         ...noteFields,
         id: noteId,
-        slug: 'f1-note-renamed',
+        slug: 'f1-note-private',
         published: 'on',
       },
       cookie,
@@ -405,7 +559,7 @@ test('historical aliases follow public owners across all content collections', a
       origin,
       '/notes/f1-note-original',
       302,
-      '/notes/f1-note-renamed',
+      '/notes/f1-note-private',
     );
 
     const labFields = {
@@ -458,10 +612,36 @@ test('historical aliases follow public owners across all content collections', a
     );
     assert.equal(labHidden.status, 303);
     await assertAlias(origin, '/lab/f1-lab-original', 404);
+    const labPrivateRename = await postForm(
+      origin,
+      '/api/console/lab/save',
+      { ...labFields, id: labId, slug: 'f1-lab-private', visible: '' },
+      cookie,
+    );
+    assert.equal(labPrivateRename.status, 303);
+    assert.equal(
+      (
+        await database.execute({
+          sql: 'SELECT to_path FROM content_redirects WHERE from_path = ?',
+          args: ['/lab/f1-lab-original'],
+        })
+      ).rows[0]?.to_path,
+      '/lab/f1-lab-private',
+    );
+    assert.equal(
+      (
+        await database.execute({
+          sql: 'SELECT COUNT(*) AS count FROM content_redirects WHERE from_path = ?',
+          args: ['/lab/f1-lab-renamed'],
+        })
+      ).rows[0]?.count,
+      0,
+    );
+    await assertAlias(origin, '/lab/f1-lab-original', 404);
     const labVisible = await postForm(
       origin,
       '/api/console/lab/save',
-      { ...labFields, id: labId, slug: 'f1-lab-renamed' },
+      { ...labFields, id: labId, slug: 'f1-lab-private' },
       cookie,
     );
     assert.equal(labVisible.status, 303);
@@ -469,7 +649,7 @@ test('historical aliases follow public owners across all content collections', a
       origin,
       '/lab/f1-lab-original',
       302,
-      '/lab/f1-lab-renamed',
+      '/lab/f1-lab-private',
     );
 
     // Tampering with a destination must not create an open redirect or point

@@ -60,6 +60,9 @@ try {
     'test',
     'tests/browser/authoring-reliability.spec.ts',
     '--workers=1',
+    ...(process.env.AUTHORING_GREP
+      ? ['--grep', process.env.AUTHORING_GREP]
+      : []),
   ]);
 } finally {
   await rm(directory, { recursive: true, force: true });

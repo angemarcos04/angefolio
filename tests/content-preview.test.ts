@@ -148,7 +148,11 @@ test('project preview normalizes unsaved metadata, actions, and screenshots like
   assert.deepEqual(preview.stack, ['Astro', 'TypeScript']);
   assert.deepEqual(
     preview.links.map(({ label }) => label),
-    ['Live demo', 'GitHub', 'Documentation'],
+    ['Live demo', 'Documentation'],
+  );
+  assert.deepEqual(
+    preview.links.map(({ href }) => href),
+    ['https://example.com/demo', 'https://example.com/docs'],
   );
   assert.deepEqual(preview.screenshots, [
     {

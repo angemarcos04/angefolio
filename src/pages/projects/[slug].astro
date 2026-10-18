@@ -10,6 +10,7 @@ import StatusPill from '../../components/astro/StatusPill.astro';
 import Tag from '../../components/astro/Tag.astro';
 import { formatPageTitle } from '../../lib/data/pageTitle';
 import { renderProjectMarkdownDocument } from '../../lib/server/markdown';
+import { normalizeProjectDisplayLinks } from '../../lib/data/projectLinks';
 import {
   getPublicProjectCatalog,
   publicProjectUrl,
@@ -109,23 +110,6 @@ const cover = data.cover?.trim() || null;
 const screenshots = data.screenshots.filter((item) => item.src !== cover);
 const stackItems = data.stack.filter((item) => item.trim());
 
-function safeProjectHref(href: string, external: boolean): string | undefined {
-  const value = href.trim();
-  if (!value) return undefined;
-  if (!external && value.startsWith('/') && !value.startsWith('//')) {
-    return value;
-  }
-  if (!external && value.startsWith('#')) return value;
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:'
-      ? value
-      : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 const candidates = [
   ...(data.demo
     ? [{ label: 'Live demo', href: data.demo, external: true }]
@@ -135,13 +119,7 @@ const candidates = [
     : []),
   ...data.links,
 ];
-const seenLinks = new Set<string>();
-const projectLinks = candidates.flatMap((link) => {
-  const href = safeProjectHref(link.href, link.external ?? false);
-  if (!href || seenLinks.has(href)) return [];
-  seenLinks.add(href);
-  return [{ ...link, href, external: link.external ?? false }];
-});
+const projectLinks = normalizeProjectDisplayLinks(candidates);
 const hasSummary = Boolean(
   data.problem?.trim() ||
   data.solution?.trim() ||

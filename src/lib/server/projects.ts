@@ -3,7 +3,11 @@ import { auditEvent } from './audit';
 import { getDatabase, migrateDatabase } from './db/client';
 import { auditLog, contentRevisions, projectRecords } from './db/schema';
 import { pruneContentRevisions, revisionValues } from './revisions';
-import { assertContentSlugAvailable, recordSlugRedirect } from './redirects';
+import {
+  assertContentSlugAvailable,
+  recordSlugRedirect,
+  repointExistingContentAliases,
+} from './redirects';
 import {
   projectStatuses,
   type ProjectRecordInput,
@@ -133,6 +137,13 @@ export async function updateProjectRecord(
         'project',
         id,
         existing.slug,
+        input.slug,
+      );
+    } else if (existing.slug !== input.slug) {
+      await repointExistingContentAliases(
+        transaction,
+        'project',
+        existing.id,
         input.slug,
       );
     }
