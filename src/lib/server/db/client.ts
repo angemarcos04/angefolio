@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { getServerEnv, isProduction } from '../env';
+import { getServerEnv, isProduction, requireServerEnv } from '../env';
 import { schema } from './schema';
 
 function getDatabaseUrl(): string {
@@ -28,7 +28,12 @@ function ensureLocalDatabaseDirectory(url: string): void {
 function createDatabase() {
   const url = getDatabaseUrl();
   ensureLocalDatabaseDirectory(url);
-  client = createClient({ url });
+  client = createClient({
+    url,
+    authToken: url.startsWith('file:')
+      ? undefined
+      : requireServerEnv('TURSO_AUTH_TOKEN'),
+  });
   return drizzle(client, { schema });
 }
 

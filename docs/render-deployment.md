@@ -1,59 +1,49 @@
-# Deploy angefolio on Render
+# Deploy angefolio on Render Free with Turso
 
-This repository includes a Render Blueprint at [`render.yaml`](../render.yaml). It defines one Docker web service with a persistent disk at `/app/data`, where SQLite stores the owner account, sessions, authored content, revisions, and project images. Review the paid compute plan, 5 GB disk, and Singapore region before creating the service. The region cannot be changed later, and the disk cannot be made smaller. Automatic deploys are off in the Blueprint so later Git pushes do not publish by themselves.
-
-The Free web service is unsuitable for the current writer workspace: its local filesystem is lost on restart or redeploy, and Free services cannot attach a persistent disk. The app also needs a Node server, so it cannot be deployed as a static site.
+The [`render.yaml`](../render.yaml) Blueprint defines one Docker web service on the Free plan. Auth, sessions, authored content, revisions, and images live in a Turso **libSQL** database. The web service has no persistent disk. Automatic deploys are off.
 
 ## Before creating the service
 
-1. Review the public copy and images in the repository. A fresh Render disk starts without the local owner account or locally authored content; ignored local database files are not part of Git or the Docker image.
-2. Keep a strong owner password in a password manager. The Blueprint creates a stable random `AUTH_SECRET` in Render; do not replace it casually because changing it signs out existing sessions.
-3. If you want a custom domain immediately, add `PUBLIC_SITE_URL` with its full HTTPS origin to the service environment before the first build. Otherwise the site uses Render's `RENDER_EXTERNAL_URL` for generated links and authentication. You can set a custom domain later and redeploy.
+1. Confirm that any older Render disk contains no content to preserve. Removing a disk or replacing its service loses its local SQLite database. If an older service has a disk, create a new Free service and retire the old one only after verification.
+2. Install and log in to the [Turso CLI](https://github.com/tursodatabase/turso-cli), then create a libSQL database: `turso db create angefolio`. Do not pass `--tursodb`; this app uses `@libsql/client`.
+3. Get the database URL with `turso db show angefolio --url`, and create a token with `turso db tokens create angefolio`. Keep the token in a private file or password manager, outside Git.
+4. Apply the committed migration history from your trusted machine with `DATABASE_URL` set to the Turso URL and `TURSO_AUTH_TOKEN` set to the token: `pnpm db:migrate`. Confirm all 13 migrations are present before bootstrapping the owner.
 
-## Create and check the service
+## Create the Free service
 
-1. In the Render Dashboard, create a **Blueprint** from this GitHub repository and review the resources in `render.yaml` before approving the paid service and disk. This does not happen when the file is merely committed to Git.
-2. Allow the first deploy. Render builds the existing Dockerfile, mounts `/app/data`, and runs committed Drizzle migrations during container startup. Do not move migrations into a Render pre-deploy command: Render does not expose the attached disk there.
-3. Open `/health/ready` on the new service URL. It must return HTTP 200 with `{"status":"ready"}` before using `/user`. A failed check means the application or its SQLite migration is not ready; inspect Render logs.
-4. Open the public homepage and `/user/login`. The sign-in form is expected, but there is no account until the one-time bootstrap below.
+Create a new Render Blueprint from this repository and review the service before deploying. On the initial Blueprint setup, enter:
 
-Render supplies the port through the Blueprint as `4321`, matching the Docker health probe. The container binds to `0.0.0.0`. The database URL is `file:/app/data/angefolio.db`; only `/app/data` persists across deploys.
+- `DATABASE_URL`: the `libsql://...` URL from Turso.
+- `TURSO_AUTH_TOKEN`: the private database token.
+- `PUBLIC_SITE_URL`: the actual HTTPS origin of the new Render service, or its custom domain.
 
-## Create the owner account once
+The Blueprint generates `AUTH_SECRET` and sets `PORT=4321`. Its Docker startup applies any pending committed migrations before starting Astro. `/health/ready` must return HTTP 200 with `{"status":"ready"}`. Check the Render logs if it returns 503.
 
-Open the running web service's **Shell** in Render and run:
+For an **existing** Blueprint, Render ignores `sync: false` variables on later syncs and preserves older environment values omitted from the YAML. Set or replace `DATABASE_URL`, `TURSO_AUTH_TOKEN`, and `PUBLIC_SITE_URL` manually in the Dashboard. Check that `DATABASE_URL` no longer points at `file:/app/data/angefolio.db`. A Free service cannot use a persistent disk.
 
-```sh
-cd /app
-./node_modules/.bin/tsx scripts/create-admin.ts
-```
+## Bootstrap the owner
 
-The command asks for the owner email and a password twice without echoing the password. The email is the sign-in identifier; no email delivery service is required for normal sign-in. The account and password hash are stored in SQLite on the persistent disk. Public sign-up is disabled, and the bootstrap refuses to create a second account. Do not place `ADMIN_EMAIL` or `ADMIN_PASSWORD` in the Blueprint or permanent Render environment settings.
+Run `pnpm console:bootstrap` once on your trusted computer with `DATABASE_URL`, `TURSO_AUTH_TOKEN`, a local `AUTH_SECRET` of at least 32 random characters, and `PUBLIC_SITE_URL` set to the deployed origin. The script prompts for the email and password without displaying the password. The bootstrap secret can differ from Render's generated `AUTH_SECRET`; no browser session is created by the script. Do not put `ADMIN_EMAIL` or `ADMIN_PASSWORD` in Render or Git.
 
-If the password is lost, use the Render Shell and run `./node_modules/.bin/tsx scripts/recover-owner.ts`. It prompts for the exact owner email and a new password and revokes existing sessions. There is no email-based reset flow. See [operations.md](operations.md) for recovery details.
+Public sign-up remains disabled. The bootstrap refuses to create a second owner. For password recovery, run `pnpm console:recover` from the trusted computer with the same database connection values and a suitable `AUTH_SECRET`.
 
-## Custom domain and ongoing deploys
+## Verify the workspace
 
-When you attach a custom domain, set `PUBLIC_SITE_URL` in Render to its HTTPS origin and redeploy. This value is used at build time for the sitemap, robots file, and canonical links, and at runtime for auth and public links. Use the custom domain for owner sign-in. Render's `onrender.com` origin remains in the trusted-origin list; add `AUTH_TRUSTED_ORIGIN` only when another browser origin also needs to be trusted. Use the final domain to verify the homepage, `/user/login`, a published article, RSS, and the sitemap.
+After a manual deploy, check `/health/ready`, then `/user/login`. Sign in, create and publish a private draft, upload an image, restore a revision, and verify the public view and historical slug redirect. Restart the Render service and confirm the account, content, and image remain. Use the deployed HTTPS origin for all browser tests.
 
-The Blueprint leaves automatic deploys off. Trigger later deploys manually from Render after reviewing changes. SQLite migrations run at container startup against the attached disk. A persistent disk limits this service to one instance and causes a short interruption during redeploys.
+## Back up Turso
 
-## Backups
-
-Render's disk snapshots are useful for infrastructure recovery, but use SQLite's verified snapshot command before relying on authored content. In the service Shell, create a new file under the disk and verify it:
+On your trusted computer, while logged in to the Turso CLI, run:
 
 ```sh
-mkdir -p /app/data/backups
-node scripts/db-maintenance.mjs backup /app/data/backups/angefolio-YYYYMMDD.sqlite
-node scripts/db-maintenance.mjs verify /app/data/backups/angefolio-YYYYMMDD.sqlite
+pnpm db:backup:turso angefolio /secure/backups/angefolio-YYYYMMDD.sqlite
+node scripts/db-maintenance.mjs verify /secure/backups/angefolio-YYYYMMDD.sqlite
 ```
 
-Replace `YYYYMMDD` with a date and use a new filename each time. Transfer the verified snapshot off Render and keep it in protected storage; a backup on the same disk alone does not protect against losing that disk. The existing encrypted `age`/`rclone` backup job is configured for Docker Compose with a host timer. It is **not** scheduled by this Render Blueprint, and Render cron jobs cannot access the web service's attached disk. Follow [operations.md](operations.md) for the restore procedure and rehearse it before depending on live edits.
+Use a new filename each time. The backup command exports Turso's SQLite snapshot and WAL, folds them into one SQLite file, and verifies its integrity and required tables. Store that file in protected off-machine storage and rehearse a restore to a **new** Turso database with `turso db create <new-name> --from-file /secure/backups/angefolio-YYYYMMDD.sqlite`. Point a test process at the new database and confirm `/health/ready` and content before considering a production cutover. The existing local SQLite `db:backup` command and Docker Compose age/rclone job still serve local volume deployments; they do not export Turso.
 
 ## References
 
+- [Turso CLI](https://github.com/tursodatabase/turso-cli)
 - [Render Blueprint specification](https://render.com/docs/blueprint-spec)
-- [Render persistent disks](https://render.com/docs/disks)
-- [Render default environment variables](https://render.com/docs/environment-variables)
-- [Render health checks](https://render.com/docs/health-checks)
 - [Render Free service limitations](https://render.com/docs/free)

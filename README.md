@@ -65,7 +65,7 @@ pnpm test:console # after pnpm build
 
 ## Docker
 
-The production image uses three Node 22 Alpine stages: frozen dependency installation, Astro/Pagefind build, and the standalone Node runtime. Container startup applies committed Drizzle migrations before launching Astro. The server listens on port `4321`; the database lives at `/app/data/angefolio.db` on a named volume.
+The production image uses three Node 22 Alpine stages: frozen dependency installation, Astro/Pagefind build, and the standalone Node runtime. Container startup applies committed Drizzle migrations before launching Astro. The server listens on port `4321`. Docker Compose uses `/app/data/angefolio.db` on a named volume; Render Free uses Turso through `DATABASE_URL` and `TURSO_AUTH_TOKEN`.
 
 Build and run the image directly:
 
@@ -124,7 +124,7 @@ Expected public output includes project, note, and Lab indexes/details; `/search
 
 ## Environment
 
-Copy `.env.example` to `.env` locally. `AUTH_SECRET` is server-only and must be at least 32 random characters in production. `DATABASE_URL` defaults to `file:./data/angefolio.db` only in development. `PUBLIC_SITE_URL` and `AUTH_TRUSTED_ORIGIN` must match the browser-visible origin so Better Auth and the same-origin write checks agree.
+Copy `.env.example` to `.env` locally. `AUTH_SECRET` is server-only and must be at least 32 random characters in production. `DATABASE_URL` defaults to `file:./data/angefolio.db` only in development. For Turso, set `DATABASE_URL=libsql://...` and provide `TURSO_AUTH_TOKEN` as a server secret. `PUBLIC_SITE_URL` and `AUTH_TRUSTED_ORIGIN` must match the browser-visible origin so Better Auth and the same-origin write checks agree.
 
 `ADMIN_EMAIL` and `ADMIN_PASSWORD` are optional one-time inputs consumed only by `pnpm console:bootstrap`; the web application never reads them. The command prompts interactively when they are unset. Never prefix auth, database, or bootstrap values with `PUBLIC_`.
 
@@ -136,10 +136,10 @@ On Render, the public URL defaults to `RENDER_EXTERNAL_URL` at build and runtime
 
 ## Deployment notes
 
-- For Render, review [the Render deployment guide](docs/render-deployment.md) and `render.yaml` before creating the paid web service and persistent disk. The Blueprint has automatic deploys disabled until you choose to enable them.
-- Deploy the Node image to a host that supports a long-running process, container port `4321`, persistent volumes, runtime secrets, and health checks.
+- For Render Free and Turso, follow [the Render deployment guide](docs/render-deployment.md) and review `render.yaml`. The Blueprint has automatic deploys disabled.
+- Deploy the Node image to a host that supports a long-running process, container port `4321`, runtime secrets, and health checks. Local SQLite deployments also need a persistent volume.
 - Terminate HTTPS at the hosting platform or reverse proxy. Secure cookies are enabled automatically when `NODE_ENV=production`.
-- Back up the SQLite volume with `node scripts/db-maintenance.mjs backup <new-file>`. Verify and rehearse restore using [operations.md](docs/operations.md). Configure the encrypted off-host job and daily systemd timer before depending on live edits.
+- Back up local SQLite volumes with `node scripts/db-maintenance.mjs backup <new-file>`. For Turso, use `pnpm db:backup:turso angefolio <new-file>`. Verify and rehearse restores using [operations.md](docs/operations.md).
 - Run migrations before the new server receives traffic. The Docker command does this automatically.
 - Notes and Lab publish through `/user`; archives, articles, search, and sitemaps update on request. RSS includes Notes only. Direct source MDX changes still need a rebuild.
 

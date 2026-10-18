@@ -1,6 +1,6 @@
-# Single-server operations
+# Database operations
 
-The chosen deployment is one long-running Node server with a persistent SQLite volume. In Docker, `DATABASE_URL=file:/app/data/angefolio.db` and `/app/data` is mounted. Keep the database, its WAL/SHM files, and generated uploads (once implemented) on durable storage. Set `PUBLIC_SITE_URL` and `AUTH_TRUSTED_ORIGIN` to the real HTTPS origin, and inject `AUTH_SECRET` as a server secret.
+For local Docker Compose, the Node server uses a persistent SQLite volume. In Docker, `DATABASE_URL=file:/app/data/angefolio.db` and `/app/data` is mounted. Keep the database and its WAL/SHM files on durable storage. Render Free uses Turso through `DATABASE_URL=libsql://...` and `TURSO_AUTH_TOKEN`; see [render-deployment.md](render-deployment.md) for remote deployment and backup steps. Set `PUBLIC_SITE_URL` and `AUTH_TRUSTED_ORIGIN` to the real HTTPS origin, and inject `AUTH_SECRET` as a server secret.
 
 ## Back up and verify
 
