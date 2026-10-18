@@ -157,6 +157,29 @@ test('private edits, audit history, recovery, and database backup', async () => 
     );
     assert.equal(badLogin.status, 403);
 
+    // Render terminates HTTPS before forwarding requests to the Node server.
+    // Astro must reconstruct the public origin or it rejects every form POST.
+    const proxiedLogin = await fetch(`${origin}/api/console/login`, {
+      method: 'POST',
+      redirect: 'manual',
+      headers: {
+        host: 'angefolio.onrender.com',
+        'x-forwarded-host': 'angefolio.onrender.com',
+        'x-forwarded-proto': 'https',
+        origin: 'https://angefolio.onrender.com',
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        email: 'probe@example.invalid',
+        password: 'not-a-real-password',
+      }),
+    });
+    assert.equal(proxiedLogin.status, 303);
+    assert.equal(
+      proxiedLogin.headers.get('location'),
+      '/user/login?error=invalid',
+    );
+
     const login = await formRequest(origin, '/api/console/login', {
       email,
       password,
