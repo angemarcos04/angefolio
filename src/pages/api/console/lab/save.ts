@@ -9,7 +9,6 @@ import {
   readUrlEncodedForm,
 } from '../../../../lib/server/security';
 import { validateLabForm } from '../../../../lib/server/validation/lab';
-import { getPublicLabCatalog } from '../../../../lib/server/lab';
 import { getAllLabEntries } from '../../../../lib/content';
 import {
   isMdxSlugClaimConflict,
@@ -59,14 +58,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     const owner = await getLabRecordBySlug(validated.data.slug);
     if (owner && owner.id !== id) return failure('slug', 'slug');
-    const mdxCollision = isMdxSlugClaimConflict(
-      (await getAllLabEntries()).map((entry) => mdxSlugFromId(entry.id)),
-      validated.data.slug,
-      {
-        replacesMdx: validated.data.replacesMdx,
-        currentSlug: existing?.slug,
-      },
+    const mdxSlugs = (await getAllLabEntries()).map((entry) =>
+      mdxSlugFromId(entry.id),
     );
+    const mdxCollision = isMdxSlugClaimConflict(mdxSlugs, validated.data.slug, {
+      replacesMdx: validated.data.replacesMdx,
+      currentSlug: existing?.slug,
+    });
     if (mdxCollision) return failure('slug', 'slug');
     const redirectOwnership = await getRedirectSlugOwnership(
       'lab',
@@ -75,17 +73,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
     if (redirectOwnership === 'unavailable') return failure('unavailable');
     if (redirectOwnership === 'reserved') return failure('slug', 'slug');
-    const currentPublic = existing
-      ? (await getPublicLabCatalog()).some(
-          (entry) =>
-            entry.slug === existing.slug && entry.source === 'database',
-        )
-      : false;
     const record = await saveLabRecord(
       id,
       validated.data,
       locals.user.id,
-      currentPublic && validated.data.visible,
+      mdxSlugs,
     );
     return new Response(null, {
       status: 303,

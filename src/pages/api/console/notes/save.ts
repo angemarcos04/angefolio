@@ -9,7 +9,6 @@ import {
   readUrlEncodedForm,
 } from '../../../../lib/server/security';
 import { validateNoteForm } from '../../../../lib/server/validation/notes';
-import { getPublicNoteCatalog } from '../../../../lib/server/notes';
 import { getAllNotes } from '../../../../lib/content';
 import {
   isMdxSlugClaimConflict,
@@ -59,14 +58,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     const owner = await getNoteRecordBySlug(result.data.slug);
     if (owner && owner.id !== id) return invalid('slug', 'slug');
-    const mdxCollision = isMdxSlugClaimConflict(
-      (await getAllNotes()).map((entry) => mdxSlugFromId(entry.id)),
-      result.data.slug,
-      {
-        replacesMdx: result.data.replacesMdx,
-        currentSlug: existing?.slug,
-      },
+    const mdxSlugs = (await getAllNotes()).map((entry) =>
+      mdxSlugFromId(entry.id),
     );
+    const mdxCollision = isMdxSlugClaimConflict(mdxSlugs, result.data.slug, {
+      replacesMdx: result.data.replacesMdx,
+      currentSlug: existing?.slug,
+    });
     if (mdxCollision) return invalid('slug', 'slug');
     const redirectOwnership = await getRedirectSlugOwnership(
       'note',
@@ -75,17 +73,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
     if (redirectOwnership === 'unavailable') return invalid('unavailable');
     if (redirectOwnership === 'reserved') return invalid('slug', 'slug');
-    const currentPublic = existing
-      ? (await getPublicNoteCatalog()).some(
-          (note) => note.slug === existing.slug && note.source === 'database',
-        )
-      : false;
-    const saved = await saveNote(
-      id,
-      result.data,
-      locals.user.id,
-      currentPublic && result.data.published,
-    );
+    const saved = await saveNote(id, result.data, locals.user.id, mdxSlugs);
     return new Response(null, {
       status: 303,
       headers: { location: `/user/notes/${saved.id}?notice=saved` },

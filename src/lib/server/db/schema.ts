@@ -280,6 +280,25 @@ export const contentRedirects = sqliteTable('content_redirects', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
+/** Canonical database URLs observed while the owning record was public. */
+export const contentPublicSlugs = sqliteTable(
+  'content_public_slugs',
+  {
+    path: text('path').primaryKey(),
+    entityType: text('entity_type').notNull(),
+    entityId: text('entity_id').notNull(),
+    firstObservedAt: integer('first_observed_at', {
+      mode: 'timestamp',
+    }).notNull(),
+  },
+  (table) => [
+    index('content_public_slugs_entity_idx').on(
+      table.entityType,
+      table.entityId,
+    ),
+  ],
+);
+
 export const auditLog = sqliteTable(
   'audit_log',
   {
@@ -316,5 +335,6 @@ export const schema = {
   homepageSettings,
   siteSettings,
   contentRedirects,
+  contentPublicSlugs,
   auditLog,
 };

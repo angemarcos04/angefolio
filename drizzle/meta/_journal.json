@@ -92,6 +92,13 @@
       "when": 1792199215710,
       "tag": "0012_giant_chimera",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1792302557685,
+      "tag": "0013_low_lady_bullseye",
+      "breakpoints": true
     }
   ]
 }

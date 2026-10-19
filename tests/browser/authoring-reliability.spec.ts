@@ -1,4 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { createClient } from '@libsql/client';
 import sharp from 'sharp';
 
 test.skip(
@@ -515,7 +516,7 @@ test.describe('authoring form reliability', () => {
     await form
       .locator('[name="links"]')
       .fill(
-        'Documentation | https://example.com/docs\nManual | https://example.com/docs',
+        'Documentation | https://example.com/docs\nManual | https://example.com/docs\nUnsafe | javascript:alert(1)',
       );
     const originalValues = await Promise.all(
       ['demo', 'github', 'links'].map((name) =>
@@ -549,6 +550,11 @@ test.describe('authoring form reliability', () => {
       'Unsaved changes',
     );
 
+    await form
+      .locator('[name="links"]')
+      .fill(
+        'Documentation | https://example.com/docs\nManual | https://example.com/docs',
+      );
     await form.locator('[name="visible"]').check();
     await page.getByRole('button', { name: 'Create project' }).click();
     await expect(page).toHaveURL(/\/user\/projects\?notice=created/);
@@ -565,11 +571,136 @@ test.describe('authoring form reliability', () => {
       'href',
       'https://example.com/docs',
     );
+    await expect(publicActions.nth(0)).toHaveAttribute('target', '_blank');
+    await expect(publicActions.nth(0)).toHaveAttribute(
+      'rel',
+      'noopener noreferrer',
+    );
+  });
+
+  test('published Project links reject unsafe legacy destinations and classify absolute links externally', async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    const unique = `legacy-links-${Date.now()}`;
+    const slug = `r2-projects-${unique}`;
+    await openEditor(page, 'projects');
+    await fillRequiredFields(page, 'projects', unique);
+    const form = page.locator('#project-editor');
+    await form.locator('details.authoring-section').evaluate((section) => {
+      (section as HTMLDetailsElement).open = true;
+    });
+    await form.locator('[name="visible"]').check();
+    await form.locator('[name="demo"]').fill('https://example.com/demo');
+    await page.getByRole('button', { name: 'Create project' }).click();
+    await expect(page).toHaveURL(/\/user\/projects\?notice=created/);
+
+    const databaseUrl = process.env.DATABASE_URL;
+    expect(databaseUrl).toMatch(/^file:/);
+    const database = createClient({ url: databaseUrl! });
+    try {
+      await database.execute({
+        sql: 'UPDATE project_records SET links_json = ? WHERE slug = ?',
+        args: [
+          JSON.stringify([
+            {
+              label: 'Unsafe path',
+              href: '/\\evil.example/path',
+              external: false,
+            },
+            {
+              label: 'Unsafe scheme',
+              href: 'javascript:alert(1)',
+              external: true,
+            },
+            { label: 'Malformed', href: '/%GG', external: false },
+            {
+              label: 'Legacy external',
+              href: 'https://docs.example.com/project',
+              external: false,
+            },
+            { label: 'Internal', href: '/projects', external: false },
+            {
+              label: 'Duplicate demo',
+              href: 'https://example.com/demo',
+              external: true,
+            },
+          ]),
+          slug,
+        ],
+      });
+    } finally {
+      database.close();
+    }
+
+    await page.goto(`/projects/${slug}`);
+    const actions = page.locator('.hero-links a');
+    await expect(actions).toHaveCount(3);
+    await expect(actions).toContainText([
+      'Live demo',
+      'Legacy external',
+      'Internal',
+    ]);
+    const rendered = await actions.evaluateAll((anchors) =>
+      anchors.map((element) => {
+        const anchor = element as HTMLAnchorElement;
+        return {
+          href: anchor.getAttribute('href'),
+          origin: new URL(anchor.href).origin,
+          target: anchor.getAttribute('target'),
+          rel: anchor.getAttribute('rel'),
+        };
+      }),
+    );
+    expect(rendered).toEqual([
+      {
+        href: 'https://example.com/demo',
+        origin: 'https://example.com',
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      },
+      {
+        href: 'https://docs.example.com/project',
+        origin: 'https://docs.example.com',
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      },
+      {
+        href: '/projects',
+        origin: new URL(page.url()).origin,
+        target: null,
+        rel: null,
+      },
+    ]);
+
+    await page.goto('/projects');
+    const card = page
+      .locator('article.project-card')
+      .filter({ hasText: `R2 projects ${unique}` });
+    await expect(card).toBeVisible();
+    const cardActions = card.locator('.project-actions a');
+    await expect(cardActions).toHaveCount(4);
+    await expect(cardActions.nth(0)).toHaveAttribute(
+      'href',
+      `/projects/${slug}`,
+    );
+    await expect(cardActions.nth(1)).toHaveAttribute(
+      'href',
+      'https://example.com/demo',
+    );
+    await expect(cardActions.nth(2)).toHaveAttribute(
+      'href',
+      'https://docs.example.com/project',
+    );
+    await expect(cardActions.nth(3)).toHaveAttribute('href', '/projects');
   });
 
   test('private page previews reflect the current unsaved presentation data for every collection', async ({
     page,
   }) => {
+    // Four editors and forty viewport checks can exceed the default timeout
+    // when the local Astro server is cold. Keep every preview assertion.
+    test.setTimeout(120_000);
     for (const collection of ['projects', 'blog', 'notes', 'lab'] as const) {
       const unique = `${collection}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       await openEditor(page, collection);

@@ -5,10 +5,9 @@ import { auditLog, blogRecords, contentRevisions } from './db/schema';
 import { pruneContentRevisions, revisionValues } from './revisions';
 import {
   assertContentSlugAvailable,
-  recordSlugRedirect,
-  repointExistingContentAliases,
   getRedirectSourcePaths,
 } from './redirects';
+import { maintainPublicSlugHistory } from './publicSlugHistory';
 import type { BlogRecordInput } from './validation/blog';
 
 export type BlogRecord = typeof blogRecords.$inferSelect;
@@ -64,7 +63,7 @@ export async function saveBlogPost(
   id: string | null,
   input: BlogRecordInput,
   actor: string,
-  redirectSlugChange = false,
+  _redirectSlugChange = false,
 ): Promise<BlogRecord> {
   await migrateDatabase();
   return getDatabase().transaction(async (tx) => {
@@ -73,18 +72,6 @@ export async function saveBlogPost(
       ? await tx.query.blogRecords.findFirst({ where: eq(blogRecords.id, id) })
       : undefined;
     await assertContentSlugAvailable(tx, 'blog', input.slug, existing?.id);
-    if (redirectSlugChange && existing && existing.slug !== input.slug) {
-      await recordSlugRedirect(
-        tx,
-        actor,
-        'blog',
-        existing.id,
-        existing.slug,
-        input.slug,
-      );
-    } else if (existing && existing.slug !== input.slug) {
-      await repointExistingContentAliases(tx, 'blog', existing.id, input.slug);
-    }
     const [record] = existing
       ? await tx
           .update(blogRecords)
@@ -100,6 +87,14 @@ export async function saveBlogPost(
             updatedAt: now,
           })
           .returning();
+    await maintainPublicSlugHistory(
+      tx,
+      actor,
+      'blog',
+      record.id,
+      existing,
+      record,
+    );
     await tx.insert(auditLog).values(
       auditEvent(
         actor,

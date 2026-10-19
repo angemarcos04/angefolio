@@ -3,11 +3,8 @@ import { auditEvent } from './audit';
 import { getDatabase, migrateDatabase } from './db/client';
 import { auditLog, contentRevisions, projectRecords } from './db/schema';
 import { pruneContentRevisions, revisionValues } from './revisions';
-import {
-  assertContentSlugAvailable,
-  recordSlugRedirect,
-  repointExistingContentAliases,
-} from './redirects';
+import { assertContentSlugAvailable } from './redirects';
+import { maintainPublicSlugHistory } from './publicSlugHistory';
 import {
   projectStatuses,
   type ProjectRecordInput,
@@ -87,6 +84,7 @@ export async function getConsoleProjectBySlug(
 export async function createProjectRecord(
   input: ProjectRecordInput,
   actorUserId: string,
+  mdxSlugs: readonly string[],
 ): Promise<ProjectRecord> {
   await migrateDatabase();
   const now = new Date();
@@ -102,6 +100,15 @@ export async function createProjectRecord(
         updatedAt: now,
       })
       .returning();
+    await maintainPublicSlugHistory(
+      transaction,
+      actorUserId,
+      'project',
+      record.id,
+      null,
+      record,
+      mdxSlugs,
+    );
     await transaction.insert(auditLog).values(
       auditEvent(actorUserId, 'project.create', 'project', record.id, {
         slug: record.slug,
@@ -120,7 +127,7 @@ export async function updateProjectRecord(
   id: string,
   input: ProjectRecordInput,
   actorUserId: string,
-  redirectSlugChange = false,
+  mdxSlugs: readonly string[],
 ): Promise<ProjectRecord | undefined> {
   await migrateDatabase();
   return getDatabase().transaction(async (transaction) => {
@@ -130,23 +137,6 @@ export async function updateProjectRecord(
       .where(eq(projectRecords.id, id));
     if (!existing) return undefined;
     await assertContentSlugAvailable(transaction, 'project', input.slug, id);
-    if (redirectSlugChange && existing.slug !== input.slug) {
-      await recordSlugRedirect(
-        transaction,
-        actorUserId,
-        'project',
-        id,
-        existing.slug,
-        input.slug,
-      );
-    } else if (existing.slug !== input.slug) {
-      await repointExistingContentAliases(
-        transaction,
-        'project',
-        existing.id,
-        input.slug,
-      );
-    }
 
     const [record] = await transaction
       .update(projectRecords)
@@ -162,6 +152,15 @@ export async function updateProjectRecord(
       })
       .where(eq(projectRecords.id, id))
       .returning();
+    await maintainPublicSlugHistory(
+      transaction,
+      actorUserId,
+      'project',
+      id,
+      existing,
+      record,
+      mdxSlugs,
+    );
     await transaction.insert(auditLog).values(
       auditEvent(actorUserId, 'project.update', 'project', id, {
         fromSlug: existing.slug,
@@ -182,6 +181,7 @@ export async function updateProjectRecord(
 export async function archiveProjectRecord(
   id: string,
   actorUserId: string,
+  mdxSlugs: readonly string[],
 ): Promise<boolean> {
   await migrateDatabase();
   return getDatabase().transaction(async (transaction) => {
@@ -203,6 +203,15 @@ export async function archiveProjectRecord(
       })
       .where(eq(projectRecords.id, id))
       .returning();
+    await maintainPublicSlugHistory(
+      transaction,
+      actorUserId,
+      'project',
+      id,
+      existing,
+      updated,
+      mdxSlugs,
+    );
     await transaction.insert(auditLog).values(
       auditEvent(actorUserId, 'project.archive', 'project', id, {
         slug: existing.slug,
@@ -221,6 +230,7 @@ export async function archiveProjectRecord(
 export async function restoreProjectRecord(
   id: string,
   actorUserId: string,
+  mdxSlugs: readonly string[],
 ): Promise<boolean> {
   await migrateDatabase();
   return getDatabase().transaction(async (transaction) => {
@@ -250,6 +260,15 @@ export async function restoreProjectRecord(
       })
       .where(eq(projectRecords.id, id))
       .returning();
+    await maintainPublicSlugHistory(
+      transaction,
+      actorUserId,
+      'project',
+      id,
+      existing,
+      updated,
+      mdxSlugs,
+    );
     await transaction.insert(auditLog).values(
       auditEvent(actorUserId, 'project.restore', 'project', id, {
         slug: existing.slug,
@@ -267,6 +286,7 @@ export async function restoreProjectRecord(
 export async function toggleProjectVisible(
   id: string,
   actorUserId: string,
+  mdxSlugs: readonly string[],
 ): Promise<boolean> {
   await migrateDatabase();
   return getDatabase().transaction(async (transaction) => {
@@ -289,6 +309,15 @@ export async function toggleProjectVisible(
       .set({ visible, updatedAt: new Date() })
       .where(eq(projectRecords.id, id))
       .returning();
+    await maintainPublicSlugHistory(
+      transaction,
+      actorUserId,
+      'project',
+      id,
+      existing,
+      updated,
+      mdxSlugs,
+    );
     await transaction.insert(auditLog).values(
       auditEvent(actorUserId, 'project.visibility', 'project', id, {
         slug: existing.slug,

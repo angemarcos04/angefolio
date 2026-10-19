@@ -5,11 +5,8 @@ import { getDatabase, migrateDatabase } from './db/client';
 import { auditLog, contentRevisions, noteRecords } from './db/schema';
 import { pruneContentRevisions, revisionValues } from './revisions';
 import { getAllNotes } from '../content';
-import {
-  assertContentSlugAvailable,
-  recordSlugRedirect,
-  repointExistingContentAliases,
-} from './redirects';
+import { assertContentSlugAvailable } from './redirects';
+import { maintainPublicSlugHistory } from './publicSlugHistory';
 import type { NoteRecordInput } from './validation/notes';
 import { getRedirectSourcePaths } from './redirects';
 
@@ -135,7 +132,7 @@ export async function saveNote(
   id: string | null,
   input: NoteRecordInput,
   actor: string,
-  redirectSlugChange = false,
+  mdxSlugs: readonly string[],
 ): Promise<NoteRecord> {
   await migrateDatabase();
   return getDatabase().transaction(async (tx) => {
@@ -144,18 +141,6 @@ export async function saveNote(
       ? await tx.query.noteRecords.findFirst({ where: eq(noteRecords.id, id) })
       : undefined;
     await assertContentSlugAvailable(tx, 'note', input.slug, existing?.id);
-    if (redirectSlugChange && existing && existing.slug !== input.slug) {
-      await recordSlugRedirect(
-        tx,
-        actor,
-        'note',
-        existing.id,
-        existing.slug,
-        input.slug,
-      );
-    } else if (existing && existing.slug !== input.slug) {
-      await repointExistingContentAliases(tx, 'note', existing.id, input.slug);
-    }
     const [record] = existing
       ? await tx
           .update(noteRecords)
@@ -175,6 +160,15 @@ export async function saveNote(
             updatedAt: now,
           })
           .returning();
+    await maintainPublicSlugHistory(
+      tx,
+      actor,
+      'note',
+      record.id,
+      existing,
+      record,
+      mdxSlugs,
+    );
     await tx.insert(auditLog).values(
       auditEvent(
         actor,

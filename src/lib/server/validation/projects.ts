@@ -1,6 +1,6 @@
 import { isSafeImageReference } from '../../data/mediaReference';
+import { isSafeProjectExternalHref } from '../../data/projectLinks';
 import {
-  isSafeHttpUrl,
   PROJECT_SCREENSHOT_CAPTION_MAX_LENGTH,
   PROJECT_SCREENSHOT_COUNT_MAX,
   PROJECT_SCREENSHOT_ALT_MAX_LENGTH,
@@ -91,7 +91,7 @@ function optionalValue(value: string): string | null {
 }
 
 function isHttpUrl(value: string): boolean {
-  return isSafeHttpUrl(value);
+  return isSafeProjectExternalHref(value);
 }
 
 function readValues(form: URLSearchParams): ProjectFormValues {

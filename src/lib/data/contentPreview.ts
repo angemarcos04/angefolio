@@ -7,7 +7,10 @@ import {
 } from './contentConstraints';
 import { labRisks, labStatuses } from '../server/validation/lab';
 import { projectStatuses } from '../server/validation/projects';
-import { normalizeProjectDisplayLinks } from './projectLinks';
+import {
+  isSafeProjectExternalHref,
+  normalizeProjectDisplayLinks,
+} from './projectLinks';
 
 export type PreviewKind = 'project' | 'blog' | 'note' | 'lab';
 
@@ -115,16 +118,16 @@ function projectLinks(form: URLSearchParams): PreviewLink[] {
   const candidates: PreviewLink[] = [];
   const demo = (form.get('demo') ?? '').trim();
   const github = (form.get('github') ?? '').trim();
-  if (demo && safeHttp(demo))
+  if (demo && isSafeProjectExternalHref(demo))
     candidates.push({ label: 'Live demo', href: demo, external: true });
-  if (github && safeHttp(github))
+  if (github && isSafeProjectExternalHref(github))
     candidates.push({ label: 'GitHub', href: github, external: true });
   for (const row of lines(form, 'links', caps.links)) {
     const separator = row.indexOf('|');
     if (separator < 1) continue;
     const label = row.slice(0, separator).trim().slice(0, 80);
     const href = row.slice(separator + 1).trim();
-    if (label && safeHttp(href))
+    if (label && isSafeProjectExternalHref(href))
       candidates.push({ label, href, external: true });
   }
   return normalizeProjectDisplayLinks(candidates);
@@ -264,7 +267,7 @@ function previewWarnings(kind: PreviewKind, form: URLSearchParams): string[] {
     checkLength('demo', 2048);
     checkLength('cover', caps.cover);
     for (const field of ['github', 'demo'] as const) {
-      if (trimmed(field) && !safeHttp(trimmed(field)))
+      if (trimmed(field) && !isSafeProjectExternalHref(trimmed(field)))
         add(field, 'must be a safe HTTP(S) URL');
     }
     checkList('stack', caps.stack, 40);
@@ -278,7 +281,11 @@ function previewWarnings(kind: PreviewKind, form: URLSearchParams): string[] {
         if (separator < 1) return true;
         const label = row.slice(0, separator).trim();
         const href = row.slice(separator + 1).trim();
-        return label.length > 80 || href.length > 2048 || !safeHttp(href);
+        return (
+          label.length > 80 ||
+          href.length > 2048 ||
+          !isSafeProjectExternalHref(href)
+        );
       })
     )
       add('links', 'contains an invalid label or destination');

@@ -163,6 +163,51 @@ test('project preview normalizes unsaved metadata, actions, and screenshots like
   ]);
 });
 
+test('Project preview keeps safe action priority without changing unsaved form data', () => {
+  const form = new URLSearchParams({
+    demo: 'https://example.com/demo',
+    github: 'https://github.com/owner/project',
+    links: [
+      'Script | javascript:alert(1)',
+      'Documentation | https://example.com/docs',
+      'Duplicate | https://example.com/demo',
+      'Manual | https://example.com/manual',
+    ].join('\n'),
+  });
+  const before = form.toString();
+  const preview = normalizeContentPreview('project', form);
+  assert.deepEqual(
+    preview.links.map(({ label, href, external }) => ({
+      label,
+      href,
+      external,
+    })),
+    [
+      {
+        label: 'Live demo',
+        href: 'https://example.com/demo',
+        external: true,
+      },
+      {
+        label: 'GitHub',
+        href: 'https://github.com/owner/project',
+        external: true,
+      },
+      {
+        label: 'Documentation',
+        href: 'https://example.com/docs',
+        external: true,
+      },
+      {
+        label: 'Manual',
+        href: 'https://example.com/manual',
+        external: true,
+      },
+    ],
+  );
+  assert.equal(form.toString(), before);
+});
+
 test('screenshot caption preview preserves over-limit text and warns consistently', () => {
   const source = '/media/123e4567-e89b-42d3-a456-426614174000.webp';
   const screenshot = (caption: string) =>

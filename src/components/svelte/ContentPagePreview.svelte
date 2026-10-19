@@ -155,13 +155,11 @@
                 <a
                   class={`button size-sm variant-${index === 0 ? 'primary' : 'secondary'}`}
                   href={link.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  >{link.label}<span aria-hidden="true">↗</span><span
-                    class="sr-only"
-                  >
-                    (opens in a new tab)</span
-                  ></a
+                  target={link.external ? '_blank' : undefined}
+                  rel={link.external ? 'noopener noreferrer' : undefined}
+                  >{link.label}{#if link.external}<span aria-hidden="true"
+                      >↗</span
+                    ><span class="sr-only"> (opens in a new tab)</span>{/if}</a
                 >
               {/each}
             </div>

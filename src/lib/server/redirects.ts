@@ -1,6 +1,6 @@
 import { eq, sql, type SQL } from 'drizzle-orm';
 import { getDatabase, migrateDatabase } from './db/client';
-import { contentRedirects } from './db/schema';
+import { contentPublicSlugs, contentRedirects } from './db/schema';
 
 export const redirectEntityTypes = ['project', 'note', 'blog', 'lab'] as const;
 export type RedirectEntityType = (typeof redirectEntityTypes)[number];
@@ -66,6 +66,18 @@ export async function assertContentSlugAvailable(
   }
 
   const path = contentPath(type, slug);
+  const publicOwnerResult = (await tx.run(sql`
+    SELECT entity_type, entity_id FROM content_public_slugs
+    WHERE path = ${path} LIMIT 1
+  `)) as { rows?: Array<Record<string, unknown>> };
+  const publicOwner = publicOwnerResult.rows?.[0];
+  if (
+    publicOwner &&
+    (!entityId ||
+      publicOwner.entity_type !== type ||
+      publicOwner.entity_id !== entityId)
+  )
+    throw new SlugRedirectConflictError();
   const aliasResult = (await tx.run(sql`
     SELECT entity_type, entity_id FROM content_redirects
     WHERE from_path = ${path} LIMIT 1
@@ -93,12 +105,32 @@ export async function getRedirectSlugOwnership(
 ): Promise<RedirectSlugOwnership> {
   const lookup = await getContentRedirect(contentPath(type, slug));
   if (lookup.status === 'unavailable') return 'unavailable';
-  if (lookup.status === 'missing') return 'available';
-  return entityId &&
-    lookup.record.entityType === type &&
-    lookup.record.entityId === entityId
-    ? 'same-entity'
-    : 'reserved';
+  const aliasOwnership =
+    lookup.status === 'missing'
+      ? 'available'
+      : entityId &&
+          lookup.record.entityType === type &&
+          lookup.record.entityId === entityId
+        ? 'same-entity'
+        : 'reserved';
+  if (aliasOwnership === 'reserved') return 'reserved';
+  try {
+    const [history] = await getDatabase()
+      .select({
+        entityType: contentPublicSlugs.entityType,
+        entityId: contentPublicSlugs.entityId,
+      })
+      .from(contentPublicSlugs)
+      .where(eq(contentPublicSlugs.path, contentPath(type, slug)));
+    if (!history) return aliasOwnership;
+    return entityId &&
+      history.entityType === type &&
+      history.entityId === entityId
+      ? 'same-entity'
+      : 'reserved';
+  } catch {
+    return 'unavailable';
+  }
 }
 
 export function contentPath(type: RedirectEntityType, slug: string): string {

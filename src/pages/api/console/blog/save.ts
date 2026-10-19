@@ -2,7 +2,6 @@ import type { APIRoute } from 'astro';
 import {
   getBlogRecord,
   getBlogRecordBySlug,
-  getPublicBlogCatalog,
   saveBlogPost,
 } from '../../../../lib/server/blog';
 import {
@@ -64,15 +63,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (redirectOwnership === 'unavailable') return invalid('unavailable');
     if (redirectOwnership === 'reserved') return invalid('slug', 'slug');
 
-    const currentPublic = existing
-      ? (await getPublicBlogCatalog()).some((post) => post.id === existing.id)
-      : false;
-    const post = await saveBlogPost(
-      id,
-      result.data,
-      locals.user.id,
-      currentPublic && result.data.published,
-    );
+    const post = await saveBlogPost(id, result.data, locals.user.id);
     return new Response(null, {
       status: 303,
       headers: { location: `/user/blog/${post.id}?notice=saved` },

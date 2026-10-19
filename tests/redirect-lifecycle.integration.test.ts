@@ -100,6 +100,12 @@ test('failed private rename rolls back alias maintenance, content, revisions, an
         entityId: original.id,
       },
       {
+        fromPath: '/blog/beta',
+        toPath: '/blog/gamma',
+        entityType: 'blog',
+        entityId: original.id,
+      },
+      {
         fromPath: '/blog/foreign-id-alias',
         toPath: '/blog/beta',
         entityType: 'blog',

@@ -19,7 +19,7 @@ const {
   class:list={['button', `variant-${variant}`, `size-${size}`, className]}
   {href}
   target={external ? '_blank' : undefined}
-  rel={external ? 'noreferrer' : undefined}
+  rel={external ? 'noopener noreferrer' : undefined}
 >
   <slot />{
     external && (

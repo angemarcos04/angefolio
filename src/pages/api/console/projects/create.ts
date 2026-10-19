@@ -68,7 +68,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
     if (redirectOwnership === 'unavailable') return redirect('unavailable');
     if (redirectOwnership === 'reserved') return redirect('slug', 'slug');
-    await createProjectRecord(result.data, locals.user.id);
+    await createProjectRecord(result.data, locals.user.id, mdxSlugs);
     return new Response(null, {
       status: 303,
       headers: { location: '/user/projects?notice=created' },

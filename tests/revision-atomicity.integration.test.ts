@@ -131,7 +131,7 @@ function contentSnapshot(
     };
   return {
     ...common,
-    status: 'Planning',
+    status: 'Idea',
     category: 'Testing',
     tags: ['atomicity'],
     visible: true,

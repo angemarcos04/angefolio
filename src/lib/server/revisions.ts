@@ -14,12 +14,13 @@ import { auditEvent } from './audit';
 import { getDatabase, migrateDatabase } from './db/client';
 import type { HomepageConfig } from '../data/homepage';
 import { isSafeImageReference } from '../data/mediaReference';
+import { validateRevisionSnapshot } from './validation/revisionSnapshots';
+import { normalizeRevisionSnapshot } from './validation/revisionCompatibility';
+import { maintainPublicSlugHistory } from './publicSlugHistory';
 import { isMdxSlugClaimConflict } from '../data/mdxSlug';
 import {
   assertContentSlugAvailable,
   contentPath,
-  recordSlugRedirect,
-  repointExistingContentAliases,
   SlugRedirectConflictError,
   type RedirectEntityType,
 } from './redirects';
@@ -197,8 +198,20 @@ export async function restoreContentRevision(
             eq(contentRevisions.entityId, entityId),
           ),
         );
-      const snapshot = asRecord(revision?.snapshot);
-      if (!revision || !snapshot || snapshot.id !== entityId) return false;
+      if (!revision) return false;
+      const normalized = normalizeRevisionSnapshot(
+        entityType,
+        revision.snapshot,
+      );
+      if (!normalized.success) return false;
+      const validated = validateRevisionSnapshot(
+        entityType,
+        normalized.data,
+        entityId,
+        revision.actorUserId === null && revision.restoredFromId === null,
+      );
+      if (!validated.success) return false;
+      const snapshot = validated.data;
       const now = new Date();
       let current: Record<string, unknown> | undefined;
 
@@ -334,36 +347,13 @@ export async function restoreContentRevision(
           snapshot.slug,
           entityId,
         );
-        if (
-          existing.slug !== snapshot.slug &&
-          existing.visible &&
-          !existing.archived &&
-          Boolean(snapshot.visible) &&
-          !Boolean(snapshot.archived)
-        ) {
-          await recordSlugRedirect(
-            tx,
-            actor,
-            'project',
-            entityId,
-            existing.slug,
-            snapshot.slug,
-          );
-        } else if (existing.slug !== snapshot.slug) {
-          await repointExistingContentAliases(
-            tx,
-            'project',
-            entityId,
-            snapshot.slug,
-          );
-        }
         const [saved] = await tx
           .update(projectRecords)
           .set({
             slug: snapshot.slug,
-            title: String(snapshot.title),
-            description: String(snapshot.description),
-            status: String(snapshot.status),
+            title: snapshot.title as string,
+            description: snapshot.description as string,
+            status: snapshot.status as string,
             category:
               typeof snapshot.category === 'string' ? snapshot.category : null,
             role: typeof snapshot.role === 'string' ? snapshot.role : null,
@@ -388,10 +378,10 @@ export async function restoreContentRevision(
             highlights,
             cover: typeof snapshot.cover === 'string' ? snapshot.cover : null,
             screenshots,
-            replacesMdx: Boolean(snapshot.replacesMdx),
-            featured: Boolean(snapshot.featured),
-            visible: Boolean(snapshot.visible),
-            archived: Boolean(snapshot.archived),
+            replacesMdx: snapshot.replacesMdx === true,
+            featured: snapshot.featured as boolean,
+            visible: snapshot.visible as boolean,
+            archived: snapshot.archived as boolean,
             statusBeforeArchive:
               typeof snapshot.statusBeforeArchive === 'string'
                 ? snapshot.statusBeforeArchive
@@ -406,6 +396,15 @@ export async function restoreContentRevision(
           .where(eq(projectRecords.id, entityId))
           .returning();
         if (!saved) throw new RevisionRestoreAborted();
+        await maintainPublicSlugHistory(
+          tx,
+          actor,
+          'project',
+          entityId,
+          existing,
+          saved,
+          mdxSlugs.project,
+        );
         current = saved;
       } else if (entityType === 'note') {
         const tags = strings(snapshot.tags);
@@ -430,47 +429,35 @@ export async function restoreContentRevision(
         )
           return false;
         await assertContentSlugAvailable(tx, 'note', snapshot.slug, entityId);
-        if (
-          existing.slug !== snapshot.slug &&
-          existing.published &&
-          Boolean(snapshot.published)
-        ) {
-          await recordSlugRedirect(
-            tx,
-            actor,
-            'note',
-            entityId,
-            existing.slug,
-            snapshot.slug,
-          );
-        } else if (existing.slug !== snapshot.slug) {
-          await repointExistingContentAliases(
-            tx,
-            'note',
-            entityId,
-            snapshot.slug,
-          );
-        }
         const [saved] = await tx
           .update(noteRecords)
           .set({
             slug: snapshot.slug,
-            title: String(snapshot.title),
-            description: String(snapshot.description),
+            title: snapshot.title as string,
+            description: snapshot.description as string,
             summary:
               typeof snapshot.summary === 'string' ? snapshot.summary : null,
-            category: String(snapshot.category),
+            category: snapshot.category as string,
             tags,
-            body: String(snapshot.body),
-            published: Boolean(snapshot.published),
-            featured: Boolean(snapshot.featured),
-            replacesMdx: Boolean(snapshot.replacesMdx),
+            body: snapshot.body as string,
+            published: snapshot.published as boolean,
+            featured: snapshot.featured as boolean,
+            replacesMdx: snapshot.replacesMdx === true,
             createdAt,
             updatedAt: now,
           })
           .where(eq(noteRecords.id, entityId))
           .returning();
         if (!saved) throw new RevisionRestoreAborted();
+        await maintainPublicSlugHistory(
+          tx,
+          actor,
+          'note',
+          entityId,
+          existing,
+          saved,
+          mdxSlugs.note,
+        );
         current = saved;
       } else if (entityType === 'blog') {
         const tags = strings(snapshot.tags);
@@ -488,35 +475,12 @@ export async function restoreContentRevision(
           .where(eq(blogRecords.id, entityId));
         if (!existing) return false;
         await assertContentSlugAvailable(tx, 'blog', snapshot.slug, entityId);
-        if (
-          existing.slug !== snapshot.slug &&
-          existing.published &&
-          !existing.archived &&
-          Boolean(snapshot.published) &&
-          !Boolean(snapshot.archived)
-        ) {
-          await recordSlugRedirect(
-            tx,
-            actor,
-            'blog',
-            entityId,
-            existing.slug,
-            snapshot.slug,
-          );
-        } else if (existing.slug !== snapshot.slug) {
-          await repointExistingContentAliases(
-            tx,
-            'blog',
-            entityId,
-            snapshot.slug,
-          );
-        }
         const [saved] = await tx
           .update(blogRecords)
           .set({
             slug: snapshot.slug,
-            title: String(snapshot.title),
-            description: String(snapshot.description),
+            title: snapshot.title as string,
+            description: snapshot.description as string,
             summary:
               typeof snapshot.summary === 'string' ? snapshot.summary : null,
             cover:
@@ -524,18 +488,26 @@ export async function restoreContentRevision(
               isSafeImageReference(snapshot.cover)
                 ? snapshot.cover
                 : null,
-            category: String(snapshot.category),
+            category: snapshot.category as string,
             tags,
-            body: String(snapshot.body),
-            published: Boolean(snapshot.published),
-            featured: Boolean(snapshot.featured),
-            archived: Boolean(snapshot.archived),
+            body: snapshot.body as string,
+            published: snapshot.published as boolean,
+            featured: snapshot.featured as boolean,
+            archived: snapshot.archived as boolean,
             createdAt,
             updatedAt: now,
           })
           .where(eq(blogRecords.id, entityId))
           .returning();
         if (!saved) throw new RevisionRestoreAborted();
+        await maintainPublicSlugHistory(
+          tx,
+          actor,
+          'blog',
+          entityId,
+          existing,
+          saved,
+        );
         current = saved;
       } else {
         const tags = strings(snapshot.tags);
@@ -567,39 +539,18 @@ export async function restoreContentRevision(
         )
           return false;
         await assertContentSlugAvailable(tx, 'lab', snapshot.slug, entityId);
-        if (
-          existing.slug !== snapshot.slug &&
-          existing.visible &&
-          Boolean(snapshot.visible)
-        ) {
-          await recordSlugRedirect(
-            tx,
-            actor,
-            'lab',
-            entityId,
-            existing.slug,
-            snapshot.slug,
-          );
-        } else if (existing.slug !== snapshot.slug) {
-          await repointExistingContentAliases(
-            tx,
-            'lab',
-            entityId,
-            snapshot.slug,
-          );
-        }
         const [saved] = await tx
           .update(labRecords)
           .set({
             slug: snapshot.slug,
-            title: String(snapshot.title),
-            description: String(snapshot.description),
-            status: String(snapshot.status),
+            title: snapshot.title as string,
+            description: snapshot.description as string,
+            status: snapshot.status as string,
             category:
               typeof snapshot.category === 'string' ? snapshot.category : null,
             tags,
-            visible: Boolean(snapshot.visible),
-            featured: Boolean(snapshot.featured),
+            visible: snapshot.visible as boolean,
+            featured: snapshot.featured as boolean,
             repo: typeof snapshot.repo === 'string' ? snapshot.repo : null,
             demo: typeof snapshot.demo === 'string' ? snapshot.demo : null,
             relatedProject:
@@ -609,14 +560,23 @@ export async function restoreContentRevision(
             tools,
             lessons,
             risk: typeof snapshot.risk === 'string' ? snapshot.risk : null,
-            body: String(snapshot.body),
-            replacesMdx: Boolean(snapshot.replacesMdx),
+            body: snapshot.body as string,
+            replacesMdx: snapshot.replacesMdx === true,
             date,
             updatedAt,
           })
           .where(eq(labRecords.id, entityId))
           .returning();
         if (!saved) throw new RevisionRestoreAborted();
+        await maintainPublicSlugHistory(
+          tx,
+          actor,
+          'lab',
+          entityId,
+          existing,
+          saved,
+          mdxSlugs.lab,
+        );
         current = saved;
       }
 

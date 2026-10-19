@@ -254,7 +254,7 @@ test('historical aliases follow public owners across all content collections', a
           args: ['/projects/f1-project-renamed'],
         })
       ).rows[0]?.count,
-      0,
+      1,
     );
     await assertAlias(origin, '/projects/f1-project-original', 404);
     const projectPrivateRenameAgain = await postForm(
@@ -366,7 +366,7 @@ test('historical aliases follow public owners across all content collections', a
           args: ['/blog/f1-blog-renamed'],
         })
       ).rows[0]?.count,
-      0,
+      1,
     );
     await postForm(
       origin,
@@ -456,9 +456,13 @@ test('historical aliases follow public owners across all content collections', a
       302,
       '/blog/f1-blog-latest',
     );
-    // The intermediate slug was not captured as a redirect when the record
-    // was private; it must not be promoted to a new public alias later.
-    await assertAlias(origin, '/blog/f1-blog-renamed', 404, undefined, false);
+    // This slug was public before the private rename and remains an alias.
+    await assertAlias(
+      origin,
+      '/blog/f1-blog-renamed',
+      302,
+      '/blog/f1-blog-latest',
+    );
     const blogSearch = await (
       await fetch(`${origin}/api/search/blog?q=F1%20Blog`)
     ).text();
@@ -540,7 +544,7 @@ test('historical aliases follow public owners across all content collections', a
           args: ['/notes/f1-note-renamed'],
         })
       ).rows[0]?.count,
-      0,
+      1,
     );
     await assertAlias(origin, '/notes/f1-note-original', 404);
     const noteRepublished = await postForm(
@@ -635,7 +639,7 @@ test('historical aliases follow public owners across all content collections', a
           args: ['/lab/f1-lab-renamed'],
         })
       ).rows[0]?.count,
-      0,
+      1,
     );
     await assertAlias(origin, '/lab/f1-lab-original', 404);
     const labVisible = await postForm(
@@ -672,7 +676,7 @@ test('historical aliases follow public owners across all content collections', a
     const aliasRows = await database.execute(
       "SELECT from_path, to_path FROM content_redirects WHERE from_path LIKE '/blog/f1-%' ORDER BY from_path",
     );
-    assert.equal(aliasRows.rows.length, 2);
+    assert.equal(aliasRows.rows.length, 3);
 
     await database.execute('DROP TABLE content_redirects');
     const unavailableAlias = await fetch(`${origin}/blog/f1-blog-original`, {

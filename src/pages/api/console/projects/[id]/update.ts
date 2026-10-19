@@ -9,7 +9,6 @@ import {
   readUrlEncodedForm,
 } from '../../../../../lib/server/security';
 import { validateProjectForm } from '../../../../../lib/server/validation/projects';
-import { getPublicProjectCatalog } from '../../../../../lib/server/publicProjects';
 import { getAllProjects, getProjectSlug } from '../../../../../lib/content';
 import { isMdxSlugClaimConflict } from '../../../../../lib/data/mdxSlug';
 import {
@@ -75,14 +74,11 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
     const slugOwner = await getConsoleProjectBySlug(result.data.slug);
     if (slugOwner && slugOwner.id !== id) return redirect(id, 'slug', 'slug');
 
-    const mdxCollision = isMdxSlugClaimConflict(
-      (await getAllProjects()).map(getProjectSlug),
-      result.data.slug,
-      {
-        replacesMdx: result.data.replacesMdx,
-        currentSlug: existing.slug,
-      },
-    );
+    const mdxSlugs = (await getAllProjects()).map(getProjectSlug);
+    const mdxCollision = isMdxSlugClaimConflict(mdxSlugs, result.data.slug, {
+      replacesMdx: result.data.replacesMdx,
+      currentSlug: existing.slug,
+    });
     if (mdxCollision) {
       return redirect(id, 'slug', 'slug');
     }
@@ -93,17 +89,7 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
     );
     if (redirectOwnership === 'unavailable') return redirect(id, 'unavailable');
     if (redirectOwnership === 'reserved') return redirect(id, 'slug', 'slug');
-    const currentPublic = (await getPublicProjectCatalog()).some(
-      (project) =>
-        project.slug === existing.slug && project.source === 'database',
-    );
-
-    await updateProjectRecord(
-      id,
-      result.data,
-      locals.user.id,
-      currentPublic && result.data.visible && !existing.archived,
-    );
+    await updateProjectRecord(id, result.data, locals.user.id, mdxSlugs);
     return new Response(null, {
       status: 303,
       headers: { location: '/user/projects?notice=updated' },

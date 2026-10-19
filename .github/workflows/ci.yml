@@ -12,7 +12,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - name: Check out repository
@@ -57,11 +57,20 @@ jobs:
       - name: Test public redirect privacy
         run: pnpm test:redirects
 
+      - name: Test historical public slug lifecycle
+        run: pnpm test:public-slug-history
+
       - name: Test CMS slug ownership
         run: pnpm test:slug-collisions
 
       - name: Test revision restoration atomicity
         run: pnpm test:revision-atomicity
+
+      - name: Test historical revision snapshot validation
+        run: pnpm test:revision-validation
+
+      - name: Test historical revision compatibility
+        run: pnpm test:revision-compatibility
 
       - name: Test revision restoration slug ownership
         run: pnpm test:revision-slug-ownership

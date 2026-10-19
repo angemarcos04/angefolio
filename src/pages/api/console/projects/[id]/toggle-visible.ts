@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { toggleProjectVisible } from '../../../../../lib/server/projects';
+import { getAllProjects, getProjectSlug } from '../../../../../lib/content';
 import {
   hasTrustedOrigin,
   readUrlEncodedForm,
@@ -28,7 +29,11 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
   }
 
   try {
-    const changed = await toggleProjectVisible(id, locals.user.id);
+    const changed = await toggleProjectVisible(
+      id,
+      locals.user.id,
+      (await getAllProjects()).map(getProjectSlug),
+    );
     return new Response(null, {
       status: 303,
       headers: {

@@ -1,3 +1,5 @@
+import { normalizeProjectDisplayLinks } from './projectLinks';
+
 export interface ProjectActionSource {
   href?: string;
   github?: string;
@@ -63,18 +65,31 @@ export function getProjectActions({
       external: /^https?:\/\//i.test(caseStudy),
       variant: 'ghost',
     });
-  for (const link of links)
+  for (const link of links) {
+    if (
+      !link ||
+      typeof link.label !== 'string' ||
+      typeof link.href !== 'string'
+    )
+      continue;
     candidates.push({
       href: link.href,
       label: link.label,
       external: link.external,
       variant: candidates.length ? 'ghost' : 'primary',
     });
+  }
 
-  const destinations = new Set<string>();
-  return candidates.filter((action) => {
-    if (!action.href || destinations.has(action.href)) return false;
-    destinations.add(action.href);
-    return true;
-  });
+  const safeCandidates = candidates.map((candidate) => ({
+    candidate,
+    safe: normalizeProjectDisplayLinks([candidate])[0],
+  }));
+  return normalizeProjectDisplayLinks(candidates).map((link) => ({
+    ...link,
+    variant:
+      safeCandidates.find(
+        ({ safe }) =>
+          safe?.href === link.href && safe.external === link.external,
+      )?.candidate.variant ?? 'ghost',
+  }));
 }

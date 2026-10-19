@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { restoreProjectRecord } from '../../../../../lib/server/projects';
+import { getAllProjects, getProjectSlug } from '../../../../../lib/content';
 import {
   hasTrustedOrigin,
   readUrlEncodedForm,
@@ -29,7 +30,11 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
   }
 
   try {
-    const restored = await restoreProjectRecord(id, locals.user.id);
+    const restored = await restoreProjectRecord(
+      id,
+      locals.user.id,
+      (await getAllProjects()).map(getProjectSlug),
+    );
     return new Response(null, {
       status: 303,
       headers: {

@@ -5,11 +5,8 @@ import { getDatabase, migrateDatabase } from './db/client';
 import { auditLog, contentRevisions, labRecords } from './db/schema';
 import { pruneContentRevisions, revisionValues } from './revisions';
 import { getAllLabEntries } from '../content';
-import {
-  assertContentSlugAvailable,
-  recordSlugRedirect,
-  repointExistingContentAliases,
-} from './redirects';
+import { assertContentSlugAvailable } from './redirects';
+import { maintainPublicSlugHistory } from './publicSlugHistory';
 import type { LabRecordInput } from './validation/lab';
 import { getRedirectSourcePaths } from './redirects';
 
@@ -149,7 +146,7 @@ export async function saveLabRecord(
   id: string | null,
   input: LabRecordInput,
   actor: string,
-  redirectSlugChange = false,
+  mdxSlugs: readonly string[],
 ): Promise<LabRecord> {
   await migrateDatabase();
   return getDatabase().transaction(async (tx) => {
@@ -157,18 +154,6 @@ export async function saveLabRecord(
       ? await tx.query.labRecords.findFirst({ where: eq(labRecords.id, id) })
       : undefined;
     await assertContentSlugAvailable(tx, 'lab', input.slug, existing?.id);
-    if (redirectSlugChange && existing && existing.slug !== input.slug) {
-      await recordSlugRedirect(
-        tx,
-        actor,
-        'lab',
-        existing.id,
-        existing.slug,
-        input.slug,
-      );
-    } else if (existing && existing.slug !== input.slug) {
-      await repointExistingContentAliases(tx, 'lab', existing.id, input.slug);
-    }
     const [record] = existing
       ? await tx
           .update(labRecords)
@@ -183,6 +168,15 @@ export async function saveLabRecord(
           .insert(labRecords)
           .values({ id: crypto.randomUUID(), ...input })
           .returning();
+    await maintainPublicSlugHistory(
+      tx,
+      actor,
+      'lab',
+      record.id,
+      existing,
+      record,
+      mdxSlugs,
+    );
     await tx.insert(auditLog).values(
       auditEvent(
         actor,
